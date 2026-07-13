@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Learning Tree — mood sketch 001</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #05070d; font-family: "Segoe UI", system-ui, sans-serif; }
+  #app { position: fixed; inset: 0; }
+  .panel {
+    position: fixed; color: #cfd8e3; background: rgba(10, 16, 28, 0.55);
+    border: 1px solid rgba(140, 170, 210, 0.18); border-radius: 12px;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    padding: 14px 16px; font-size: 13px; line-height: 1.5; user-select: none;
+  }
+  #hud { top: 16px; left: 16px; max-width: 300px; }
+  #hud h1 { font-size: 15px; margin: 0 0 2px; font-weight: 600; color: #eef4fb; letter-spacing: 0.02em; }
+  #hud .sub { color: #8fa3ba; font-size: 11.5px; margin-bottom: 10px; }
+  .stratum { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-size: 12px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+  #controls { display: flex; gap: 8px; margin-top: 12px; }
+  button {
+    all: unset; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 12.5px;
+    color: #eaf2fb; background: rgba(90, 140, 220, 0.22); border: 1px solid rgba(140, 180, 240, 0.35);
+    transition: background 0.2s;
+  }
+  button:hover { background: rgba(110, 160, 240, 0.38); }
+  #note { bottom: 14px; right: 16px; font-size: 11px; color: #7f93aa; padding: 8px 12px; }
+  #legendSectors { bottom: 14px; left: 16px; font-size: 11px; padding: 10px 12px; color: #9fb2c8; }
+  #legendSectors b { color: #cfe0f2; font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div class="panel" id="hud">
+  <h1>AI Learning Tree</h1>
+  <div class="sub">mood sketch 001 · bioluminescent night garden</div>
+  <div class="stratum"><span class="dot" style="color:#e8ecff; background:#e8ecff"></span> Emergent · <i>Expert</i></div>
+  <div class="stratum"><span class="dot" style="color:#ffcf6e; background:#ffcf6e"></span> Canopy · <i>Practitioner</i></div>
+  <div class="stratum"><span class="dot" style="color:#4fd8c4; background:#4fd8c4"></span> Understory · <i>Experimenter</i></div>
+  <div class="stratum"><span class="dot" style="color:#5aa66a; background:#5aa66a"></span> Forest floor · <i>Novice</i></div>
+  <div id="controls">
+    <button id="replay">▶ Replay growth</button>
+    <button id="spin">⏸ Orbit</button>
+  </div>
+</div>
+
+<div class="panel" id="legendSectors">
+  <b>Limbs:</b> CREATE (copy · images · video) &nbsp;·&nbsp; AUTOMATE (workflows)<br/>
+  DISTRIBUTE (SEO · GEO) &nbsp;·&nbsp; BUILD (no-code · low-code · pro-code)<br/>
+  Mock data — roots (private knowledge) ghost below the ground.
+</div>
+
+<div class="panel" id="note">phase 1 concept · geometry &amp; palette are placeholders, the feeling is the spec</div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.181/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.181/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+// ---------- deterministic PRNG (seeded — same seed, same tree, always) ----------
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rand = mulberry32(20260713);
+const R = (lo, hi) => lo + rand() * (hi - lo);
+
+// ---------- the four strata (Section levels × forest stratification) ----------
+const STRATA = [
+  { name: 'Forest floor', level: 'Novice',       y0: 0,  y1: 3.0,  tint: 0x5aa66a },
+  { name: 'Understory',   level: 'Experimenter', y0: 3.0, y1: 7.0, tint: 0x4fd8c4 },
+  { name: 'Canopy',       level: 'Practitioner', y0: 7.0, y1: 12.0, tint: 0xffcf6e },
+  { name: 'Emergent',     level: 'Expert',       y0: 12.0, y1: 16.5, tint: 0xe8ecff },
+];
+const ceilingFor = lvl => STRATA[Math.max(0, Math.min(3, lvl - 1))].y1 - 0.35;
+
+// ---------- sector compass (limb → sectors), mock "Walter-ish" profile ----------
+// level: Section level reached (gates height) · act: lifetime activity 0..1 (mass)
+// recent: share of recent work 0..1 (foliage freshness + fireflies) · roots: private note mass
+const SECTORS = [
+  { id: 'copy',      limb: 'CREATE',     az: 15,  hue: 0xffb454, level: 3, act: 0.62, recent: 0.45, roots: 0.5 },
+  { id: 'images',    limb: 'CREATE',     az: 55,  hue: 0xff6ec7, level: 2, act: 0.48, recent: 0.30, roots: 0.35 },
+  { id: 'video',     limb: 'CREATE',     az: 95,  hue: 0xff5d73, level: 1, act: 0.20, recent: 0.65, roots: 0.85 }, // big roots, tiny shoot: growth foreshadowed
+  { id: 'workflows', limb: 'AUTOMATE',   az: 140, hue: 0x7ce65a, level: 2, act: 0.42, recent: 0.40, roots: 0.4 },
+  { id: 'seo',       limb: 'DISTRIBUTE', az: 185, hue: 0x35d0ba, level: 3, act: 0.85, recent: 0.55, roots: 0.6 },
+  { id: 'geo',       limb: 'DISTRIBUTE', az: 225, hue: 0x4aa8ff, level: 3, act: 0.70, recent: 0.90, roots: 0.7 },
+  { id: 'no-code',   limb: 'BUILD',      az: 270, hue: 0xb59aff, level: 2, act: 0.30, recent: 0.20, roots: 0.3 },
+  { id: 'low-code',  limb: 'BUILD',      az: 310, hue: 0x8f7bff, level: 2, act: 0.36, recent: 0.30, roots: 0.35 },
+  { id: 'pro-code',  limb: 'BUILD',      az: 350, hue: 0x6a8dff, level: 4, act: 1.00, recent: 1.00, roots: 0.8 }, // the emergent hero limb
+];
+const deg = d => (d * Math.PI) / 180;
+
+// ---------- scene scaffold ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x05070d);
+scene.fog = new THREE.FogExp2(0x05070d, 0.017);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 300);
+camera.position.set(17, 8.5, 17);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+// ?dpr=1 (or lower) tames cost on software-GL / low-power embeds
+const dprCap = parseFloat(new URLSearchParams(location.search).get('dpr') || '2');
+renderer.setPixelRatio(Math.min(devicePixelRatio, dprCap));
+document.getElementById('app').appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 5.6, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.45;
+controls.maxDistance = 60;
+controls.minDistance = 6;
+controls.maxPolarAngle = deg(96); // allow a peek at the roots
+
+// bloom pipeline (parameters informed by ai-periodic-cube's bloomComposer)
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.9, 0.55, 0.6);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+// ---------- growth state (uGrow sweeps 0→1; every element knows when it was born) ----------
+const U = { uTime: { value: 0 }, uGrow: { value: 0 } };
+
+// ---------- branch skeleton via instanced tapered cylinders ----------
+const segs = []; // { start:V3, dir:V3, len, r, born, dist(0 root→1 tip), color }
+const V3 = (...a) => new THREE.Vector3(...a);
+
+function growPath(start, dir0, opts) {
+  // organic random walk inside a sector wedge, under a stratum ceiling
+  const { steps, len0, r0, az, wedge, ceil, hue, born0, bornSpan, depth } = opts;
+  let p = start.clone(), dir = dir0.clone().normalize(), r = r0;
+  const tips = [];
+  for (let i = 0; i < steps; i++) {
+    const t = i / steps;
+    const len = len0 * R(0.85, 1.15) * (1 - t * 0.35);
+    // jitter + keep inside the sector's azimuth wedge + ease off vertical climb
+    dir.x += R(-0.16, 0.16); dir.z += R(-0.16, 0.16); dir.y += R(-0.05, 0.10);
+    const azNow = Math.atan2(dir.z, dir.x);
+    const azDelta = Math.atan2(Math.sin(azNow - az), Math.cos(azNow - az));
+    if (Math.abs(azDelta) > wedge) { // steer back toward the wedge center
+      const rXZ = Math.hypot(dir.x, dir.z);
+      const azFix = az + Math.sign(azDelta) * wedge * 0.85;
+      dir.x = Math.cos(azFix) * rXZ; dir.z = Math.sin(azFix) * rXZ;
+    }
+    dir.normalize();
+    // stratum ceiling: flatten out instead of piercing it (until a milestone raises it)
+    if (p.y + dir.y * len > ceil) { dir.y *= 0.25; dir.normalize(); }
+    const born = born0 + bornSpan * t + R(0, 0.02);
+    segs.push({ start: p.clone(), dir: dir.clone(), len, r, born, dist: opts.dist0 + (1 - opts.dist0) * t, hue });
+    p = p.clone().addScaledVector(dir, len);
+    r *= 0.86;
+    // side branches
+    if (depth > 0 && i >= 2 && rand() < 0.42) {
+      const childDir = dir.clone();
+      childDir.x += R(-0.7, 0.7); childDir.z += R(-0.7, 0.7); childDir.y += R(0.05, 0.5);
+      tips.push(...growPath(p, childDir, { ...opts, steps: Math.max(3, ((steps - i) * 0.55) | 0), len0: len0 * 0.6, r0: r * 0.7, born0: born, bornSpan: bornSpan * 0.6, depth: depth - 1, dist0: opts.dist0 + (1 - opts.dist0) * t }));
+    }
+    if (i > steps * 0.45) tips.push({ p: p.clone(), born, hue, t });
+  }
+  return tips;
+}
+
+// trunk — thickness stands for the whole history (strand-model spirit)
+const trunkTips = growPath(V3(0, -0.3, 0), V3(0, 1, 0), {
+  steps: 7, len0: 0.48, r0: 0.4, az: 0, wedge: Math.PI, ceil: 3.2, hue: 0x8a7a68,
+  born0: 0.0, bornSpan: 0.04, depth: 0, dist0: 0,
+});
+
+// sector boughs
+const leafSpots = [];
+const blossoms = []; // { pos, born, level }
+for (const s of SECTORS) {
+  const az = deg(s.az);
+  const attachY = R(1.5, 2.6);
+  const start = V3(Math.cos(az) * 0.22, attachY, Math.sin(az) * 0.22);
+  const dir0 = V3(Math.cos(az) * 0.6, 1.05, Math.sin(az) * 0.6);
+  const steps = Math.round(8 + s.act * 10);
+  const born0 = 0.06 + R(0, 0.1);
+  const tips = growPath(start, dir0, {
+    steps, len0: 0.5 + s.act * 0.42, r0: 0.09 + s.act * 0.12, az, wedge: deg(17),
+    ceil: ceilingFor(s.level), hue: s.hue, born0, bornSpan: 0.86 - born0, depth: 2, dist0: 0.12,
+  });
+  for (const tip of tips) leafSpots.push({ ...tip, sector: s });
+  // blossoms mark each stratum boundary this sector has crossed (the level-up moments)
+  for (let lvl = 2; lvl <= s.level; lvl++) {
+    const boundary = STRATA[lvl - 1].y0;
+    const near = tips.filter(t => Math.abs(t.p.y - boundary) < 1.4);
+    const at = near.length ? near[(rand() * near.length) | 0].p : null;
+    if (at) blossoms.push({ pos: at.clone().add(V3(R(-0.2, 0.2), R(0, 0.3), R(-0.2, 0.2))), born: 0.2 + 0.6 * ((lvl - 1) / 3) + R(0, 0.05), hue: s.hue });
+  }
+  // roots mirror the compass below ground — private knowledge (metadata only), dim
+  const nRoots = 1 + Math.round(s.roots * 2);
+  for (let k = 0; k < nRoots; k++) {
+    const rd = V3(Math.cos(az + R(-0.5, 0.5)) * 0.8, -1.1, Math.sin(az + R(-0.5, 0.5)) * 0.8);
+    growPath(V3(0, -0.15, 0), rd, {
+      steps: 4 + Math.round(s.roots * 4), len0: 0.42 + s.roots * 0.25, r0: 0.05 + s.roots * 0.05,
+      az, wedge: deg(26), ceil: 0, hue: 0x36503f, born0: 0.02 + R(0, 0.3), bornSpan: 0.3, depth: 1, dist0: 0.3,
+    });
+  }
+}
+
+// build the instanced mesh for all segments
+{
+  const geo = new THREE.CylinderGeometry(0.62, 1, 1, 6, 1, true);
+  geo.translate(0, 0.5, 0); // base at origin so growth scales upward from the base
+  const n = segs.length;
+  const mesh = new THREE.InstancedMesh(geo, null, n);
+  const aColor = new Float32Array(n * 3), aBorn = new Float32Array(n), aDist = new Float32Array(n);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = V3(0, 1, 0), sc = V3();
+  const bark = new THREE.Color(0x241d18), c = new THREE.Color();
+  segs.forEach((s2, i) => {
+    q.setFromUnitVectors(up, s2.dir);
+    sc.set(s2.r, s2.len, s2.r);
+    m.compose(s2.start, q, sc);
+    mesh.setMatrixAt(i, m);
+    c.set(s2.hue).lerp(bark, 1 - Math.min(1, s2.dist * 0.55 + 0.12)); // bark darkens toward the root
+    aColor.set([c.r, c.g, c.b], i * 3);
+    aBorn[i] = s2.born; aDist[i] = s2.dist;
+  });
+  geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(aColor, 3));
+  geo.setAttribute('aBorn', new THREE.InstancedBufferAttribute(aBorn, 1));
+  geo.setAttribute('aDist', new THREE.InstancedBufferAttribute(aDist, 1));
+  mesh.material = new THREE.ShaderMaterial({
+    uniforms: U,
+    vertexShader: /* glsl */`
+      attribute vec3 aColor; attribute float aBorn, aDist;
+      varying vec3 vColor; varying float vDist;
+      uniform float uGrow;
+      void main() {
+        float s = clamp((uGrow - aBorn) / 0.05, 0.0, 1.0);   // sprout when the growth front arrives
+        vec3 p = position * s;
+        vColor = aColor; vDist = aDist;
+        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.0);
+      }`,
+    fragmentShader: /* glsl */`
+      varying vec3 vColor; varying float vDist;
+      uniform float uTime;
+      void main() {
+        // sap-light: a slow luminous pulse climbing from trunk to tips
+        float front = fract(uTime * 0.09);
+        float sap = exp(-pow((vDist - front) * 7.0, 2.0)) * 0.5;
+        vec3 col = vColor * 0.75 + vColor * sap + vec3(0.9, 1.0, 0.8) * sap * 0.25;
+        gl_FragColor = vec4(col, 1.0);
+      }`,
+  });
+  mesh.frustumCulled = false;
+  scene.add(mesh);
+}
+
+// ---------- leaves: instanced billboards, hue = sector, freshness = recency ----------
+{
+  const spots = [];
+  for (const ls of leafSpots) {
+    const s = ls.sector;
+    const count = Math.round(2 + s.act * 5);
+    for (let i = 0; i < count; i++) spots.push(ls);
+  }
+  const n = spots.length;
+  const geo = new THREE.InstancedBufferGeometry();
+  const quad = new THREE.PlaneGeometry(1, 1);
+  geo.index = quad.index; geo.attributes.position = quad.attributes.position; geo.attributes.uv = quad.attributes.uv;
+  const off = new Float32Array(n * 3), col = new Float32Array(n * 3);
+  const born = new Float32Array(n), phase = new Float32Array(n), size = new Float32Array(n);
+  const c = new THREE.Color(), fresh = new THREE.Color(0xa8ff9e), gold = new THREE.Color(0xffb84d);
+  spots.forEach((ls, i) => {
+    const s = ls.sector;
+    off.set([ls.p.x + R(-0.5, 0.5), ls.p.y + R(-0.3, 0.55), ls.p.z + R(-0.5, 0.5)], i * 3);
+    c.set(s.hue);
+    if (rand() < s.recent * 0.6) c.lerp(fresh, 0.55);          // this month's work glows young-green
+    else if (s.recent < 0.25 && rand() < 0.5) c.lerp(gold, 0.6); // dormant sectors turn autumnal, never bare
+    const boost = 0.9 + s.recent * 0.9;                          // recency feeds the bloom pass
+    col.set([c.r * boost, c.g * boost, c.b * boost], i * 3);
+    born[i] = Math.min(0.98, ls.born + R(0.01, 0.06));
+    phase[i] = R(0, Math.PI * 2);
+    size[i] = R(0.13, 0.30);
+  });
+  geo.setAttribute('aOffset', new THREE.InstancedBufferAttribute(off, 3));
+  geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(col, 3));
+  geo.setAttribute('aBorn', new THREE.InstancedBufferAttribute(born, 1));
+  geo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phase, 1));
+  geo.setAttribute('aSize', new THREE.InstancedBufferAttribute(size, 1));
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { ...U, uCamRight: { value: V3(1, 0, 0) }, uCamUp: { value: V3(0, 1, 0) } },
+    transparent: true, depthWrite: false,
+    vertexShader: /* glsl */`
+      attribute vec3 aOffset, aColor; attribute float aBorn, aPhase, aSize;
+      uniform vec3 uCamRight, uCamUp; uniform float uGrow, uTime;
+      varying vec3 vColor; varying vec2 vUv; varying float vTw;
+      void main() {
+        float s = clamp((uGrow - aBorn) / 0.04, 0.0, 1.0);
+        s = s * (1.6 - 0.6 * s); // overshoot pop when a leaf sprouts
+        vec3 sway = vec3(sin(uTime * 1.3 + aPhase), 0.0, cos(uTime * 1.1 + aPhase)) * 0.045; // wind
+        vec3 world = aOffset + sway + (uCamRight * position.x + uCamUp * position.y) * aSize * s;
+        vColor = aColor; vUv = uv; vTw = aPhase;
+        gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
+      }`,
+    fragmentShader: /* glsl */`
+      varying vec3 vColor; varying vec2 vUv; varying float vTw;
+      uniform float uTime;
+      void main() {
+        float d = length(vUv - 0.5);
+        float a = smoothstep(0.5, 0.18, d);
+        if (a < 0.02) discard;
+        float tw = 0.85 + 0.3 * sin(uTime * 1.7 + vTw * 3.0);
+        gl_FragColor = vec4(vColor * tw, a * 0.92);
+      }`,
+  });
+  const leaves = new THREE.Mesh(geo, mat);
+  leaves.frustumCulled = false;
+  scene.add(leaves);
+  leaves.onBeforeRender = (r, sc2, cam) => {
+    cam.updateMatrixWorld();
+    const e = cam.matrixWorld.elements;
+    mat.uniforms.uCamRight.value.set(e[0], e[1], e[2]);
+    mat.uniforms.uCamUp.value.set(e[4], e[5], e[6]);
+  };
+}
+
+// ---------- blossoms 🌸 — persistent markers of the level-up moments ----------
+const blossomMeshes = [];
+{
+  const g = new THREE.SphereGeometry(0.15, 14, 14);
+  for (const b of blossoms) {
+    const c = new THREE.Color(b.hue).lerp(new THREE.Color(0xfff0f6), 0.72).multiplyScalar(2.4); // hot → blooms hard
+    const m2 = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: c }));
+    m2.position.copy(b.pos);
+    m2.userData.born = b.born;
+    scene.add(m2);
+    blossomMeshes.push(m2);
+  }
+}
+
+// ---------- fireflies ✨ — the last seven days of work, alive around the branches ----------
+{
+  const pts = [];
+  for (const s of SECTORS) {
+    const nf = Math.round(s.recent * 26);
+    const anchors = leafSpots.filter(l => l.sector === s);
+    for (let i = 0; i < nf && anchors.length; i++) {
+      const a = anchors[(rand() * anchors.length) | 0];
+      pts.push({ p: a.p, hue: s.hue });
+    }
+  }
+  const n = pts.length;
+  const pos = new Float32Array(n * 3), col = new Float32Array(n * 3), ph = new Float32Array(n);
+  const c = new THREE.Color(), warm = new THREE.Color(0xfffbe0);
+  pts.forEach((f, i) => {
+    pos.set([f.p.x + R(-0.8, 0.8), f.p.y + R(-0.4, 0.9), f.p.z + R(-0.8, 0.8)], i * 3);
+    c.set(f.hue).lerp(warm, 0.6).multiplyScalar(2.0);
+    col.set([c.r, c.g, c.b], i * 3);
+    ph[i] = R(0, Math.PI * 2);
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+  g.setAttribute('aPhase', new THREE.BufferAttribute(ph, 1));
+  const m2 = new THREE.ShaderMaterial({
+    uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: /* glsl */`
+      attribute vec3 aColor; attribute float aPhase;
+      uniform float uTime, uGrow; varying vec3 vColor; varying float vA;
+      void main() {
+        vec3 p = position + vec3(sin(uTime * 0.7 + aPhase) * 0.35, sin(uTime * 0.5 + aPhase * 2.1) * 0.25, cos(uTime * 0.6 + aPhase) * 0.35);
+        vColor = aColor;
+        vA = (0.55 + 0.45 * sin(uTime * 2.2 + aPhase * 3.7)) * smoothstep(0.85, 1.0, uGrow);
+        vec4 mv = viewMatrix * vec4(p, 1.0);
+        gl_PointSize = 26.0 / max(1.0, -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */`
+      varying vec3 vColor; varying float vA;
+      void main() {
+        float d = length(gl_PointCoord - 0.5);
+        float a = smoothstep(0.5, 0.05, d) * vA;
+        gl_FragColor = vec4(vColor, a);
+      }`,
+  });
+  const fireflies = new THREE.Points(g, m2);
+  fireflies.frustumCulled = false;
+  scene.add(fireflies);
+}
+
+// ---------- strata bands — atmosphere you can read, not gridlines ----------
+for (let i = 1; i < STRATA.length; i++) {
+  const s = STRATA[i];
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(4.5, 15.5, 72),
+    new THREE.MeshBasicMaterial({ color: s.tint, transparent: true, opacity: 0.018, side: THREE.DoubleSide, depthWrite: false })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = s.y0;
+  scene.add(ring);
+}
+// stratum labels as small billboarded sprites at the rim
+function labelSprite(text, color) {
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128;
+  const ctx = cv.getContext('2d');
+  ctx.font = '500 44px "Segoe UI", sans-serif';
+  ctx.fillStyle = color; ctx.globalAlpha = 0.9;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 16, 64);
+  const tex = new THREE.CanvasTexture(cv);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.6, depthWrite: false }));
+  sp.scale.set(4.6, 1.15, 1);
+  return sp;
+}
+STRATA.forEach((s, i) => {
+  const sp = labelSprite(`${s.name} · ${s.level}`, '#' + new THREE.Color(s.tint).getHexString());
+  sp.position.set(11.6, (s.y0 + s.y1) / 2, 0);
+  scene.add(sp);
+});
+
+// ---------- ground: the compass rose, drawn once into a canvas texture ----------
+{
+  const cv = document.createElement('canvas'); cv.width = cv.height = 1024;
+  const ctx = cv.getContext('2d');
+  const cx = 512, rMax = 500;
+  const grd = ctx.createRadialGradient(cx, cx, 40, cx, cx, rMax);
+  grd.addColorStop(0, '#101a17'); grd.addColorStop(0.7, '#0a1210'); grd.addColorStop(1, '#05070d');
+  ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(cx, cx, rMax, 0, 7); ctx.fill();
+  // wedge separators between limbs + faint sector spokes and names
+  const limbEdges = [-10, 117.5, 162.5, 247.5]; // rough boundaries between limb arcs
+  ctx.strokeStyle = 'rgba(140,180,220,0.10)'; ctx.lineWidth = 3;
+  for (const e of limbEdges) {
+    ctx.beginPath(); ctx.moveTo(cx, cx);
+    ctx.lineTo(cx + Math.cos(deg(e)) * rMax, cx + Math.sin(deg(e)) * rMax); ctx.stroke();
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const s of SECTORS) {
+    const a = deg(s.az);
+    ctx.save();
+    ctx.translate(cx + Math.cos(a) * 400, cx + Math.sin(a) * 400);
+    ctx.rotate(a + Math.PI / 2);
+    ctx.font = '500 30px "Segoe UI", sans-serif';
+    ctx.fillStyle = 'rgba(180,205,230,0.42)';
+    ctx.fillText(s.id, 0, 0);
+    ctx.restore();
+    // sector tint hint near the rim
+    ctx.strokeStyle = 'rgba(' + [(s.hue >> 16) & 255, (s.hue >> 8) & 255, s.hue & 255].join(',') + ',0.22)';
+    ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.arc(cx, cx, 452, a - deg(14), a + deg(14)); ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  const ground = new THREE.Mesh(
+    new THREE.CircleGeometry(14.5, 96),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.85, depthWrite: false })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.02;
+  scene.add(ground);
+}
+
+// ---------- growth / replay (wall-clock driven — frame-rate independent) ----------
+let growStart = performance.now(), growDur = 4500; // initial load: the 4.5s grow-in echo
+document.getElementById('replay').addEventListener('click', () => {
+  growStart = performance.now(); growDur = 22000; // the full 22s journey
+});
+const spinBtn = document.getElementById('spin');
+spinBtn.addEventListener('click', () => {
+  controls.autoRotate = !controls.autoRotate;
+  spinBtn.textContent = controls.autoRotate ? '⏸ Orbit' : '▶ Orbit';
+});
+
+// ---------- loop ----------
+const clock = new THREE.Clock();
+function tick() {
+  requestAnimationFrame(tick);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  U.uTime.value += dt;
+  U.uGrow.value = Math.min(1, (performance.now() - growStart) / growDur);
+  for (const b of blossomMeshes) {
+    const s = Math.max(0.0001, Math.min(1, (U.uGrow.value - b.userData.born) / 0.05));
+    const pop = s * (1.7 - 0.7 * s);
+    b.scale.setScalar(pop * (1 + 0.12 * Math.sin(U.uTime.value * 2.0 + b.position.y)));
+  }
+  controls.update();
+  composer.render();
+}
+tick();
+
+// robust sizing: some hosts (embeds, side panes) lay out after module init and
+// never fire window.resize — observe the body instead of trusting events
+function syncSize() {
+  const w = Math.max(1, innerWidth), h = Math.max(1, innerHeight);
+  if (renderer.domElement.width === w * renderer.getPixelRatio() && renderer.domElement.height === h * renderer.getPixelRatio()) return;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  composer.setSize(w, h);
+}
+addEventListener('resize', syncSize);
+new ResizeObserver(syncSize).observe(document.body);
+syncSize();
+
+window.__dbg = { U, camera, controls, segs: segs.length, leaves: leafSpots.length, blossoms: blossoms.length };
+</script>
+</body>
+</html>
