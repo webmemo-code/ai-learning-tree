@@ -1,6 +1,6 @@
 # ADR-0006 — Grove membership is an append-only planting log; joining is a PR
 
-- **Status:** Proposed *(phase-6 gate: Walter signs off before any grove ships)*
+- **Status:** Accepted *(Walter, 2026-07-14 — phase-6 build unlocked)*
 - **Date:** 2026-07-14
 - **Context:** Phase 6 turns single trees into shared forests. ADR-0001 reserved
   the forest metaphor for the community layer; [04-roadmap-and-process.md](../04-roadmap-and-process.md)

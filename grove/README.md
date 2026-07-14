@@ -1,15 +1,17 @@
-# grove/ — the coordination system (phase 6 concept)
+# grove/ — the coordination system (phase 6)
 
 *Which tree grows where?* Answered in [docs/05-grove.md](../docs/05-grove.md) and
-decided (Proposed) in [ADR-0006](../docs/decisions/0006-grove-planting-log.md) /
+decided (**Accepted**) in [ADR-0006](../docs/decisions/0006-grove-planting-log.md) /
 [ADR-0007](../docs/decisions/0007-grove-placement-phyllotaxis.md). This directory
 holds the **reference implementation** of the placement function — the part that
-must be pure, deterministic, and append-stable.
+must be pure, deterministic, and append-stable — plus the **grove template**: the
+folder a community copies to start a grove of their own.
 
 | File | What it is |
 | --- | --- |
 | [place.mjs](place.mjs) | `placeGrove(events, config)` — planting log → clearing centers + tree positions. Pure: no I/O, no clock, no unseeded randomness. Stamped `placeVersion` (semver-sacred, mirror of `algoVersion`). |
-| [test-place.mjs](test-place.mjs) | The trust properties as executable checks: determinism, append-stability, measured spacing floors, stump/tombstone slot semantics, validation. |
+| [test-place.mjs](test-place.mjs) | The trust properties as executable checks: determinism, append-stability, measured spacing floors, stump/tombstone slot semantics, validation — plus the template drift guard (the vendored copy must stay byte-identical). |
+| [template/](template/) | **The grove template**: `grove.yml`, empty `plantings.jsonl`, the planting-ceremony CI check, keeper documentation. Copy it, name it, plant. |
 
 ## The one-paragraph version
 
@@ -38,8 +40,15 @@ python -m http.server 8123
 # http://localhost:8123/prototypes/grove-sketch/
 ```
 
-## What is deliberately NOT here yet
+## Starting a grove
 
-The grove **template repo** (grove.yml, planting-ceremony CI, keeper docs, the 3D
-grove renderer with impostor LOD) is the phase-6 build, gated on the ADRs being
-Accepted. This directory exists so the concept is falsifiable before anything ships.
+Copy [template/](template/) into a new repository (it is self-contained — it
+vendors its own `place.mjs`), edit `grove.yml`, and merge your first planting.
+The template's README carries the full keeper + ceremony documentation. When the
+template graduates to its own `grove-template` repo ("Use this template" button),
+this folder is its source of truth.
+
+## What is deliberately NOT here
+
+Any grove *instance*. Walter's own grove — like anyone's — belongs in its own
+repo, planted from the template. This repo only ships the seeds.

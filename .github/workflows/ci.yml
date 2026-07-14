@@ -17,6 +17,20 @@ jobs:
       - run: node harvester/test-harvest.mjs
       - run: node harvester/test-vault.mjs
 
+  grove-tests:
+    # ADR-0006/0007 trust properties: placement determinism + append-stability,
+    # ceremony validation, and the template drift guard (vendored place.mjs must
+    # stay byte-identical to the canonical one).
+    name: Grove placement + ceremony tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node grove/test-place.mjs
+      - run: node grove/test-ceremony.mjs
+
   determinism:
     # docs/04-roadmap-and-process.md §2: "generator determinism test (same log +
     # seed + algoVersion => byte-identical tree.json) is the one test that must

@@ -180,8 +180,8 @@ template-first, everything in the open, a registry that is only an index.
 
 | # | Question | Current lean | Where |
 | --- | --- | --- | --- |
-| G1 | Registry + ceremony mechanics as specified? | Planting log, PR ceremony, keeper merges | [ADR-0006](decisions/0006-grove-planting-log.md) — *Proposed* |
-| G2 | Placement = phyllotaxis, slots eternal? | Yes — golden-angle spiral at both scales | [ADR-0007](decisions/0007-grove-placement-phyllotaxis.md) — *Proposed* |
+| G1 | Registry + ceremony mechanics as specified? | Planting log, PR ceremony, keeper merges | [ADR-0006](decisions/0006-grove-planting-log.md) — **Accepted** |
+| G2 | Placement = phyllotaxis, slots eternal? | Yes — golden-angle spiral at both scales | [ADR-0007](decisions/0007-grove-placement-phyllotaxis.md) — **Accepted** |
 | G3 | Heterogeneous clearing capacities? | v1 uniform (256); classes later, additive | backlog |
 | G4 | Ownership attestation beyond "PR author == tree owner"? | GitHub identity is enough for v1 | backlog |
 | G5 | Grove-level view of a tree: full render vs. impostor budget? | Impostors from `tree.json` bounds + sector hues at distance; full tree within ~2 plots (LOD budget, [02 §5](02-visual-language.md)) | phase-6 build |
@@ -198,3 +198,12 @@ template-first, everything in the open, a registry that is only an index.
 - [`prototypes/grove-sketch/`](../prototypes/grove-sketch/) — a top-down night-map
   of a mock grove (commons + three clearings, stumps, moss plots) rendered through
   the real `place.mjs`, so the concept is something you can look at.
+- [`grove/template/`](../grove/template/) — **the grove template** (built after the
+  ADRs were Accepted): `grove.yml`, an empty planting log, the planting-ceremony CI
+  check ([`validate-ceremony.mjs`](../grove/template/tools/validate-ceremony.mjs) —
+  append-only, well-formed, owner-authored, still-places), and the keeper's
+  handbook. Self-contained: it vendors `place.mjs` (drift-guarded by CI here).
+- [`prototypes/grove-walk/`](../prototypes/grove-walk/) — the **walkable grove**
+  (G5): first-person night walk with a stroll mode that flies between clearings;
+  every member an instanced impostor from `tree.json` bounds + sector hues, real
+  members fetched live; click a tree to meet its grower and visit its full renderer.
