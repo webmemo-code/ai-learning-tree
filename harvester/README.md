@@ -207,6 +207,16 @@ from the **current working-tree copy**, and a deleted note has none to read.
 This is intentional: we don't cache a deleted note's last-known tags anywhere,
 so its original topic can't leak after the fact either.
 
+The mirror-image case is also intentional: events harvested **while the note
+still existed** keep their (allow-listed) tags and sector even if the note is
+deleted later. The log is append-only history — those tags were explicitly
+vetted via the tag-map at emission time, and the activity really happened.
+Deleting a note stops *future* events; it does not rewrite the past (the same
+rule that lets old snapshots replay identically forever). If a right-to-forget
+scrub is ever needed, it should be an explicit, deliberate tool (rewrite
+`obs:{hash}:*` rows for one path-hash), not an implicit side effect of
+deletion.
+
 ### The tag allow-list: why unmapped tags are dropped, not passed through
 
 `vault.mjs` reads a note's frontmatter `tags:` and inline `#tags` **locally**,

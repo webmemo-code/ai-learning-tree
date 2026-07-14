@@ -216,7 +216,9 @@ export function readNoteTags(vaultPath, relPath) {
   try {
     return { exists: true, rawTags: extractRawTags(readFileSync(full, 'utf8')) };
   } catch {
-    return { exists: false, rawTags: new Set() };
+    // the file exists but couldn't be read (permissions, transient IO) — that is
+    // not a deletion, so keep exists:true and just emit no tags this round
+    return { exists: true, rawTags: new Set() };
   }
 }
 
