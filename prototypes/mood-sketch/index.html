@@ -26,14 +26,15 @@
   }
   button:hover { background: rgba(110, 160, 240, 0.38); }
   #note { bottom: 14px; right: 16px; font-size: 11px; color: #7f93aa; padding: 8px 12px; }
-  #legendSectors { bottom: 14px; left: 16px; font-size: 11px; padding: 10px 12px; color: #9fb2c8; max-width: 200px; }
+  #legendSectors { bottom: 14px; left: 16px; font-size: 11px; padding: 10px 12px; color: #9fb2c8; max-width: 248px; }
   #legendSectors b { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 6px; }
-  #legendSectors .secGrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 8px; }
+  #legendSectors .secGrid { display: grid; grid-template-columns: repeat(3, auto); gap: 3px 8px; }
   #legendSectors .sec {
     display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 1px 3px; border-radius: 5px;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.15s, color 0.15s; white-space: nowrap;
   }
   #legendSectors .sec:hover { background: rgba(120, 160, 230, 0.18); color: #eaf2fb; }
+  #legendSectors .sec:focus-visible { outline: 1px solid rgba(140, 180, 240, 0.6); color: #eaf2fb; }
   #legendSectors .sec.active { background: rgba(120, 170, 240, 0.32); color: #fff; }
   #legendSectors .sec .dot { width: 8px; height: 8px; }
   .stratum { border-radius: 6px; transition: background 0.15s; } /* resting look unchanged; hover adds a wash */
@@ -48,7 +49,7 @@
   #detail .tag { font-size: 10.5px; color: #bcd0e6; background: rgba(120, 160, 230, 0.18); padding: 2px 7px; border-radius: 999px; }
   #detail .x {
     position: absolute; top: 8px; right: 10px; cursor: pointer; color: #8fa3ba; font-size: 16px; line-height: 1;
-    padding: 2px 4px; border-radius: 5px;
+    padding: 2px 4px; border-radius: 5px; background: none; border: none;
   }
   #detail .x:hover { color: #eaf2fb; background: rgba(120, 160, 230, 0.2); }
 </style>
@@ -75,7 +76,7 @@
 </div>
 
 <div class="panel" id="detail">
-  <span class="x" id="detailClose">×</span>
+  <button type="button" class="x" id="detailClose" aria-label="Close details">×</button>
   <h2 id="detailTitle"></h2>
   <div id="detailBody"></div>
 </div>
@@ -677,17 +678,29 @@ let groundMesh;
 // ---------- compass wedge highlight — a glowing arc under the selected sector's limb ----------
 // Built in world XZ directly (azimuth = atan2(z,x), matching how limbs place themselves), so the
 // glow always sits beneath the real bough regardless of the ground texture's UV orientation.
-const wedge = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({
-  transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+const wedge = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+  uniforms: { uColor: { value: new THREE.Color() }, uOpacity: { value: 0 } },
+  vertexShader: /* glsl */`
+    attribute float aA; varying float vA;
+    void main() { vA = aA; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: /* glsl */`
+    uniform vec3 uColor; uniform float uOpacity; varying float vA;
+    void main() { gl_FragColor = vec4(uColor, uOpacity * vA); }`,
 }));
 wedge.position.y = 0.01; wedge.renderOrder = 2; wedge.visible = false;
 scene.add(wedge);
 let wedgeTargetOpacity = 0;
 function buildWedge(azCenter, half, rIn, rOut, steps) {
+  // per-vertex alpha: full at the inner rim fading to nothing at the outer, with soft angular
+  // edges — a glow pooled at the trunk's feet, not a hard-edged pie slice
   const g = new THREE.BufferGeometry();
-  const pos = [], idx = [];
+  const pos = [], alp = [], idx = [];
   for (let i = 0; i <= steps; i++) {
-    const a = azCenter - half + (2 * half) * (i / steps);
+    const t = i / steps;
+    const a = azCenter - half + (2 * half) * t;
+    const edge = Math.pow(Math.sin(t * Math.PI), 0.6); // 0 at the angular edges, 1 mid-wedge
+    alp.push(edge, 0);
     pos.push(Math.cos(a) * rIn, 0, Math.sin(a) * rIn);
     pos.push(Math.cos(a) * rOut, 0, Math.sin(a) * rOut);
   }
@@ -695,6 +708,7 @@ function buildWedge(azCenter, half, rIn, rOut, steps) {
     const b = i * 2; idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
   }
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('aA', new THREE.Float32BufferAttribute(alp, 1));
   g.setIndex(idx);
   return g;
 }
@@ -702,8 +716,8 @@ function updateWedge(idx) {
   if (idx < 0) { wedgeTargetOpacity = 0; return; }
   const s = SECTORS[idx];
   wedge.geometry.dispose();
-  wedge.geometry = buildWedge(deg(s.az), deg(20), 4.6, 14.2, 16); // per-sector az ±20°
-  wedge.material.color.set(s.hue);
+  wedge.geometry = buildWedge(deg(s.az), deg(20), 4.6, 14.2, 32); // per-sector az ±20°
+  wedge.material.uniforms.uColor.value.set(s.hue);
   wedge.visible = true;
   wedgeTargetOpacity = 0.5;
 }
@@ -838,7 +852,7 @@ function showLeaf(i) {
 function showBlossom(mesh) {
   const u = mesh.userData;
   const pr = mulberry32(hashSeed(u.lvl, u.sec));
-  const mo = String(2 + (pr() * 6 | 0)).padStart(2, '0'), da = String(1 + (pr() * 27 | 0)).padStart(2, '0');
+  const mo = String(1 + (pr() * 6 | 0)).padStart(2, '0'), da = String(1 + (pr() * 27 | 0)).padStart(2, '0'); // Jan–Jun: mock milestones stay in the past
   elTitle.textContent = `🌸 Level-up`;
   elBody.innerHTML =
     `<div class="meta"><b>${u.sectorId}</b> reached <b>${u.stratum}</b> · ${u.levelLabel}</div>` +
@@ -849,8 +863,10 @@ function showBlossom(mesh) {
 // ---- pointer: drag-vs-click discriminator (click only if <5px AND <200ms) ----
 const dom = renderer.domElement;
 let downX = 0, downY = 0, downT = 0;
-dom.addEventListener('pointerdown', e => { downX = e.clientX; downY = e.clientY; downT = performance.now(); cancelTour(); });
+let downPrimary = false; // only the primary button picks — right/middle stay pure camera input
+dom.addEventListener('pointerdown', e => { downPrimary = e.button === 0; downX = e.clientX; downY = e.clientY; downT = performance.now(); cancelTour(); });
 dom.addEventListener('pointerup', e => {
+  if (e.button !== 0 || !downPrimary) return;
   const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
   if (moved <= 5 && performance.now() - downT <= 200) doPick(e.clientX, e.clientY); // a click, not an orbit drag
 });
@@ -873,12 +889,18 @@ const secGrid = document.getElementById('secGrid');
 SECTORS.forEach((s, i) => {
   const el = document.createElement('span');
   el.className = 'sec'; el.dataset.sec = i;
+  el.setAttribute('role', 'button'); el.tabIndex = 0; el.setAttribute('aria-pressed', 'false');
   el.innerHTML = `<span class="dot" style="color:#${new THREE.Color(s.hue).getHexString()};background:#${new THREE.Color(s.hue).getHexString()}"></span>${s.id}`;
-  el.addEventListener('click', () => applyFilter(i === filterIndex ? -1 : i));
+  const toggle = () => applyFilter(i === filterIndex ? -1 : i);
+  el.addEventListener('click', toggle);
+  el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
   secGrid.appendChild(el);
 });
 function refreshLegendActive() {
-  [...secGrid.children].forEach((el, i) => el.classList.toggle('active', i === filterIndex));
+  [...secGrid.children].forEach((el, i) => {
+    el.classList.toggle('active', i === filterIndex);
+    el.setAttribute('aria-pressed', String(i === filterIndex));
+  });
 }
 
 // ---- stratum legend hover: highlight a height band ----
@@ -924,8 +946,9 @@ function tick() {
   U.uBandGain.value += ((hoveredStratum >= 0 ? 0.6 : 0) - U.uBandGain.value) * k;
 
   // wedge glow + stratum ring/label brighten (all eased)
-  wedge.material.opacity += (wedgeTargetOpacity - wedge.material.opacity) * k;
-  if (wedge.material.opacity < 0.01 && wedgeTargetOpacity === 0) wedge.visible = false;
+  const wo = wedge.material.uniforms.uOpacity;
+  wo.value += (wedgeTargetOpacity - wo.value) * k;
+  if (wo.value < 0.01 && wedgeTargetOpacity === 0) wedge.visible = false;
   for (const rg of strataRings) {
     const near = hoveredStratum >= 0 && (Math.abs(rg.y - STRATA[hoveredStratum].y0) < 0.01 || Math.abs(rg.y - STRATA[hoveredStratum].y1) < 0.01);
     rg.mesh.material.opacity += ((near ? 0.10 : rg.mesh.material.userData.base) - rg.mesh.material.opacity) * k;
