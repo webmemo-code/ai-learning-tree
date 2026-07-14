@@ -1,0 +1,7 @@
+# demo-grove — a tiny committed grove used by tests and the ?grove= demo link.
+# Not a real community; the planting log below is a fixture.
+name: "Demo grove"
+seed: "demo-grove-fixture"
+plotPitch: 32
+clearingCapacity: 256
+placeVersion: "1.0.0"

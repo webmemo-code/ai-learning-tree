@@ -10,8 +10,11 @@ folder a community copies to start a grove of their own.
 | File | What it is |
 | --- | --- |
 | [place.mjs](place.mjs) | `placeGrove(events, config)` — planting log → clearing centers + tree positions. Pure: no I/O, no clock, no unseeded randomness. Stamped `placeVersion` (semver-sacred, mirror of `algoVersion`). |
-| [test-place.mjs](test-place.mjs) | The trust properties as executable checks: determinism, append-stability, measured spacing floors, stump/tombstone slot semantics, validation — plus the template drift guard (the vendored copy must stay byte-identical). |
-| [template/](template/) | **The grove template**: `grove.yml`, empty `plantings.jsonl`, the planting-ceremony CI check, keeper documentation. Copy it, name it, plant. |
+| [walk-app.mjs](walk-app.mjs) | The **walkable-grove renderer** (three.js, injects its own UI): impostors from each member's `tree.json` where fetchable, stroll mode, click-to-meet-the-grower. Shared by [prototypes/grove-walk/](../prototypes/grove-walk/) and every grove's own walk page. Also exports `loadGrove` + `parseGroveYml`. |
+| [test-place.mjs](test-place.mjs) | The trust properties as executable checks: determinism, append-stability, measured spacing floors, stump/tombstone slot semantics, validation. |
+| [test-ceremony.mjs](test-ceremony.mjs) | Ceremony-check tests + the drift guards (both vendored copies must stay byte-identical to their canonicals). |
+| [fixtures/demo-grove/](fixtures/demo-grove/) | A tiny committed grove (5 alive, 1 stump, one clearing) for tests and the `?grove=` demo link. |
+| [template/](template/) | **The grove template**: `grove.yml`, empty `plantings.jsonl`, the planting-ceremony CI check, keeper documentation, and its own **walk page** ([template/walk/](template/walk/)) — enable GitHub Pages and the grove is a place, not a log file. Copy it, name it, plant. |
 
 ## The one-paragraph version
 
