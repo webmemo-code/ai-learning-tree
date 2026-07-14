@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Learning Tree — grove sketch 001 (top-down)</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #05070d; font-family: "Segoe UI", system-ui, sans-serif; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; }
+  .panel {
+    position: fixed; color: #cfd8e3; background: rgba(10, 16, 28, 0.55);
+    border: 1px solid rgba(140, 170, 210, 0.18); border-radius: 12px;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    padding: 14px 16px; font-size: 13px; line-height: 1.5; user-select: none;
+  }
+  #hud { top: 16px; left: 16px; max-width: 300px; }
+  #hud h1 { font-size: 15px; margin: 0 0 2px; font-weight: 600; color: #eef4fb; }
+  #hud .sub { color: #8fa3ba; font-size: 11.5px; margin-bottom: 8px; }
+  #hud p { margin: 6px 0 0; font-size: 12px; color: #9fb2c8; }
+  #note { bottom: 14px; right: 16px; font-size: 11px; color: #7f93aa; padding: 8px 12px; }
+  #tip { display: none; pointer-events: none; font-size: 11.5px; padding: 6px 10px; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="panel" id="hud">
+  <h1>The grove — placement sketch</h1>
+  <div class="sub">phase 6 concept · phyllotaxis over the planting log</div>
+  <p>A mock grove placed by the real <code>grove/place.mjs</code>: the <b>commons</b>
+  at the center, three clearings around it, ~200 trees on golden-angle spirals.
+  Radius = joining order (old growth inward), dot = dominant-sector hue, faint
+  rings = stumps, moss discs = room to grow. Nothing here ever moves when someone
+  new plants.</p>
+</div>
+<div class="panel" id="note">grove sketch 001 · placement only — the 3D walk is the phase-6 build</div>
+<div class="panel" id="tip"></div>
+
+<script type="module">
+import { placeGrove } from '../../grove/place.mjs';
+
+// ---------- a mock planting log (seeded — same story every reload) ----------
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rand = mulberry32(20260714);
+// the tree taxonomy's nine sector hues (docs/03) — a planting gets a dominant sector
+const HUES = [0xffb54d, 0xff6f91, 0xff4d6d, 0x7bd88f, 0x4fd8c4, 0x3fa7ff, 0xb28dff, 0x8f7bff, 0x5aa0e6];
+const log = [];
+const meta = new Map(); // tree id -> { hue, act } (mock render attributes)
+let n = 0;
+function plantMock(clearing, count) {
+  for (let i = 0; i < count; i++) {
+    const id = `member/tree-${++n}`;
+    log.push({ kind: 'planted', tree: id, url: null, clearing });
+    meta.set(id, { hue: HUES[Math.floor(rand() * 9)], act: 0.25 + rand() * 0.75 });
+  }
+}
+plantMock('commons', 34);
+log.push({ kind: 'clearing', id: 'acme-guild', label: 'ACME growth guild' });
+plantMock('acme-guild', 21); plantMock('commons', 30);
+log.push({ kind: 'clearing', id: 'cohort-26', label: 'Cohort ’26' });
+plantMock('cohort-26', 48); plantMock('commons', 40);
+log.push({ kind: 'clearing', id: 'indies', label: 'Indie gardeners' });
+plantMock('indies', 9);
+// some history: departures + one transplant (stumps stay, slots are eternal)
+log.push({ kind: 'felled', tree: 'member/tree-7' });
+log.push({ kind: 'felled', tree: 'member/tree-61' });
+log.push({ kind: 'transplanted', tree: 'member/tree-40', to: 'indies' });
+plantMock('commons', 22);
+
+const grove = placeGrove(log, { seed: 'mock-grove' });
+
+// ---------- top-down night map (plain 2D canvas — the walk itself is 3D, later) ----------
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const tip = document.getElementById('tip');
+const hex = (h) => '#' + h.toString(16).padStart(6, '0');
+let view = { s: 1, ox: 0, oy: 0 };
+
+function fitView() {
+  const pad = 80;
+  const xs = [], ys = [];
+  for (const c of grove.clearings) if (c.plots || c.id === 'commons') {
+    xs.push(c.center[0] - c.reservedRadius, c.center[0] + c.reservedRadius);
+    ys.push(c.center[1] - c.reservedRadius, c.center[1] + c.reservedRadius);
+  }
+  const w = Math.max(...xs) - Math.min(...xs), h = Math.max(...ys) - Math.min(...ys);
+  view.s = Math.min((cv.width - pad * 2) / w, (cv.height - pad * 2) / h);
+  view.ox = cv.width / 2 - (Math.min(...xs) + w / 2) * view.s;
+  view.oy = cv.height / 2 - (Math.min(...ys) + h / 2) * view.s;
+}
+const X = (p) => p[0] * view.s + view.ox;
+const Y = (p) => p[1] * view.s + view.oy;
+
+function draw() {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
+  fitView();
+  // night ground
+  const g0 = ctx.createRadialGradient(cv.width / 2, cv.height / 2, 60, cv.width / 2, cv.height / 2, Math.max(cv.width, cv.height) * 0.7);
+  g0.addColorStop(0, '#0a120f'); g0.addColorStop(1, '#05070d');
+  ctx.fillStyle = g0; ctx.fillRect(0, 0, cv.width, cv.height);
+
+  for (const c of grove.clearings) {
+    if (!c.plots && c.id !== 'commons') continue;
+    const cx = X(c.center), cy = Y(c.center), R = c.reservedRadius * view.s;
+    // reserved ground — the clearing's moss disc ("room to grow is the invitation")
+    const g1 = ctx.createRadialGradient(cx, cy, R * 0.1, cx, cy, R);
+    g1.addColorStop(0, 'rgba(70, 110, 85, 0.10)'); g1.addColorStop(1, 'rgba(70, 110, 85, 0.015)');
+    ctx.fillStyle = g1; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(120, 160, 140, 0.10)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.stroke();
+    // clearing name, floating like a stratum label
+    ctx.fillStyle = 'rgba(170, 195, 220, 0.5)';
+    ctx.font = `500 ${13 * (cv.width / innerWidth)}px "Segoe UI", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(c.label, cx, cy - R - 8 * (cv.width / innerWidth));
+  }
+
+  for (const t of grove.trees) {
+    const x = X(t.pos), y = Y(t.pos);
+    if (t.state === 'stump') { // the grove remembers, honestly but kindly
+      ctx.strokeStyle = 'rgba(160, 140, 110, 0.35)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(x, y, 4 * (cv.width / innerWidth), 0, 7); ctx.stroke();
+      continue;
+    }
+    const m = meta.get(t.tree) || { hue: 0x9fb2c8, act: 0.5 };
+    const r = (3.5 + m.act * 5) * (cv.width / innerWidth);
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 3.2);
+    glow.addColorStop(0, hex(m.hue) + 'cc'); glow.addColorStop(0.35, hex(m.hue) + '55'); glow.addColorStop(1, hex(m.hue) + '00');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(x, y, r * 3.2, 0, 7); ctx.fill();
+    ctx.fillStyle = '#f4f8ff'; ctx.beginPath(); ctx.arc(x, y, r * 0.42, 0, 7); ctx.fill();
+  }
+}
+
+// hover: nearest tree within 14px — id, clearing, slot (the whole coordination story)
+addEventListener('mousemove', (e) => {
+  const dpr = cv.width / innerWidth;
+  let best = null, bd = 14 * dpr;
+  for (const t of grove.trees) {
+    const d = Math.hypot(X(t.pos) - e.clientX * dpr, Y(t.pos) - e.clientY * dpr);
+    if (d < bd) { bd = d; best = t; }
+  }
+  if (!best) { tip.style.display = 'none'; return; }
+  tip.textContent = `${best.tree} · ${best.clearing} · slot ${best.slot}${best.state === 'stump' ? ' · stump' : ''}`;
+  tip.style.display = 'block';
+  tip.style.left = (e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 10) + 'px';
+});
+
+addEventListener('resize', draw);
+draw();
+
+window.__dbg = { grove, log, trees: grove.trees.length, clearings: grove.clearings.length };
+</script>
+</body>
+</html>

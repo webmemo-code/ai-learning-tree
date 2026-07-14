@@ -69,7 +69,9 @@ Two deployment shapes, decided at phase 6 (not before — avoid premature platfo
 
 Recommendation: **A first.** It matches the project's ethos (your evidence, your
 repo, your tree), costs nothing to operate, and the grove can still emerge from an
-opt-in registry of published trees.
+opt-in registry of published trees. *The grove's coordination system — who decides
+which tree grows where — is specified in [05-grove.md](05-grove.md) (planting log +
+phyllotaxis placement, ADR-0006/0007).*
 
 ## 4. Long-term risks & mitigations
 
