@@ -63,10 +63,15 @@ Phase 3 ("First rings") split this directory in two:
 `workflow_dispatch`):
 
 1. `node harvester/harvest.mjs` — reads `tree.config.yml` (owner, repo
-   mappings, harvest scope) and `data/milestones.yml`, pulls new activity
-   (GitHub commits for now; Obsidian vault notes from phase 4), and appends
-   new events to `data/growth-log.jsonl`. Idempotent/dedupable by `id` — safe
-   to re-run.
+   mappings, harvest scope) and `data/milestones.yml`, pulls new GitHub
+   activity, and appends new events to `data/growth-log.jsonl`. Idempotent/
+   dedupable by `id` — safe to re-run.
+1b. `node harvester/vault.mjs --vault vault` (phase 4, "Roots" — only runs when
+   `VAULT_TOKEN` is set and `tree.config.yml`'s `vault.enabled: true`; a
+   silent no-op otherwise) — reads a checked-out Obsidian vault's **own git
+   history**, never its content over the network, and appends `kind: note`
+   events. See `harvester/README.md` "Vault harvesting" for the full
+   privacy/granularity contract; the short version is in the section below.
 2. `node generator/build.mjs` — regrows `data/tree.json` from the updated log.
 3. `node generator/test-determinism.mjs` — the fixture half always runs; the
    live half now has a real `data/growth-log.jsonl` to check double-run
@@ -118,17 +123,26 @@ algoVersion)`. Concretely:
 
 Obsidian vault notes feed the tree as **roots** — private knowledge that
 nourishes but never blooms into public canopy. Hard rules, enforced in the
-mock fixture exactly as they are (from phase 4) by the real harvester:
+mock fixture and by the real harvester (`harvester/vault.mjs`, phase 4) alike:
 
 1. Note **content never leaves the vault**. A `note` event carries only a
-   path-hash-derived `id` (`obs:<8-hex>`), a timestamp, a `weight`, and
-   `attrs.tags` — never a title, body, excerpt, or filename.
+   path-hash-derived `id` (`obs:{sha256(vault-relative-path).slice(0,12)}:
+   {YYYYMMDD}` — the mock fixture's shorter `obs:<8-hex>` ids predate this
+   exact format and are kept as-is, frozen), a timestamp, a `weight`, and
+   `attrs.tags` — never a title, body, excerpt, or filename. Tags themselves
+   are filtered through `tree.config.yml`'s `vault.tag-map` allow-list before
+   being read for real — an unmapped tag never reaches the log at all (see
+   `harvester/README.md` for the rationale).
 2. Every `note` event has `"private": true`. Privacy is a hard flag, not a
    convention — `private: true` events contribute to **roots only**; they
-   never grow above-ground wood or leaves.
+   never grow above-ground wood or leaves. `harvester/vault.mjs` asserts this
+   before an event can leave the module.
 3. `roots` mass (see `SECTORS[i].roots` in the prototype) is the relative
    share of private-note weight per sector — it can foreshadow growth
-   without ever exposing what was actually written.
+   without ever exposing what was actually written. A note that has since
+   been deleted from the vault still contributes its historical days at a
+   damped weight (`0.6` vs. `1.0`) and falls back to `unclassified`, since its
+   tags can no longer be read from a file that isn't there anymore.
 
 ## History note
 
