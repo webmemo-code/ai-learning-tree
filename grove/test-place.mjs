@@ -119,6 +119,8 @@ throws(() => placeGrove([plant(1), plant(1)]), /already planted/, 'double planti
 throws(() => placeGrove([{ kind: 'clearing', id: 'a' }, { kind: 'clearing', id: 'a' }]), /already declared/, 'redeclaring a clearing throws');
 throws(() => placeGrove([{ kind: 'felled', tree: 'owner/none' }]), /not alive/, 'felling an unknown tree throws');
 throws(() => placeGrove(range(3).map(i => plant(i)), { clearingCapacity: 2 }), /full/, 'capacity overflow throws');
+throws(() => placeGrove([plant(1), { kind: 'renamed', tree: 'owner/tree-1' }]), /without a target id/, 'rename without target throws');
+throws(() => placeGrove([plant(1), plant(2), { kind: 'renamed', tree: 'owner/tree-1', to: 'owner/tree-2' }]), /already exists/, 'rename colliding with an existing id throws');
 {
   const g = placeGrove([{ kind: 'partyhat', wat: true }, plant(1)], { seed: 'g1' });
   ok(g.trees.length === 1 && g.trees[0].slot === 0, 'unknown event kinds are ignored (forward compat) and consume no slot');

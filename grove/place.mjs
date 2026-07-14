@@ -142,6 +142,8 @@ export function placeGrove(events, config = {}) {
       case 'renamed': {
         const row = trees.get(ev.tree);
         if (!row) throw new Error(`plantings line ${lineNo}: cannot rename "${ev.tree}" — unknown`);
+        if (typeof ev.to !== 'string' || !ev.to) throw new Error(`plantings line ${lineNo}: rename of "${ev.tree}" without a target id`);
+        if (trees.has(ev.to)) throw new Error(`plantings line ${lineNo}: cannot rename "${ev.tree}" to "${ev.to}" — id already exists here`);
         trees.delete(ev.tree);
         row.tree = ev.to; if (ev.url) row.url = ev.url;
         trees.set(ev.to, row);
