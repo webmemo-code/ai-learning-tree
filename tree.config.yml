@@ -1,47 +1,99 @@
 # tree.config.yml — per-user config (this repo carries Walter's as the reference instance)
 # See docs/03-data-model.md §3 for the classification priority chain this config drives.
+# Note for future editors — the generator's YAML parser (generator/serialize.mjs) is a tiny
+# hand-rolled one. Keep comment-only lines free of a bare colon (an inline comment trailing
+# a real config value is fine and gets stripped; a comment-only LINE containing a colon is
+# parsed as if it were a config entry, which is not what you want).
+#
+# Priority chain, first match wins
+#   1. explicit repo mapping in the repos section below (highest priority)
+#   2. GitHub topic fallback in the topic-map section, used when a repo isn't listed above
+#   3. Obsidian tag mapping in vault.tag-map, notes only, phase 4
+#   4. unclassified bucket for anything unmapped, rendered as faint gray shoots at the
+#      trunk base. This is BY DESIGN — visible nagging to go add a mapping rather than a
+#      repo's work silently vanishing. Seeing shoots there is a prompt to edit this file.
+#
+# This file is Walter's main editing surface for the pipeline. When a new repo shows up
+# in the nightly harvest and lands in unclassified, add one line to repos (or, for a whole
+# class of future repos, one line to topic-map) and it'll classify from then on.
+
 owner: webmemo-code
-seed: "webmemo-code"          # determinism anchor for the growth generator PRNG
-taxonomy: default-v1           # the 9-sector CREATE/AUTOMATE/DISTRIBUTE/BUILD taxonomy
+seed: "webmemo-code"          # determinism anchor for the growth generator PRNG, do not change
+                               # casually — changing it reshuffles every PRNG stream and every
+                               # existing branch/leaf/root will look different on next build.
+taxonomy: default-v1           # the 9-sector CREATE/AUTOMATE/DISTRIBUTE/BUILD taxonomy (generator/taxonomy.mjs)
 
+# ----------------------------------------------------------------------------------------
 # 1. explicit repo -> sector mapping (highest-priority classification rule)
+# ----------------------------------------------------------------------------------------
+# Only high-confidence mappings belong here. Everything else falls through to topic-map
+# and then to unclassified — that's the intended default, not a gap to panic over.
 repos:
-  ai-copy-templates: create.copy
-  webmemo-content-engine: create.copy
-  ai-image-pipeline: create.images
-  midjourney-prompt-lab: create.images
-  comfyui-video-experiments: create.video
-  comfyui-flows: automate.workflows
-  n8n-automations: automate.workflows
-  reisememo-seo-audit: distribute.seo
-  webmemo-seo-pipeline: distribute.seo
-  webmemo-geo-signals: distribute.geo
-  geo-content-lab: distribute.geo
-  airtable-ops: build.no-code
-  zapier-glue: build.no-code
-  webflow-client-sites: build.low-code
-  bubble-mvp-lab: build.low-code
-  ai-learning-tree: build.pro-code
-  ai-periodic-cube: build.pro-code
-  webmemo-cli-tools: build.pro-code
+  # BUILD / pro-code — hand-written software, this repo included (dogfooding, docs/04 §2)
+  ai-learning-tree:                    build.pro-code
+  ai-periodic-cube:                    build.pro-code
+  vrml-converter-viewer:               build.pro-code
+  ai-knowledge-base-visualizer:        build.pro-code
+  texture-generator:                   build.pro-code
+  github-intro-skill:                  build.pro-code
 
+  # DISTRIBUTE / seo — search + knowledge-graph tooling
+  entity-map:                          distribute.seo
+  google-knowledge-graph-retriever:    distribute.seo
+  google-knowledge-graph-request:      distribute.seo
+
+  # CREATE / copy — writing + publishing pipelines
+  copywriting-style-guide:             create.copy
+  markdown-wp-rm-post-publisher:       create.copy
+  markdown-wp-wm-linkedin-article-publisher: create.copy
+
+  # CREATE / images — photo & image asset pipelines
+  photo-gallery:                       create.images
+  lightroom-metadata-translator:       create.images
+
+  # AUTOMATE / workflows — cross-tool glue and content-ops automation
+  flickr-to-instagram-automation:      automate.workflows
+  api_asana_content_retriever:         automate.workflows
+
+  # BUILD / no-code
+  lovable:                             build.no-code
+
+# ----------------------------------------------------------------------------------------
 # 2. GitHub topic -> sector fallback, used when a repo isn't explicitly mapped above
+# ----------------------------------------------------------------------------------------
+# Add topics here as new repo kinds emerge — cheaper than listing every repo by name.
+# The harvester checks repos first and falls back to topic-map before giving up to
+# unclassified (docs/03 §3 priority chain, step 2).
 topic-map:
-  comfyui: automate.workflows
-  n8n: automate.workflows
-  seo: distribute.seo
-  geo: distribute.geo
+  seo:      distribute.seo
+  geo:      distribute.geo
+  comfyui:  automate.workflows
+  wordpress: create.copy
 
-# 3. Obsidian vault harvesting (notes -> roots; content never leaves the vault)
+# ----------------------------------------------------------------------------------------
+# 3. harvest scope — what the nightly harvester is allowed to pull (docs/03 §6 privacy)
+# ----------------------------------------------------------------------------------------
+harvest:
+  include-forks: false     # forked repos are noise, not your own work — excluded by default
+  private-repos: false     # opt-in only; flip to true once HARVEST_TOKEN has private-repo
+                            # scope and you've decided private commit history should grow
+                            # public canopy (see docs/03-data-model.md §6 rule 4)
+
+# ----------------------------------------------------------------------------------------
+# 4. Obsidian vault harvesting (notes -> roots; content never leaves the vault)
+# ----------------------------------------------------------------------------------------
+# Phase 4 (Roots, docs/04 §1) work — left here, disabled, as a preview of the shape.
+# Do not enable until the vault-harvest half of the pipeline actually exists; enabling it
+# now would just make the harvester look for a vault checkout that isn't wired up yet.
 vault:
-  enabled: true
+  enabled: false            # phase 4 — flip on once vault git-sync + harvester support lands
   tag-map:
-    "ai/copy": create.copy
-    "ai/images": create.images
-    "ai/video": create.video
+    "ai/copy":      create.copy
+    "ai/images":    create.images
+    "ai/video":     create.video
     "ai/workflows": automate.workflows
-    "ai/seo": distribute.seo
-    "ai/geo": distribute.geo
-    "ai/no-code": build.no-code
-    "ai/low-code": build.low-code
-    "ai/pro-code": build.pro-code
+    "ai/seo":       distribute.seo
+    "ai/geo":       distribute.geo
+    "ai/no-code":   build.no-code
+    "ai/low-code":  build.low-code
+    "ai/pro-code":  build.pro-code
