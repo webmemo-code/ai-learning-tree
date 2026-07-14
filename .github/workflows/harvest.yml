@@ -44,6 +44,53 @@ jobs:
           HARVEST_TOKEN: ${{ secrets.HARVEST_TOKEN }}
         run: node harvester/harvest.mjs
 
+      # Phase 4 (Roots): the vault is a SEPARATE private repo, checked out only
+      # when both a secret and the config opt-in are present — a quiet no-op
+      # otherwise (a fork or a clone without VAULT_TOKEN must never fail this
+      # workflow). GitHub Actions does not reliably support referencing
+      # `secrets.*` directly in a step's `if:` condition, so the check happens
+      # in a `run:` step instead (the secret is read via `env:`, never
+      # interpolated into the condition itself) and the result — plus the
+      # owner/repo slug parsed from tree.config.yml's `vault.repo` (accepts an
+      # git@/https URL or an owner/repo slug) — is exposed as step outputs
+      # that later `if:` conditions and inputs can safely reference.
+      - name: Check vault harvesting availability
+        id: vault_check
+        env:
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+        run: |
+          OUT=$(node --input-type=module -e "
+            import { parseYaml } from './generator/serialize.mjs';
+            import { readFileSync } from 'node:fs';
+            const cfg = parseYaml(readFileSync('tree.config.yml', 'utf8'));
+            const enabled = !!(cfg.vault && cfg.vault.enabled === true);
+            const repoRaw = (cfg.vault && cfg.vault.repo) || '';
+            const m = repoRaw.match(/([^\/:]+)\/([^\/]+?)(?:\.git)?\$/);
+            console.log(enabled ? 'true' : 'false');
+            console.log(m ? \`\${m[1]}/\${m[2]}\` : '');
+          ")
+          ENABLED=$(echo "$OUT" | sed -n '1p')
+          REPO_SLUG=$(echo "$OUT" | sed -n '2p')
+          if [ -n "$VAULT_TOKEN" ] && [ "$ENABLED" = "true" ] && [ -n "$REPO_SLUG" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "repo=$REPO_SLUG" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "vault harvesting skipped this run (needs the VAULT_TOKEN secret, tree.config.yml vault.enabled: true, and vault.repo set)"
+          fi
+
+      - name: Checkout vault
+        if: steps.vault_check.outputs.run == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.vault_check.outputs.repo }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          path: vault
+
+      - name: Run vault harvester (vault git history -> data/growth-log.jsonl, roots only)
+        if: steps.vault_check.outputs.run == 'true'
+        run: node harvester/vault.mjs --vault vault
+
       - name: Build tree.json (deterministic generator)
         run: node generator/build.mjs
 

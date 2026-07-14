@@ -15,6 +15,7 @@ jobs:
         with:
           node-version: 22
       - run: node harvester/test-harvest.mjs
+      - run: node harvester/test-vault.mjs
 
   determinism:
     # docs/04-roadmap-and-process.md §2: "generator determinism test (same log +

@@ -1,17 +1,26 @@
-# harvester/ — the phase-3 GitHub harvester
+# harvester/ — the growth-event harvesters
 
-Turns real GitHub activity into growth events and appends them to
-`data/growth-log.jsonl`. This is the "First rings" pipeline (docs/04 §1): a
-nightly GitHub Action runs `harvest.mjs`, commits the new lines, and the tree
-grows in `git log`. Zero npm dependencies (Node 18+; the only shared code is the
-generator's tiny YAML parser).
+Turns real activity into growth events and appends them to
+`data/growth-log.jsonl`. Two independent harvesters share this directory and
+the log's schema/merge machinery, but never each other's data:
+
+- **`harvest.mjs`** (phase 3, "First rings") — real GitHub activity, public by
+  default. See the sections below.
+- **`vault.mjs`** (phase 4, "Roots") — Obsidian vault note *metadata only*,
+  always private. See "Vault harvesting (phase 4 — Roots)" further down.
+
+Zero npm dependencies (Node 18+; the only shared code is the generator's tiny
+YAML parser, plus vault.mjs importing harvest.mjs's log-merge helpers).
 
 ```
 harvester/
-  harvest.mjs         # the CLI + the testable core (fetchJson is the network seam)
+  harvest.mjs         # GitHub CLI + testable core (fetchJson is the network seam)
+  vault.mjs           # Obsidian vault CLI + testable core (git + fs are the only seams, no network)
   bootstrap-local.mjs # one-time: seed the real log from THIS repo's git history, no network
-  test-harvest.mjs    # zero-dep, no-network fixture tests
-  fixtures/           # recorded API JSON the tests inject
+  test-harvest.mjs    # zero-dep, no-network fixture tests (GitHub side)
+  test-vault.mjs      # zero-dep, no-network tests (vault side) — builds a real temp git repo
+  fixtures/           # recorded API JSON the GitHub tests inject
+  fixtures/vault/     # a tiny committed fixture vault the vault tests turn into a temp git repo
 ```
 
 ## Usage
@@ -147,3 +156,109 @@ It **overwrites** (does not merge): the phase-2 mock log is disposable and must 
 bleed into the real one. Commit events use `git log --numstat` file counts for the
 weight and the committer date (UTC); `data/milestones.yml` is merged in if present.
 Same schema and privacy rules as the live harvester.
+
+## Vault harvesting (phase 4 — Roots)
+
+`vault.mjs` turns an Obsidian vault's **own git history** (it syncs via
+[obsidian-git](https://github.com/Vinzent03/obsidian-git)) into `kind: note`
+growth events, appended into the same `data/growth-log.jsonl` the GitHub side
+writes to. It is the only source that feeds `private: true` events — per
+docs/03-data-model.md §6 and docs/decisions/0002, those contribute to **roots
+only** and never grow above-ground wood or leaves.
+
+```bash
+# preview what would be appended, write nothing:
+node harvester/vault.mjs --vault ../vault --dry-run
+
+# harvest for real (appends + re-sorts data/growth-log.jsonl):
+node harvester/vault.mjs --vault ../vault
+
+# no --vault: falls back to tree.config.yml's vault.path (default ../vault),
+# and respects vault.enabled — skips silently (exit 0) when it's false.
+node harvester/vault.mjs
+```
+
+`--vault <path>` always **forces** a run (even if `vault.enabled: false` in
+config) — handy for a one-off local test against a real checkout. Without
+`--vault`, the config's `enabled` flag decides: `false` prints "vault
+harvesting disabled" and exits `0` (not an error — a fresh clone with no vault
+configured yet must not fail here); `true` but the checkout is missing or
+isn't a git repo exits `1` with a clear message, same as a genuine harvest
+failure would.
+
+### Input: a LOCAL git checkout, never the network
+
+`vault.mjs` never makes an HTTP request. It reads the vault as a **local git
+checkout** — in Actions that's a sibling directory checked out by
+`.github/workflows/harvest.yml`'s "Checkout vault" step (gated on `VAULT_TOKEN`,
+see below); locally it's whatever `--vault` or `tree.config.yml`'s `vault.path`
+points at (default `../vault`, a sibling of this repo).
+
+### Event granularity and the deleted-note case
+
+One event per **(note, commit-day)** — `id: obs:{sha256(vault-relative-path)
+.slice(0,12)}:{YYYYMMDD}`. The path itself is hashed and discarded immediately;
+nothing downstream of that hash ever sees it. `ts` is that day's **latest**
+commit touching the note (same-day commits collapse into one event). A note
+that has since been **deleted** still keeps its historical (note, day) events
+(you did write something that day), but at damped `weight: 0.6` instead of
+`1.0`, with `attrs.tags: []` and `sector: unclassified` — because tags are read
+from the **current working-tree copy**, and a deleted note has none to read.
+This is intentional: we don't cache a deleted note's last-known tags anywhere,
+so its original topic can't leak after the fact either.
+
+### The tag allow-list: why unmapped tags are dropped, not passed through
+
+`vault.mjs` reads a note's frontmatter `tags:` and inline `#tags` **locally**,
+but only tags that are keys in `tree.config.yml`'s `vault.tag-map` ever reach
+`attrs.tags` — sorted, and with the sector picked from the alphabetically-first
+mapped tag if a note carries more than one. Everything else about the note
+(title, body, any tag not in the map) is discarded the instant it's read.
+
+The reasoning: an *unmapped* tag is still a topic name chosen for a private
+vault — `#medical-history`, `#job-search`, whatever it might be — that was
+never explicitly declared safe to surface. Emitting raw tag strings and hoping
+none of them are sensitive would make every future tag an accidental privacy
+decision. Emitting only allow-listed tags keeps that decision explicit and
+auditable in one file: add a line to `vault.tag-map` when you're sure a tag is
+safe to expose as a sector label, and until then the note simply falls into
+`unclassified` — same nagging-shoots behavior as an unmapped GitHub repo
+(docs/03 §3 rule 4), never a silently leaked topic.
+
+### Cursor + dedupe (same design as the GitHub side)
+
+No separate cursor file: `vault.mjs` scans the log for the newest already-logged
+`obs:` event's `ts`, floors it to UTC midnight, and passes that as `git log
+--since=` — coarser than an exact timestamp so a same-day commit added after a
+previous run is never missed. Whether or not that day gets rescanned, an
+already-logged `(note, day)` id is skipped by the same `buildOutput` dedupe
+`harvest.mjs` uses, so re-running is always idempotent.
+
+### VAULT_TOKEN setup (for the workflow)
+
+| Env var / config | Who sets it | Purpose |
+| --- | --- | --- |
+| `tree.config.yml` `vault.enabled` | You | Master on/off switch. `false` by default. |
+| `tree.config.yml` `vault.repo` | You | The vault's git location — `owner/repo`, a `git@...` SSH URL, or an `https://...` URL; the workflow extracts `owner/repo` from any of these for `actions/checkout`. |
+| `VAULT_TOKEN` (repo secret) | You | A PAT with read access to the vault repo (private, presumably). Used both to check it out and as the checkout's auth token. |
+
+`.github/workflows/harvest.yml` checks out the vault **only** when both
+`VAULT_TOKEN` is set and `vault.enabled: true` — see that workflow's "Check
+vault harvesting availability" step for why the check happens in a `run:`
+script rather than a step `if:` (GitHub Actions doesn't reliably support
+referencing `secrets.*` directly in `if:` conditions). A fork or a clone
+without the secret configured is a **silent no-op** here, not a failure.
+
+### Privacy guarantees enforced
+
+Every note event is `private: true`, asserted (not merely set — see
+`assertPrivate` in `vault.mjs`) before it can leave the module. `test-vault.mjs`
+builds a real temp git repo from `fixtures/vault/` — including secret-looking
+body text (`SECRET ...`), an unmapped tag (`#medical-history`), a note in a
+subfolder, and a note that gets deleted partway through the vault's history —
+and scans **every** emitted event for every fixture filename, folder name,
+title word, `SECRET`, and the unmapped tag, failing if any of it survives.
+
+```bash
+node harvester/test-vault.mjs   # -> "✓ all green — N passed, 0 failed"
+```

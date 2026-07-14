@@ -82,11 +82,31 @@ harvest:
 # ----------------------------------------------------------------------------------------
 # 4. Obsidian vault harvesting (notes -> roots; content never leaves the vault)
 # ----------------------------------------------------------------------------------------
-# Phase 4 (Roots, docs/04 §1) work — left here, disabled, as a preview of the shape.
-# Do not enable until the vault-harvest half of the pipeline actually exists; enabling it
-# now would just make the harvester look for a vault checkout that isn't wired up yet.
+# Phase 4 (Roots, docs/04 §1). The harvester (harvester/vault.mjs) reads the vault's own
+# git history (it syncs via obsidian-git: https://github.com/Vinzent03/obsidian-git) as a
+# LOCAL checkout — never over the network, never the note content itself. Only a path-hash,
+# a timestamp, and tags already present in tag-map below ever reach data/growth-log.jsonl,
+# and every emitted event is private: true, unconditionally (docs/03 §6, docs/decisions/0002).
+#
+# enabled: false by default — flip to true only once a local vault checkout (or the Actions
+# checkout below) actually exists at `path`; the harvester exits cleanly either way, but
+# leaving this off keeps a fresh clone from ever looking for a vault that isn't there yet.
 vault:
-  enabled: false            # phase 4 — flip on once vault git-sync + harvester support lands
+  enabled: false
+  # git URL the WORKFLOW checks the vault out from (actions/checkout `repository:`), e.g.
+  # git@github.com:you/your-obsidian-vault.git or https://github.com/you/your-vault.git.
+  # Requires a repo secret VAULT_TOKEN (a PAT with read access) — see harvester/README.md
+  # "Vault harvesting" for setup. Leave blank to skip the vault checkout step entirely.
+  repo: ""
+  # local checkout path the harvester reads from — override per-run with `--vault <path>`.
+  # In Actions this is the `path:` the vault gets checked out to (a sibling-style directory
+  # inside the workspace); locally it defaults to a sibling of this repo.
+  path: "../vault"
+  # tag -> sector allow-list (docs/03 §3 step 3). ONLY tags listed here ever leave the
+  # vault — an unmapped tag (#job-search, #medical-history, whatever) is never emitted,
+  # even as a raw string; the note just falls into `unclassified` like an unmapped repo
+  # does on the GitHub side. This is deliberate: a tag not on this list is still something
+  # Walter never told the pipeline was safe to surface. See harvester/README.md.
   tag-map:
     "ai/copy":      create.copy
     "ai/images":    create.images
@@ -97,3 +117,18 @@ vault:
     "ai/no-code":   build.no-code
     "ai/low-code":  build.low-code
     "ai/pro-code":  build.pro-code
+
+# ==========================================================================================
+# 5. privacy — root-system visibility mode (phase 4 "Roots", docs/03 §6, ADR-0005)
+# ==========================================================================================
+# Appended block (kept at the END of the file so the phase-4 renderer work and the
+# concurrent harvester/vault work never touch the same lines). Modes:
+#   owner       full roots: sector-attributed glow + the rootDetail aggregate block.
+#               This is Walter's own tree — the owner sees their own private knowledge.
+#   silhouette  (default for OTHER users) roots keep their shape but carry no sector
+#               attribution and ship no aggregates — an anonymized below-ground silhouette.
+#   hidden      no root geometry at all.
+# NOTE (docs/03 §6 rule 3): even `owner` never emits private event ids / path hashes /
+# per-note rows — rootDetail is aggregates only, because tree.json can be embedded publicly.
+privacy:
+  roots: owner
