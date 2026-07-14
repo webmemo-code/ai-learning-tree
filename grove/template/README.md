@@ -61,6 +61,16 @@ The **keeper** is whoever maintains this repo. The role is deliberately small:
 - **Hand over the keys** when you step down: add a co-maintainer, note it in
   the README. A grove should outlive its first keeper.
 
+## 🥾 Walk your grove
+
+This repo ships its own walkable page: enable **GitHub Pages**
+(Settings → Pages → deploy from a branch → `main` / `/ (root)`) and open
+`https://<owner>.github.io/<this-repo>/walk/` — a first-person night walk
+through the grove, every member an impostor built from their published
+`tree.json` where fetchable. Locally: `python -m http.server` from the repo
+root, then `/walk/`. (Drag to look, WASD to walk; the 🚶 stroll flies you
+between clearings.)
+
 ## Checking placement locally
 
 ```bash

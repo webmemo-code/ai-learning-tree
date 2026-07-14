@@ -201,8 +201,10 @@ template-first, everything in the open, a registry that is only an index.
 - [`grove/template/`](../grove/template/) — **the grove template** (built after the
   ADRs were Accepted): `grove.yml`, an empty planting log, the planting-ceremony CI
   check ([`validate-ceremony.mjs`](../grove/template/tools/validate-ceremony.mjs) —
-  append-only, well-formed, owner-authored, still-places), and the keeper's
-  handbook. Self-contained: it vendors `place.mjs` (drift-guarded by CI here).
+  append-only, well-formed, owner-authored, still-places), the keeper's
+  handbook, and its own **walk page** ([`template/walk/`](../grove/template/walk/) —
+  enable GitHub Pages and the grove is a *place*). Self-contained: it vendors
+  `place.mjs` and the walk renderer (both drift-guarded by CI here).
 - [`prototypes/grove-walk/`](../prototypes/grove-walk/) — the **walkable grove**
   (G5): first-person night walk with a stroll mode that flies between clearings;
   every member an instanced impostor from `tree.json` bounds + sector hues, real

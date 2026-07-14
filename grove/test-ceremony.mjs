@@ -70,12 +70,16 @@ ok(failsWith(validateCeremony({
   ok(cfg.plotPitch === 32 && cfg.clearingCapacity === 256 && cfg.placeVersion === '1.0.0', 'template grove.yml parses to the documented defaults', JSON.stringify(cfg));
 }
 
-// ---------- drift guard: the vendored copy must stay byte-identical ----------
+// ---------- drift guard: the vendored copies must stay byte-identical ----------
 {
   const here = dirname(fileURLToPath(import.meta.url));
-  const canonical = readFileSync(join(here, 'place.mjs'), 'utf8');
-  const vendored = readFileSync(join(here, 'template/tools/place.mjs'), 'utf8');
-  ok(canonical === vendored, 'template/tools/place.mjs is byte-identical to grove/place.mjs (update both together)');
+  for (const [canonical, vendored] of [
+    ['place.mjs', 'template/tools/place.mjs'],
+    ['walk-app.mjs', 'template/walk/walk-app.mjs'],
+  ]) {
+    ok(readFileSync(join(here, canonical), 'utf8') === readFileSync(join(here, vendored), 'utf8'),
+      `${vendored} is byte-identical to grove/${canonical} (update both together)`);
+  }
 }
 
 console.log(failed ? `\n✗ ${failed} failed, ${passed} passed` : `\n✓ all green — ${passed} passed, 0 failed`);

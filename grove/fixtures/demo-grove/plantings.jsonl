@@ -1,0 +1,11 @@
+# demo-grove fixture — exercises every event kind the walk page renders:
+# planted · clearing · felled (stump) · transplanted (stump + new slot).
+{"kind":"planted","tree":"webmemo-code/ai-learning-tree","url":"https://raw.githubusercontent.com/webmemo-code/ai-learning-tree/main/data/tree.json","clearing":"commons","ts":"2026-07-14T18:00:00Z"}
+{"kind":"planted","tree":"ada/loom-tree","url":"https://raw.githubusercontent.com/ada/loom-tree/main/data/tree.json","clearing":"commons","ts":"2026-07-15T09:00:00Z"}
+{"kind":"clearing","id":"night-shift","label":"The night shift","ts":"2026-07-16T10:00:00Z"}
+{"kind":"planted","tree":"kai/orchard","url":"https://raw.githubusercontent.com/kai/orchard/main/data/tree.json","clearing":"night-shift","ts":"2026-07-16T11:00:00Z"}
+{"kind":"planted","tree":"noor/sapling","url":"https://raw.githubusercontent.com/noor/sapling/main/data/tree.json","clearing":"night-shift","ts":"2026-07-17T08:30:00Z"}
+{"kind":"planted","tree":"sam/thicket","url":"https://raw.githubusercontent.com/sam/thicket/main/data/tree.json","clearing":"commons","ts":"2026-07-18T14:00:00Z"}
+{"kind":"felled","tree":"ada/loom-tree","ts":"2026-08-01T00:00:00Z"}
+{"kind":"transplanted","tree":"sam/thicket","to":"night-shift","ts":"2026-08-01T12:00:00Z"}
+{"kind":"planted","tree":"ines/canopy","url":"https://raw.githubusercontent.com/ines/canopy/main/data/tree.json","clearing":"commons","ts":"2026-08-02T16:00:00Z"}
