@@ -1,6 +1,6 @@
 # ADR-0007 — Tree placement is phyllotaxis over planting order; slots are eternal
 
-- **Status:** Proposed *(phase-6 gate: Walter signs off before any grove ships)*
+- **Status:** Accepted *(Walter, 2026-07-14 — phase-6 build unlocked)*
 - **Date:** 2026-07-14
 - **Context:** Given a planting log ([ADR-0006](0006-grove-planting-log.md)),
   something must turn it into positions — "which tree grows where". Requirements

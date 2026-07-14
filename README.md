@@ -8,9 +8,12 @@ across the fields of the AI landscape you practice in. It is your journey, rende
 as something alive — and something worth showing to other knowledge workers to say:
 *you can grow one too.*
 
-> **Status: 🌱 Seed phase.** We are brainstorming the concept and conceiving the final
-> visual look. Nothing here is final; everything here is an invitation to think along.
-> The origin brain dump lives in [issue #1](https://github.com/webmemo-code/ai-learning-tree/issues/1).
+> **Status: 🌲🌲 Forest phase (6 of 6).** The tree pipeline is live (nightly GitHub +
+> Obsidian harvest → deterministic `tree.json` → interactive renderer with the 30s
+> replay), and the community layer is taking shape: grove coordination is decided
+> (ADR-0006/0007), the [grove template](grove/template/) exists, and the
+> [walkable grove](prototypes/grove-walk/) has its first prototype. The origin
+> brain dump lives in [issue #1](https://github.com/webmemo-code/ai-learning-tree/issues/1).
 
 Sibling project: [ai-periodic-cube](https://github.com/webmemo-code/ai-periodic-cube) —
 the Periodic Cube of AI, whose visual language (bloom, camera choreography, sound,
