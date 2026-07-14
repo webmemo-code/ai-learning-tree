@@ -1,82 +1,22 @@
-# data/milestones.yml
-# Hand-authored milestone declarations (see docs/03-data-model.md §2).
-# Each entry here has a matching kind: milestone event in data/growth-log.jsonl;
-# in phase 3 the harvester will merge this file into the log automatically.
-
-- ts: 2024-11-15
-  sector: build.pro-code
-  level: 2
-  evidence: "https://www.webmemo.ch/blog/pro-code-experimenter"
-  note: "Frequent AI-assisted scripting for ai-periodic-cube; no repeatable engineering workflow yet."
-
-- ts: 2024-12-05
-  sector: create.copy
-  level: 2
-  evidence: "https://www.webmemo.ch/blog/ai-copy-first-repeatable-brief-workflow"
-  note: "Landed a repeatable AI-assisted briefing + first-draft workflow for client copy."
-
-- ts: 2025-01-20
-  sector: distribute.seo
-  level: 2
-  evidence: "https://www.webmemo.ch/blog/seo-audit-experimenter"
-  note: "Running AI-assisted SEO audits frequently, one client at a time."
-
-- ts: 2025-02-14
-  sector: create.images
-  level: 2
-  evidence: "https://www.webmemo.ch/blog/ai-image-experimenter"
-  note: "Prompted and curated AI imagery for a dozen posts; no repeatable pipeline yet, but frequent, confident use."
-
-- ts: 2025-03-10
-  sector: distribute.geo
-  level: 2
-  evidence: "https://www.webmemo.ch/blog/geo-experimenter"
-  note: "Frequent hands-on GEO experiments: tracking how AI answer engines cite client content."
-
-- ts: 2025-04-18
-  sector: automate.workflows
-  level: 2
-  evidence: "https://www.webmemo.ch/blog/comfyui-flows-experimenter"
-  note: "Regularly building one-off ComfyUI/n8n flows for client tasks, not yet templated."
-
-- ts: 2025-05-22
-  sector: build.low-code
-  level: 2
-  evidence: "https://www.webmemo.ch/blog/low-code-experimenter"
-  note: "Shipping client sites on Webflow/Bubble regularly, still bespoke per project."
-
-- ts: 2025-06-30
-  sector: build.no-code
-  level: 2
-  evidence: "https://www.webmemo.ch/blog/no-code-experimenter"
-  note: "Frequent Airtable/Zapier automations for internal ops, ad hoc rather than templated."
-
-- ts: 2025-07-10
-  sector: build.pro-code
-  level: 3
-  evidence: "https://www.webmemo.ch/blog/pro-code-repeatable-ci"
-  note: "AI-assisted CI/CD and code review is now a repeatable part of the ai-learning-tree workflow."
-
-- ts: 2025-07-25
-  sector: create.copy
-  level: 3
-  evidence: "https://www.webmemo.ch/blog/ai-copy-in-production"
-  note: "AI-copy pipeline now runs weekly across every client account, human-edited before publish."
-
-- ts: 2025-09-05
-  sector: distribute.seo
-  level: 3
-  evidence: "https://www.webmemo.ch/blog/programmatic-seo-in-production"
-  note: "reisememo-seo-audit runs as a repeatable weekly pipeline across all managed sites."
-
-- ts: 2026-05-20
-  sector: build.pro-code
-  level: 4
-  evidence: "https://www.webmemo.ch/blog/ai-learning-tree-generator-for-everyone"
-  note: "Built the growth-log harvester + tree generator so other people can grow their own tree, not just mine."
-
-- ts: 2026-05-30
-  sector: distribute.geo
-  level: 3
-  evidence: "https://www.webmemo.ch/geo-audit-workflow/"
-  note: "GEO workflow in production — repeatable audit, used weekly"
+# data/milestones.yml — the real, hand-authored milestone log for Walter's tree.
+#
+# See docs/03-data-model.md §2 ("Milestones") for the full spec and the
+# integrity rule: a sector's stratum ceiling only rises via a milestone here —
+# activity alone can fill a stratum but never cross into the next one.
+#
+# The nightly harvester (harvester/harvest.mjs) reads this file on every run
+# and merges each entry into data/growth-log.jsonl as a `kind: milestone`
+# event (deduped by ts+sector+level, so it's safe to run repeatedly and safe
+# to edit old entries' `note`/`evidence` text — only ts/sector/level identify
+# an entry for dedup purposes; see data/README.md).
+#
+# This file starts empty on purpose — the real milestones are Walter's to
+# author, not to invent. Uncomment the template below and fill it in when a
+# sector genuinely levels up (see docs/03-data-model.md §2 for `level`
+# meanings: 2=Experimenter, 3=Practitioner, 4=Expert).
+#
+# - ts: 2026-01-01           # date the milestone was reached (YYYY-MM-DD)
+#   sector: build.pro-code   # limb.sector id from tree.config.yml's taxonomy
+#   level: 2                 # stratum ceiling this raises the sector to
+#   evidence: "https://example.com/proof"  # URL only — prose goes in `note`
+#   note: "Short, factual description of what happened."

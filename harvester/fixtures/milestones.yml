@@ -1,0 +1,10 @@
+# fixture milestones (see test-harvest.mjs)
+- ts: 2025-06-01
+  sector: build.pro-code
+  level: 2
+  evidence: "https://example.com/x"
+  note: "already in the log — edited note text should NOT re-add"
+- ts: 2025-07-01
+  sector: distribute.seo
+  level: 3
+  note: "new milestone — should be appended once"

@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+
+jobs:
+  harvester-tests:
+    name: Harvester unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node harvester/test-harvest.mjs
+
+  determinism:
+    # docs/04-roadmap-and-process.md §2: "generator determinism test (same log +
+    # seed + algoVersion => byte-identical tree.json) is the one test that must
+    # never break." Kept as its own clearly-named job so a red check here is
+    # never mistaken for an unrelated failure.
+    name: "Determinism — the one test that must never break"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node generator/test-determinism.mjs

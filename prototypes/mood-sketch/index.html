@@ -145,10 +145,14 @@ function fatal(msg) {
 }
 
 // ---------- load the generated tree (a pure geometry/metadata graph) ----------
+// ?data=mock -> load the frozen data/mock/ fixture instead of the real (harvester-fed) tree.
+const useMock = new URLSearchParams(location.search).get('data') === 'mock';
+const treePath = useMock ? '../../data/mock/tree.json' : '../../data/tree.json';
+if (useMock) document.getElementById('note').textContent += ' · mock data';
 let TREE;
 try {
-  const res = await fetch('../../data/tree.json', { cache: 'no-cache' });
-  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching ../../data/tree.json');
+  const res = await fetch(treePath, { cache: 'no-cache' });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching ' + treePath);
   TREE = await res.json();
 } catch (e) {
   fatal(e.message || e);

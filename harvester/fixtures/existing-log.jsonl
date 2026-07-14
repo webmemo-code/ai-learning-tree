@@ -1,0 +1,2 @@
+{"id": "gh:faketree/explicit-repo:aaaaaaa", "ts": "2025-01-01T00:00:00Z", "source": "github", "kind": "commit", "sector": "build.pro-code", "project": "explicit-repo", "weight": 1.0, "attrs": {"runtime": "cloud", "lang": "TypeScript"}, "private": false}
+{"id": "manual:2025-06-01-build.pro-code-l2", "ts": "2025-06-01T00:00:00Z", "source": "manual", "kind": "milestone", "sector": "build.pro-code", "project": null, "weight": 1.0, "attrs": {"level": 2, "evidence": "https://example.com/x", "note": "already in the log"}, "private": false}

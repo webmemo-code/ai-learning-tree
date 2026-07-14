@@ -1,0 +1,14 @@
+[
+  {
+    "sha": "dddddddddddddddddddddddddddddddddddddddd",
+    "commit": {
+      "committer": {
+        "date": "2025-03-05T09:00:00Z"
+      },
+      "author": {
+        "date": "2025-03-05T09:00:00Z"
+      },
+      "message": "SECRET zero-file merge — weight lower bound"
+    }
+  }
+]

@@ -25,3 +25,12 @@ full-screen hint instead of the tree. First build the data if it's missing:
 
 On low-power machines or software-GL environments, append `?dpr=1` (or `?dpr=0.75`)
 to the URL to reduce render cost.
+
+By default the page fetches the real tree (`data/tree.json`, produced by the
+phase-3 harvester + `generator/build.mjs` — see [data/README.md](../data/README.md)).
+Append `?data=mock` to load the frozen phase-2 fixture instead
+(`data/mock/tree.json`) — handy before the real pipeline has produced anything,
+or to compare current output against the known-good reference shape. The HUD's
+bottom-right note gets a "· mock data" suffix whenever this param is active, so
+it's always obvious which dataset is on screen. Combine freely with `?dpr=`,
+e.g. `?data=mock&dpr=1`.

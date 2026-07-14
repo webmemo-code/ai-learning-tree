@@ -1,0 +1,63 @@
+name: Nightly growth harvest
+# docs/04-roadmap-and-process.md §2 "Automation (from phase 3)":
+# runs the harvester, appends to data/growth-log.jsonl, rebuilds data/tree.json,
+# and commits with the exact message "CHORE | Nightly growth harvest" — the
+# tree's growth is literally visible in `git log`. Only commits when data/
+# actually changed, so a quiet night leaves no empty commit behind.
+
+on:
+  schedule:
+    # 03:17 UTC — off-peak, and deliberately not on a round number (avoids
+    # herding onto the same minute as everyone else's :00 cron jobs).
+    - cron: '17 3 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  # never let two harvests race each other's commits; a manual dispatch queues
+  # behind a still-running nightly rather than cancelling it mid-commit.
+  group: nightly-growth-harvest
+  cancel-in-progress: false
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run harvester (tree.config.yml + data/milestones.yml -> data/growth-log.jsonl)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # optional: a PAT with broader scope (e.g. private-repo read) than the
+          # ambient GITHUB_TOKEN; safe to leave unset — harvester.mjs falls back
+          # to GITHUB_TOKEN-only (public data) per docs/03-data-model.md §6.
+          HARVEST_TOKEN: ${{ secrets.HARVEST_TOKEN }}
+        run: node harvester/harvest.mjs
+
+      - name: Build tree.json (deterministic generator)
+        run: node generator/build.mjs
+
+      - name: Determinism check (must never break, docs/04 §2)
+        run: node generator/test-determinism.mjs
+
+      - name: Commit and push if data/ changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/; then
+            echo "no growth tonight — data/ unchanged, nothing to commit"
+            exit 0
+          fi
+          git add data/
+          git commit -m "CHORE | Nightly growth harvest"
+          git push

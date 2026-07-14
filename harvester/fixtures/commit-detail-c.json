@@ -1,0 +1,813 @@
+{
+  "sha": "cccccccccccccccccccccccccccccccccccccccc",
+  "commit": {
+    "message": "SECRET hundred files"
+  },
+  "stats": {
+    "total": 700,
+    "additions": 500,
+    "deletions": 200
+  },
+  "files": [
+    {
+      "filename": "src/secret/private-path-0.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 0 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-1.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 1 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-2.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 2 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-3.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 3 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-4.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 4 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-5.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 5 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-6.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 6 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-7.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 7 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-8.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 8 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-9.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 9 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-10.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 10 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-11.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 11 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-12.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 12 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-13.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 13 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-14.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 14 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-15.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 15 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-16.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 16 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-17.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 17 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-18.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 18 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-19.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 19 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-20.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 20 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-21.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 21 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-22.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 22 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-23.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 23 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-24.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 24 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-25.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 25 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-26.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 26 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-27.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 27 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-28.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 28 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-29.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 29 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-30.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 30 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-31.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 31 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-32.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 32 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-33.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 33 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-34.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 34 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-35.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 35 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-36.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 36 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-37.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 37 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-38.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 38 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-39.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 39 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-40.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 40 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-41.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 41 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-42.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 42 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-43.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 43 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-44.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 44 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-45.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 45 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-46.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 46 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-47.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 47 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-48.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 48 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-49.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 49 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-50.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 50 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-51.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 51 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-52.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 52 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-53.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 53 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-54.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 54 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-55.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 55 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-56.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 56 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-57.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 57 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-58.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 58 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-59.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 59 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-60.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 60 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-61.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 61 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-62.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 62 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-63.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 63 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-64.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 64 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-65.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 65 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-66.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 66 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-67.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 67 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-68.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 68 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-69.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 69 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-70.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 70 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-71.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 71 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-72.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 72 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-73.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 73 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-74.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 74 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-75.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 75 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-76.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 76 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-77.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 77 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-78.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 78 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-79.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 79 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-80.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 80 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-81.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 81 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-82.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 82 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-83.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 83 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-84.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 84 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-85.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 85 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-86.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 86 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-87.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 87 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-88.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 88 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-89.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 89 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-90.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 90 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-91.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 91 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-92.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 92 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-93.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 93 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-94.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 94 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-95.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 95 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-96.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 96 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-97.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 97 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-98.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 98 do not leak"
+    },
+    {
+      "filename": "src/secret/private-path-99.ts",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 2,
+      "changes": 7,
+      "patch": "@@ -1,2 +1,2 @@ SECRET diff body line 99 do not leak"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "commit": {
+      "committer": {
+        "date": "2025-01-01T00:00:00Z"
+      },
+      "author": {
+        "date": "2025-01-01T00:00:00Z"
+      },
+      "message": "SECRET older commit already in the log — must dedupe"
+    }
+  },
+  {
+    "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "commit": {
+      "committer": {
+        "date": "2025-02-01T12:00:00Z"
+      },
+      "author": {
+        "date": "2025-02-01T12:00:00Z"
+      },
+      "message": "SECRET five-file change — do not leak this subject line"
+    }
+  }
+]
