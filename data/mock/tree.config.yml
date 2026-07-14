@@ -32,7 +32,13 @@ topic-map:
   seo: distribute.seo
   geo: distribute.geo
 
-# 3. Obsidian vault harvesting (notes -> roots; content never leaves the vault)
+# 3. root-system privacy mode (docs/03 §6, ADR-0005): owner | silhouette | hidden.
+# The frozen fixture runs `owner` so it exercises the richest path — sector-attributed
+# root segments + the rootDetail aggregate block.
+privacy:
+  roots: owner
+
+# 4. Obsidian vault harvesting (notes -> roots; content never leaves the vault)
 vault:
   enabled: true
   tag-map:

@@ -18,7 +18,11 @@
 
 import { getTaxonomy } from './taxonomy.mjs';
 
-export const ALGO_VERSION = '1.0.0';
+export const ALGO_VERSION = '1.1.0';
+
+// Neutral warm bark-gray for silhouette-mode roots (no sector attribution). Owner
+// mode paints roots with their sector hue instead; hidden mode emits no roots.
+const ROOT_SILHOUETTE_HUE = 0x6b5f52;
 
 // ----------------------------------------------------------------------------
 // deterministic PRNG — mulberry32, seeded from a string hash of (seed, ...parts)
@@ -152,6 +156,13 @@ function deriveDrivers(events, sectors) {
 // ----------------------------------------------------------------------------
 export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
   const seed = config.seed != null ? String(config.seed) : 'seed';
+  // Privacy mode for the root system (docs/03 §6 rule 2/3, ADR-0005). Default is
+  // `silhouette` — safe by default: geometry stays but nothing attributes it to a
+  // sector and no private aggregates ship. Walter's own config says `owner`.
+  const rootsMode = (() => {
+    const m = config.privacy && config.privacy.roots;
+    return (m === 'owner' || m === 'silhouette' || m === 'hidden') ? m : 'silhouette';
+  })();
   const taxonomy = getTaxonomy(config.taxonomy || 'default-v1');
   const SECTORS = taxonomy.sectors;
   const STRATA = taxonomy.strata;
@@ -386,17 +397,29 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
       }
     }
 
-    // ---- roots: mirror the compass below ground (private-note flare), dim ----
-    const nRoots = 1 + Math.round(d.roots * 2);
-    for (let k = 0; k < nRoots; k++) {
-      const ra = az + R(rng, -0.4, 0.4);
-      const rd = normalize(v(Math.cos(ra) * 0.85, -0.9, Math.sin(ra) * 0.85));
-      const rStart = v(Math.cos(az) * TRUNK_BASE_R * 0.6, -0.2, Math.sin(az) * TRUNK_BASE_R * 0.6);
-      growBranch(rng, rStart, rd, 0.06 + d.roots * 0.06, {
-        steps: 4 + Math.round(d.roots * 4), stepLen: 0.5, az: ra, azKeep: 0.4, ceil: -0.05,
-        hue: 0x36503f, born0: 0.03 + R(rng, 0, 0.09), bornSpan: 0.3, depth: 1, dist0: 0.12, dist1: 0.02,
-        secIdx: -1, isMain: false, ctx: null, gravity: 0.06, tropism: -0.04, taper: 0.86, targetArr: roots,
-      }, null);
+    // ---- roots: mirror the compass below ground (private-note flare) ----
+    // Privacy modes (docs/03 §6 rule 2/3, ADR-0005):
+    //   hidden     → emit NO root segments at all (below-ground world is absent)
+    //   silhouette → geometry only, one neutral bark-gray hue, no sector attribution
+    //   owner      → geometry + per-sector hue/index (like above-ground segments)
+    // The root GEOMETRY (start/dir/len/r/born/dist) is byte-identical between owner and
+    // silhouette — the growBranch RNG draws below are unchanged; only `hue`/`secIdx`
+    // (stored, never fed back into the PRNG) differ. That is what keeps this an ADDITIVE
+    // change (algoVersion minor bump, not major): same log+seed ⇒ same shape.
+    if (rootsMode !== 'hidden') {
+      const rootHue = rootsMode === 'owner' ? s.hue : ROOT_SILHOUETTE_HUE;
+      const rootSec = rootsMode === 'owner' ? secIdx : -1;
+      const nRoots = 1 + Math.round(d.roots * 2);
+      for (let k = 0; k < nRoots; k++) {
+        const ra = az + R(rng, -0.4, 0.4);
+        const rd = normalize(v(Math.cos(ra) * 0.85, -0.9, Math.sin(ra) * 0.85));
+        const rStart = v(Math.cos(az) * TRUNK_BASE_R * 0.6, -0.2, Math.sin(az) * TRUNK_BASE_R * 0.6);
+        growBranch(rng, rStart, rd, 0.06 + d.roots * 0.06, {
+          steps: 4 + Math.round(d.roots * 4), stepLen: 0.5, az: ra, azKeep: 0.4, ceil: -0.05,
+          hue: rootHue, born0: 0.03 + R(rng, 0, 0.09), bornSpan: 0.3, depth: 1, dist0: 0.12, dist1: 0.02,
+          secIdx: rootSec, isMain: false, ctx: null, gravity: 0.06, tropism: -0.04, taper: 0.86, targetArr: roots,
+        }, null);
+      }
     }
   }
 
@@ -443,6 +466,37 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     for (const pt of [s.start, tip]) for (let i = 0; i < 3; i++) { min[i] = Math.min(min[i], pt[i]); max[i] = Math.max(max[i], pt[i]); }
   }
 
+  // ---- rootDetail (OWNER mode only): per-sector AGGREGATES of private events ----
+  // PRIVACY (docs/03 §6 rule 3, ADR-0005): aggregates ONLY — a note count, the last
+  // note timestamp, and the top mapped tag counts. NEVER event ids, path hashes, or
+  // per-event rows for private events. Even this OWNER payload stays strictly
+  // aggregate on purpose: tree.json may be embedded on a public page by mistake, so
+  // there must be nothing here that a leak could turn into per-note tracking.
+  let rootDetail;
+  if (rootsMode === 'owner') {
+    rootDetail = {};
+    for (const s of SECTORS) {
+      const priv = bySector[s.id].private;
+      if (!priv.length) continue; // only sectors with actual private activity
+      const tagCounts = {};
+      let lastTs = -Infinity;
+      for (const e of priv) {
+        lastTs = Math.max(lastTs, e.tsMs);
+        const tags = e.attrs && Array.isArray(e.attrs.tags) ? e.attrs.tags : [];
+        for (const t of tags) tagCounts[t] = (tagCounts[t] || 0) + 1;
+      }
+      const topTags = Object.keys(tagCounts)
+        .map((tag) => ({ tag, count: tagCounts[tag] }))
+        .sort((a, b) => b.count - a.count || (a.tag < b.tag ? -1 : a.tag > b.tag ? 1 : 0))
+        .slice(0, 5);
+      rootDetail[String(secIndex.get(s.id))] = {
+        noteCount: priv.length,
+        lastNoteTs: new Date(lastTs).toISOString().replace('.000Z', 'Z'),
+        topTags,
+      };
+    }
+  }
+
   // ---- sectors block for the renderer (compass, filter, legend) ----
   const outSectors = SECTORS.map((s, i) => ({
     id: s.id, label: s.label, limb: s.limb, az: s.az, hue: s.hue, index: i,
@@ -467,6 +521,7 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     blossoms: outBlossoms,
     fireflies: outFireflies,
     eventMeta,
+    ...(rootDetail !== undefined ? { rootDetail } : {}),
     bounds: { min: min.map(round4), max: max.map(round4) },
   };
 }
