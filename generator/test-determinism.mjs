@@ -63,8 +63,8 @@ function firstDiff(a, b) {
   const configPath = resolve(repoRoot, 'data/mock/tree.config.yml');
   const treePath = resolve(repoRoot, 'data/mock/tree.json');
 
-  if (!existsSync(logPath) || !existsSync(treePath)) {
-    fail(`mock fixture missing (expected ${logPath} and ${treePath}) — the frozen fixture must always be present`);
+  if (!existsSync(logPath) || !existsSync(treePath) || !existsSync(configPath)) {
+    fail(`mock fixture missing (expected ${logPath}, ${configPath} and ${treePath}) — the frozen fixture must always be present`);
   } else {
     const events = readLog(logPath);
     const config = loadConfig(configPath);

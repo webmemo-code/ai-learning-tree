@@ -171,9 +171,15 @@ export function buildOutput(existingRows, newEvents, existingIds) {
     seen.add(e.id);
     appended.push(e);
   }
+  // the log is the pipeline's state/cursor — a NaN ts would silently unsort it, so fail fast
+  const tsMs = (id, ts) => {
+    const ms = Date.parse(ts);
+    if (Number.isNaN(ms)) throw new Error(`invalid ts ${JSON.stringify(ts)} on event ${id} — refusing to sort/write the log`);
+    return ms;
+  };
   const all = [
-    ...existingRows.map((r) => ({ id: r.id, tsMs: Date.parse(r.ts), raw: r.raw })),
-    ...appended.map((e) => ({ id: e.id, tsMs: Date.parse(e.ts), raw: jline(e) })),
+    ...existingRows.map((r) => ({ id: r.id, tsMs: tsMs(r.id, r.ts), raw: r.raw })),
+    ...appended.map((e) => ({ id: e.id, tsMs: tsMs(e.id, e.ts), raw: jline(e) })),
   ];
   all.sort((a, b) => (a.tsMs - b.tsMs) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const text = all.length ? all.map((r) => r.raw).join('\n') + '\n' : '';
