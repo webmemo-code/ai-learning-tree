@@ -152,3 +152,4 @@ which is a genuinely motivating signal. (❓ [ADR-0002](decisions/0002-roots-are
 | 5 | Do blog posts / published articles count as events? | Yes eventually (RSS/sitemap harvest) — phase 3+ | backlog |
 | 6 | Seasons tied to calendar or to activity? | Activity (foliage recency), calendar only for ambience | [02-visual-language.md](02-visual-language.md) |
 | 7 | What exactly is the seed/planting moment shown at t=0 of the replay? | First ever AI-related commit | backlog |
+| 8 | Who decides where each tree grows in a shared grove? | Append-only planting log + phyllotaxis; nothing ever moves | [05-grove.md](05-grove.md) · [ADR-0006](decisions/0006-grove-planting-log.md)/[0007](decisions/0007-grove-placement-phyllotaxis.md) |
