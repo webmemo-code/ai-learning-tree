@@ -89,6 +89,7 @@ const STRATA = [
   { name: 'Emergent',     level: 'Expert',       y0: 12.0, y1: 16.5, tint: 0xe8ecff },
 ];
 const ceilingFor = lvl => STRATA[Math.max(0, Math.min(3, lvl - 1))].y1 - 0.35;
+const STRATUM_BOUNDARIES = STRATA.slice(1).map(st => st.y0); // heights where a level-up blossom can sit
 
 // ---------- sector compass (limb → sectors), mock "Walter-ish" profile ----------
 // level: Section level reached (gates height) · act: lifetime activity 0..1 (mass)
@@ -161,7 +162,6 @@ const TRUNK_H = 8.4;
 const TRUNK_STEPS = 15;
 const TRUNK_BASE_R = 0.54, TRUNK_TOP_R = 0.135;
 const trunkNodes = []; // { pos, dir, r, dist, born, frac }
-let trunkTopPos;
 {
   const leanAz = R(0, Math.PI * 2), lean = R(0.05, 0.09);
   const waver = R(0.03, 0.06);
@@ -180,7 +180,6 @@ let trunkTopPos;
     pushSeg(p, dir, len, r, born, dist, 0x8a7a68);
     p = p.clone().addScaledVector(dir, len);
   }
-  trunkTopPos = p.clone();
 }
 // sample the trunk at a height fraction, for limb attachment (position + parent radius)
 function trunkAt(frac) {
@@ -239,7 +238,7 @@ function growBranch(p0, dir0, r0, opts) {
 
     // record stratum-boundary crossings on the main axis, for blossom (level-up) markers
     if (isMain && ctx) {
-      for (const b of [3.0, 7.0, 12.0]) {
+      for (const b of STRATUM_BOUNDARIES) {
         if ((pPrev.y - b) * (p.y - b) <= 0 && Math.abs(pPrev.y - b) < 2.0) ctx.crossings.push({ y: b, pos: p.clone(), born });
       }
     }
