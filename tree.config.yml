@@ -1,0 +1,47 @@
+# tree.config.yml — per-user config (this repo carries Walter's as the reference instance)
+# See docs/03-data-model.md §3 for the classification priority chain this config drives.
+owner: webmemo-code
+seed: "webmemo-code"          # determinism anchor for the growth generator PRNG
+taxonomy: default-v1           # the 9-sector CREATE/AUTOMATE/DISTRIBUTE/BUILD taxonomy
+
+# 1. explicit repo -> sector mapping (highest-priority classification rule)
+repos:
+  ai-copy-templates: create.copy
+  webmemo-content-engine: create.copy
+  ai-image-pipeline: create.images
+  midjourney-prompt-lab: create.images
+  comfyui-video-experiments: create.video
+  comfyui-flows: automate.workflows
+  n8n-automations: automate.workflows
+  reisememo-seo-audit: distribute.seo
+  webmemo-seo-pipeline: distribute.seo
+  webmemo-geo-signals: distribute.geo
+  geo-content-lab: distribute.geo
+  airtable-ops: build.no-code
+  zapier-glue: build.no-code
+  webflow-client-sites: build.low-code
+  bubble-mvp-lab: build.low-code
+  ai-learning-tree: build.pro-code
+  ai-periodic-cube: build.pro-code
+  webmemo-cli-tools: build.pro-code
+
+# 2. GitHub topic -> sector fallback, used when a repo isn't explicitly mapped above
+topic-map:
+  comfyui: automate.workflows
+  n8n: automate.workflows
+  seo: distribute.seo
+  geo: distribute.geo
+
+# 3. Obsidian vault harvesting (notes -> roots; content never leaves the vault)
+vault:
+  enabled: true
+  tag-map:
+    "ai/copy": create.copy
+    "ai/images": create.images
+    "ai/video": create.video
+    "ai/workflows": automate.workflows
+    "ai/seo": distribute.seo
+    "ai/geo": distribute.geo
+    "ai/no-code": build.no-code
+    "ai/low-code": build.low-code
+    "ai/pro-code": build.pro-code
