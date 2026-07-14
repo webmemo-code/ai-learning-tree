@@ -215,9 +215,11 @@ export function readNoteTags(vaultPath, relPath) {
   if (!existsSync(full)) return { exists: false, rawTags: new Set() };
   try {
     return { exists: true, rawTags: extractRawTags(readFileSync(full, 'utf8')) };
-  } catch {
-    // the file exists but couldn't be read (permissions, transient IO) — that is
-    // not a deletion, so keep exists:true and just emit no tags this round
+  } catch (err) {
+    // deleted between the existsSync check and the read — a genuine deletion
+    if (err && err.code === 'ENOENT') return { exists: false, rawTags: new Set() };
+    // exists but unreadable (permissions, transient IO) — not a deletion, so
+    // keep exists:true and just emit no tags this round
     return { exists: true, rawTags: new Set() };
   }
 }

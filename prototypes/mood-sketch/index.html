@@ -25,6 +25,7 @@
     transition: background 0.2s;
   }
   button:hover { background: rgba(110, 160, 240, 0.38); }
+  button[aria-pressed="true"] { background: rgba(120, 170, 240, 0.42); color: #fff; border-color: rgba(160, 195, 250, 0.6); }
   #note { bottom: 14px; right: 16px; font-size: 11px; color: #7f93aa; padding: 8px 12px; }
   #legendSectors { bottom: 14px; left: 16px; font-size: 11px; padding: 10px 12px; color: #9fb2c8; max-width: 248px; }
   #legendSectors b { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 6px; }
@@ -76,6 +77,7 @@
   <div id="controls">
     <button id="replay">▶ Replay growth</button>
     <button id="spin">⏸ Orbit</button>
+    <button id="rootsBtn" type="button" aria-pressed="false" title="Dip below ground to the private root system">🕳 Roots</button>
   </div>
 </div>
 
@@ -189,7 +191,7 @@ controls.autoRotate = true;
 controls.autoRotateSpeed = 0.45;
 controls.maxDistance = 72;
 controls.minDistance = 6;
-controls.maxPolarAngle = deg(96); // allow a peek at the roots
+controls.maxPolarAngle = deg(135); // the camera can genuinely dip below the ground disc (roots reveal)
 
 // bloom pipeline (parameters informed by ai-periodic-cube's bloomComposer)
 const composer = new EffectComposer(renderer);
@@ -209,11 +211,20 @@ const U = {
   uSharedDim: { value: 1 },                           // trunk + roots (shared → dim to ~0.5)
   uBandY0: { value: -1e6 }, uBandY1: { value: -1e6 }, // stratum-hover band, sentinel = inactive
   uBandGain: { value: 0 },                            // eased 0→~0.6 while a stratum row is hovered
+  uRootsMode: { value: 0 },                           // roots reveal: 0 idle → 1 below-ground, eased ~0.8s
 };
 
 // ---------- branch skeleton: instanced tapered cylinders, straight from tree.segments ----------
 // Each segment carries { start, dir, len, r, born, dist, hue, sector }. The generator already
 // placed and coloured them; the renderer just uploads and animates the growth front.
+// A segment is a ROOT iff its whole span sits below the ground plane (maxY < -0.05).
+// This is a pure-geometry test, so it works in every privacy mode AND on older
+// tree.json files: owner-mode roots carry a sector hue/index (indistinguishable by
+// attribute from an above-ground branch), but they're still the only segments living
+// below y=0. Verified equal to the generator's hue-tag on the mock fixture (261/261).
+const segIsRoot = (s2) => Math.max(s2.start[1], s2.start[1] + s2.dir[1] * s2.len) < -0.05;
+let hasRoots = false;               // any root segment present? (hidden mode / older files → false)
+const rootClusters = [];            // owner mode: per-sector root centroids, pickable in the reveal
 {
   const segs = TREE.segments;
   const geo = new THREE.CylinderGeometry(0.62, 1, 1, 6, 1, true);
@@ -221,8 +232,10 @@ const U = {
   const n = segs.length;
   const mesh = new THREE.InstancedMesh(geo, null, n);
   const aColor = new Float32Array(n * 3), aBorn = new Float32Array(n), aDist = new Float32Array(n), aSector = new Float32Array(n);
+  const aRoot = new Float32Array(n), aGlow = new Float32Array(n * 3);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = V3(0, 1, 0), sc = V3(), st = V3(), di = V3();
-  const bark = new THREE.Color(0x241d18), c = new THREE.Color();
+  const bark = new THREE.Color(0x241d18), c = new THREE.Color(), gc = new THREE.Color();
+  const rootAccum = new Map(); // sector index → { sum:Vector3, count }
   segs.forEach((s2, i) => {
     st.set(s2.start[0], s2.start[1], s2.start[2]);
     di.set(s2.dir[0], s2.dir[1], s2.dir[2]);
@@ -233,23 +246,42 @@ const U = {
     c.set(s2.hue).lerp(bark, 1 - Math.min(1, s2.dist * 0.55 + 0.12)); // bark darkens toward the root
     aColor.set([c.r, c.g, c.b], i * 3);
     aBorn[i] = s2.born; aDist[i] = s2.dist; aSector[i] = s2.sector;
+    // roots reveal: mark roots + carry an un-darkened glow colour (sector hue in owner
+    // mode, neutral bark-gray in silhouette mode — straight from the stored hue).
+    const isRoot = segIsRoot(s2);
+    aRoot[i] = isRoot ? 1 : 0;
+    if (isRoot) {
+      hasRoots = true;
+      gc.set(s2.hue);
+      aGlow.set([gc.r, gc.g, gc.b], i * 3);
+      if (s2.sector >= 0) { // owner mode carries attribution → pickable per-sector clusters
+        const mid = V3(s2.start[0] + s2.dir[0] * s2.len * 0.5, s2.start[1] + s2.dir[1] * s2.len * 0.5, s2.start[2] + s2.dir[2] * s2.len * 0.5);
+        const acc = rootAccum.get(s2.sector) || { sum: V3(), count: 0 };
+        acc.sum.add(mid); acc.count++; rootAccum.set(s2.sector, acc);
+      }
+    } else {
+      aGlow.set([c.r, c.g, c.b], i * 3); // unused for non-roots; mirror aColor
+    }
   });
+  for (const [sector, acc] of rootAccum) rootClusters.push({ sector, center: acc.sum.multiplyScalar(1 / acc.count) });
   geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(aColor, 3));
   geo.setAttribute('aBorn', new THREE.InstancedBufferAttribute(aBorn, 1));
   geo.setAttribute('aDist', new THREE.InstancedBufferAttribute(aDist, 1));
   geo.setAttribute('aSector', new THREE.InstancedBufferAttribute(aSector, 1));
+  geo.setAttribute('aRoot', new THREE.InstancedBufferAttribute(aRoot, 1));
+  geo.setAttribute('aGlow', new THREE.InstancedBufferAttribute(aGlow, 3));
   mesh.material = new THREE.ShaderMaterial({
     uniforms: U,
     vertexShader: /* glsl */`
-      attribute vec3 aColor; attribute float aBorn, aDist, aSector;
-      varying vec3 vColor; varying float vDist, vDim, vBand;
+      attribute vec3 aColor, aGlow; attribute float aBorn, aDist, aSector, aRoot;
+      varying vec3 vColor, vGlow; varying float vDist, vDim, vBand, vRoot;
       uniform float uGrow;
       uniform int uFilterSector;
       uniform float uSectorDim[9], uSharedDim, uBandY0, uBandY1, uBandGain;
       void main() {
         float s = clamp((uGrow - aBorn) / 0.05, 0.0, 1.0);   // sprout when the growth front arrives
         vec3 p = position * s;
-        vColor = aColor; vDist = aDist;
+        vColor = aColor; vDist = aDist; vGlow = aGlow; vRoot = aRoot;
         vec4 world = modelMatrix * instanceMatrix * vec4(p, 1.0);
         // sector dim (dim-not-hide): trunk/roots (aSector<0) share one factor; loop index keeps
         // the array access a constant-index-expression → safe on every driver
@@ -265,8 +297,8 @@ const U = {
         gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.0);
       }`,
     fragmentShader: /* glsl */`
-      varying vec3 vColor; varying float vDist, vDim, vBand;
-      uniform float uTime;
+      varying vec3 vColor, vGlow; varying float vDist, vDim, vBand, vRoot;
+      uniform float uTime, uRootsMode;
       void main() {
         // sap-light: a slow luminous pulse climbing from trunk to tips
         float front = fract(uTime * 0.09);
@@ -276,6 +308,20 @@ const U = {
         float luma = dot(col, vec3(0.299, 0.587, 0.114));
         col = mix(vec3(luma), col, clamp(vDim * 1.15, 0.0, 1.0)) * vDim;
         col *= (1.0 + vBand);   // stratum highlight, 0 when idle
+        // ---- roots reveal ----
+        if (uRootsMode > 0.001) {
+          if (vRoot > 0.5) {
+            // root: rise from the dim bark tint to a soft glow (sector hue in owner mode,
+            // neutral warm gray in silhouette). vDim folds in filter composition: with a
+            // sector filter active, that sector's roots (vDim~1) glow brightest.
+            vec3 glow = vGlow * (0.9 + 0.55 * sap) * vDim;
+            col = mix(col, glow, uRootsMode);
+          } else {
+            // above-ground world falls to a ~12% desaturated silhouette
+            float l2 = dot(col, vec3(0.299, 0.587, 0.114));
+            col = mix(col, vec3(l2) * 0.12, uRootsMode);
+          }
+        }
         gl_FragColor = vec4(col, 1.0);
       }`,
   });
@@ -338,7 +384,7 @@ let leafCount = 0;
     transparent: true, depthWrite: false,
     vertexShader: /* glsl */`
       attribute vec3 aOffset, aColor; attribute float aBorn, aPhase, aSize, aSector;
-      uniform vec3 uCamRight, uCamUp; uniform float uGrow, uTime;
+      uniform vec3 uCamRight, uCamUp; uniform float uGrow, uTime, uRootsMode;
       uniform int uFilterSector;
       uniform float uSectorDim[9], uSharedDim, uBandY0, uBandY1, uBandGain;
       varying vec3 vColor; varying vec2 vUv; varying float vTw;
@@ -357,6 +403,8 @@ let leafCount = 0;
         vec3 lc = aColor;
         float luma = dot(lc, vec3(0.299, 0.587, 0.114));
         lc = mix(vec3(luma), lc, clamp(dim * 1.15, 0.0, 1.0)) * dim * (1.0 + band * uBandGain);
+        // roots reveal: canopy falls to a ~12% desaturated silhouette
+        if (uRootsMode > 0.001) { float l2 = dot(lc, vec3(0.299, 0.587, 0.114)); lc = mix(lc, vec3(l2) * 0.12, uRootsMode); }
         vColor = lc; vUv = uv; vTw = aPhase;
         gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
       }`,
@@ -424,7 +472,7 @@ if (TREE.fireflies.length) {
     uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     vertexShader: /* glsl */`
       attribute vec3 aColor; attribute float aPhase, aSector;
-      uniform float uTime, uGrow; uniform int uFilterSector; uniform float uSectorDim[9], uSharedDim;
+      uniform float uTime, uGrow, uRootsMode; uniform int uFilterSector; uniform float uSectorDim[9], uSharedDim;
       varying vec3 vColor; varying float vA;
       void main() {
         vec3 p = position + vec3(sin(uTime * 0.7 + aPhase) * 0.35, sin(uTime * 0.5 + aPhase * 2.1) * 0.25, cos(uTime * 0.6 + aPhase) * 0.35);
@@ -433,8 +481,9 @@ if (TREE.fireflies.length) {
           if (aSector < -0.5) dim = uSharedDim;
           else { for (int k = 0; k < 9; k++) if (k == int(aSector + 0.5)) dim = uSectorDim[k]; }
         }
-        vColor = aColor * dim;
-        vA = (0.55 + 0.45 * sin(uTime * 2.2 + aPhase * 3.7)) * smoothstep(0.85, 1.0, uGrow) * dim; // dimmed motes fade out
+        float rootDim = 1.0 - 0.88 * uRootsMode;                 // motes fade with the rest of the crown
+        vColor = aColor * dim * rootDim;
+        vA = (0.55 + 0.45 * sin(uTime * 2.2 + aPhase * 3.7)) * smoothstep(0.85, 1.0, uGrow) * dim * (1.0 - 0.7 * uRootsMode); // dimmed motes fade out
         vec4 mv = viewMatrix * vec4(p, 1.0);
         gl_PointSize = 26.0 / max(1.0, -mv.z);
         gl_Position = projectionMatrix * mv;
@@ -525,6 +574,7 @@ let groundMesh;
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -0.02;
+  ground.material.userData = { base: 0.85 }; // rest opacity; roots reveal eases it to ~0.15 (see-through)
   scene.add(ground);
   groundMesh = ground;
 }
@@ -596,8 +646,10 @@ function applyFilter(idx) {           // idx: 0..8 sets, -1 clears (no toggle he
   if (idx >= 0) {
     U.uFilterSector.value = idx;                 // engage immediately; dims ease in
     if (!wasFiltered) autoRotatePrev = controls.autoRotate;
-    tourToSector(idx);                           // Sector Walk
-  } else {
+    if (!rootsMode) tourToSector(idx);           // Sector Walk — but in the roots reveal we
+                                                 // stay below ground; the filter just composes
+                                                 // (that sector's roots glow brightest)
+  } else if (!rootsMode) {
     startTour(defaultCamPos.clone(), defaultTarget.clone(), 1.6, true); // return + restore autoRotate
   }
 }
@@ -625,6 +677,37 @@ function tourToSector(idx) {
   startTour(camPos, centroid.clone(), 1.6, false);
 }
 
+// ---- roots reveal 🕳 — the privacy boundary as a PLACE you visit (docs/02 §3.7, ADR-0005) ----
+// Toggling flies the camera below the ground disc (polar ~112°, target slightly below
+// origin); the tick loop eases uRootsMode 0↔1 (~0.8s) which dims the crown to silhouette,
+// glows the roots, clears the ground and fades the strata. Same flight easing as Sector Walk.
+let rootsMode = false;
+let spinBeforeRoots = controls.autoRotate;
+function tourToRoots() {
+  const tgt = V3(0, -1.5, 0);
+  const off = camera.position.clone().sub(controls.target);
+  const az = Math.atan2(off.z, off.x);                 // keep current azimuth (no jarring spin)
+  const r = 21, polar = deg(112);                      // polar > 90° ⇒ below the horizon
+  const camPos = V3(tgt.x + r * Math.sin(polar) * Math.cos(az), tgt.y + r * Math.cos(polar), tgt.z + r * Math.sin(polar) * Math.sin(az));
+  startTour(camPos, tgt, 1.6, false);                  // restoreAuto false → spin stays paused below ground
+}
+function setRootsMode(on) {
+  on = !!on;
+  if (on === rootsMode || (on && !hasRoots)) return;   // nothing to reveal in hidden mode / older files
+  rootsMode = on;
+  rootsBtn.setAttribute('aria-pressed', String(on));
+  noteEl.textContent = noteBase + (on ? ' · roots (private)' : '');
+  if (on) {
+    spinBeforeRoots = controls.autoRotate;
+    spinBtn.textContent = '▶ Orbit';
+    tourToRoots();
+  } else {
+    autoRotatePrev = spinBeforeRoots;                  // restored when the return flight ends
+    spinBtn.textContent = spinBeforeRoots ? '⏸ Orbit' : '▶ Orbit';
+    startTour(defaultCamPos.clone(), defaultTarget.clone(), 1.6, true);
+  }
+}
+
 // ---- pick pipeline ----
 const pointerNDC = (x, y, out) => out.set((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1);
 const _ndc = new THREE.Vector2(), _v = new THREE.Vector3();
@@ -633,6 +716,17 @@ function nearestLeafCluster(x, y, maxPx) {        // screen-space nearest (leave
   for (let i = 0; i < leafClusters.length; i++) {
     _v.copy(leafClusters[i].center).project(camera);
     if (_v.z > 1) continue;                       // behind camera
+    const sx = (_v.x * 0.5 + 0.5) * innerWidth, sy = (-_v.y * 0.5 + 0.5) * innerHeight;
+    const d = (sx - x) * (sx - x) + (sy - y) * (sy - y);
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  return best;
+}
+function nearestRootCluster(x, y, maxPx) {        // owner-mode roots: screen-space nearest sector centroid
+  let best = -1, bestD = maxPx * maxPx;
+  for (let i = 0; i < rootClusters.length; i++) {
+    _v.copy(rootClusters[i].center).project(camera);
+    if (_v.z > 1) continue;
     const sx = (_v.x * 0.5 + 0.5) * innerWidth, sy = (-_v.y * 0.5 + 0.5) * innerHeight;
     const d = (sx - x) * (sx - x) + (sy - y) * (sy - y);
     if (d < bestD) { bestD = d; best = i; }
@@ -650,6 +744,16 @@ function azToSector(az) {                          // az radians → nearest sec
 function doPick(x, y) {
   pointerNDC(x, y, _ndc);
   raycaster.setFromCamera(_ndc, camera);
+  // 0) roots reveal — the crown is silhouetted, so picking is about the roots now
+  if (rootsMode) {
+    if (rootClusters.length) {                    // owner mode: nearest sector root cluster
+      const ri = nearestRootCluster(x, y, 24);
+      if (ri >= 0) { showRoot(rootClusters[ri].sector); return 'root'; }
+      closePanel(); return null;
+    }
+    showRootPrivate();                            // silhouette mode: no attribution to show
+    return 'root';
+  }
   // 1) blossoms — raycast the little spheres directly (does NOT touch the filter)
   const bHit = raycaster.intersectObjects(blossomMeshes, false);
   if (bHit.length) { showBlossom(bHit[0].object); return 'blossom'; }
@@ -730,6 +834,31 @@ function showBlossom(mesh) {
   elDetail.classList.add('on');
 }
 
+// ---- roots detail (OWNER mode: aggregates only; NEVER per-note data — docs/03 §6.3) ----
+function showRoot(sectorIndex) {
+  const s = SECTORS[sectorIndex];
+  const rd = TREE.rootDetail && TREE.rootDetail[sectorIndex]; // keyed by index; string/number access coerces
+  elTitle.textContent = `🕳 ${esc(s.id)} roots`;
+  if (!rd) {                                     // roots exist but this sector logged no private notes (e.g. real tree)
+    elBody.innerHTML = `<div class="meta">Private knowledge feeds this sector's roots — visible to the owner only.</div>` +
+      `<div class="meta">No private notes logged here yet.</div>`;
+    elDetail.classList.add('on'); return;
+  }
+  const days = Math.floor((NOW - Date.parse(rd.lastNoteTs)) / DAY);
+  const tags = (rd.topTags || []).map(t => `<span class="tag">${esc(t.tag)} · <b>${t.count}</b></span>`).join('');
+  elBody.innerHTML =
+    `<div class="meta"><b>${rd.noteCount}</b> private note${rd.noteCount !== 1 ? 's' : ''} · last tended <b>${relDate(days)}</b></div>` +
+    (tags ? `<div class="tags">${tags}</div>` : '') +
+    `<div class="meta" style="margin-top:6px;color:#7f93aa">aggregates only — no note content or ids leave the vault</div>`;
+  elDetail.classList.add('on');
+}
+function showRootPrivate() {                      // silhouette mode: nothing attributable to reveal
+  elTitle.textContent = `🕳 Roots — private`;
+  elBody.innerHTML = `<div class="meta">The root system holds private knowledge (Obsidian notes, learning inputs).</div>` +
+    `<div class="meta">It's visible only to the tree's owner — visitors see an anonymized silhouette.</div>`;
+  elDetail.classList.add('on');
+}
+
 // ---- pointer: drag-vs-click discriminator (click only if <5px AND <200ms) ----
 const dom = renderer.domElement;
 let downX = 0, downY = 0, downT = 0;
@@ -747,12 +876,21 @@ dom.addEventListener('pointermove', e => {
   if (now - hoverT < 60) return; hoverT = now;
   pointerNDC(e.clientX, e.clientY, _ndc);
   raycaster.setFromCamera(_ndc, camera);
-  const over = raycaster.intersectObjects(blossomMeshes, false).length > 0 || nearestLeafCluster(e.clientX, e.clientY, 24) >= 0;
+  const over = rootsMode
+    ? (rootClusters.length > 0 && nearestRootCluster(e.clientX, e.clientY, 24) >= 0)
+    : (raycaster.intersectObjects(blossomMeshes, false).length > 0 || nearestLeafCluster(e.clientX, e.clientY, 24) >= 0);
   dom.style.cursor = over ? 'pointer' : '';
 });
 
-// ---- keyboard: Escape clears filter + closes panel ----
-addEventListener('keydown', e => { if (e.key === 'Escape') { applyFilter(-1); closePanel(); } });
+// ---- keyboard: Escape — precedence: leave the roots reveal FIRST (it's the "place" you're
+// visiting), only then clear a sector filter. A filter can stay live across the roots reveal,
+// so exiting roots shouldn't also drop it; a second Escape does that. The panel always closes. ----
+addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (rootsMode) setRootsMode(false);
+  else applyFilter(-1);
+  closePanel();
+});
 
 // ---- sector legend: 9 clickable chips with hue dots ----
 const secGrid = document.getElementById('secGrid');
@@ -792,6 +930,13 @@ spinBtn.addEventListener('click', () => {
   spinBtn.textContent = controls.autoRotate ? '⏸ Orbit' : '▶ Orbit';
 });
 
+// ---- roots reveal 🕳 button (hidden entirely when there are no roots to visit) ----
+const noteEl = document.getElementById('note');
+const noteBase = noteEl.textContent;               // capture AFTER any "· mock data" suffix
+const rootsBtn = document.getElementById('rootsBtn');
+if (!hasRoots) rootsBtn.style.display = 'none';    // hidden mode / older tree.json without roots
+rootsBtn.addEventListener('click', () => setRootsMode(!rootsMode));
+
 // ---------- loop ----------
 const clock = new THREE.Clock();
 function tick() {
@@ -815,15 +960,24 @@ function tick() {
   }
   U.uBandGain.value += ((hoveredStratum >= 0 ? 0.6 : 0) - U.uBandGain.value) * k;
 
-  // wedge glow + stratum ring/label brighten (all eased)
+  // ---- roots reveal ease (~0.8s): crown → silhouette, roots glow, ground clears, strata fade ----
+  const kr = 1 - Math.exp(-dt / 0.28);
+  U.uRootsMode.value += ((rootsMode ? 1 : 0) - U.uRootsMode.value) * kr;
+  const rm = U.uRootsMode.value;
+  if (groundMesh) {
+    const gBase = groundMesh.material.userData.base;
+    groundMesh.material.opacity += ((gBase - (gBase - 0.15) * rm) - groundMesh.material.opacity) * k; // → ~0.15 (see-through)
+  }
+
+  // wedge glow + stratum ring/label brighten (all eased); strata fade OUT under the roots reveal
   const wo = wedge.material.uniforms.uOpacity;
   wo.value += (wedgeTargetOpacity - wo.value) * k;
   if (wo.value < 0.01 && wedgeTargetOpacity === 0) wedge.visible = false;
   for (const rg of strataRings) {
     const near = hoveredStratum >= 0 && (Math.abs(rg.y - STRATA[hoveredStratum].y0) < 0.01 || Math.abs(rg.y - STRATA[hoveredStratum].y1) < 0.01);
-    rg.mesh.material.opacity += ((near ? 0.10 : rg.mesh.material.userData.base) - rg.mesh.material.opacity) * k;
+    rg.mesh.material.opacity += ((near ? 0.10 : rg.mesh.material.userData.base) * (1 - rm) - rg.mesh.material.opacity) * k;
   }
-  strataLabels.forEach((sp, i) => { sp.material.opacity += ((hoveredStratum === i ? 1.0 : 0.6) - sp.material.opacity) * k; });
+  strataLabels.forEach((sp, i) => { sp.material.opacity += ((hoveredStratum === i ? 1.0 : 0.6) * (1 - rm) - sp.material.opacity) * k; });
 
   // blossoms: pop scale (unchanged) + eased dim (plain meshes → lerp material.color)
   for (const b of blossomMeshes) {
@@ -834,6 +988,7 @@ function tick() {
     b.userData.dim += (dimT - b.userData.dim) * k;
     const d = b.userData.dim;
     b.material.color.copy(b.userData.baseColor).lerp(b.userData.gray, (1 - d) * 0.7).multiplyScalar(0.2 + 0.8 * d);
+    if (rm > 0.001) b.material.color.multiplyScalar(1 - 0.85 * rm); // fall to silhouette in the roots reveal
   }
 
   // camera: run the tour, else hand off to OrbitControls
@@ -869,8 +1024,10 @@ window.__dbg = {
   U, camera, controls, tree: TREE, segs: TREE.segments.length, leaves: leafCount, clusters: leafClusters.length, blossoms: blossomMeshes.length,
   // ---- phase-2 hooks for the Playwright verifier (in addition to real pointer events) ----
   setFilter: id => applyFilter(id == null ? -1 : (secIndex.has(id) ? secIndex.get(id) : -1)), // id string or null
+  setRoots: on => setRootsMode(on),                                                            // roots reveal toggle
   pickAt: (x, y) => doPick(x, y),                                                              // CSS px → runs the pick pipeline
-  state: () => ({ filter: filterIndex < 0 ? null : SECTORS[filterIndex].label, panelVisible: panelVisible(), tourActive: !!tour }),
+  hasRoots, rootClusters: rootClusters.length,
+  state: () => ({ filter: filterIndex < 0 ? null : SECTORS[filterIndex].label, panelVisible: panelVisible(), tourActive: !!tour, rootsMode }),
 };
 </script>
 </body>

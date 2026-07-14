@@ -130,5 +130,7 @@ vault:
 #   hidden      no root geometry at all.
 # NOTE (docs/03 §6 rule 3): even `owner` never emits private event ids / path hashes /
 # per-note rows — rootDetail is aggregates only, because tree.json can be embedded publicly.
+# This committed reference config stays on the safe default; flip to `owner` (and rebuild
+# with `node generator/build.mjs`) to see your own sector-attributed roots + note aggregates.
 privacy:
-  roots: owner
+  roots: silhouette

@@ -64,10 +64,31 @@ guardrail: *same log + seed + algoVersion ⇒ byte-identical `tree.json`.*
 `algoVersion` is recorded in every `tree.json`. **Any change that alters geometry
 from the same log is a major bump**, recorded in the ADR log. Old snapshots must
 replay identically forever — a tree that retroactively changes shape betrays trust.
-Current: **`1.0.0`** (the approved curved-limb look ported from the mood sketch:
-trunk + gravity/tropism limbs + secondary branching + canopy clusters +
-stratum-crossing blossoms + root flare). Taxonomy versions (`default-v1`) are
-additive-only; renames/merges need a new taxonomy id + migration note.
+Current: **`1.1.0`**. `1.0.0` was the approved curved-limb look ported from the mood
+sketch (trunk + gravity/tropism limbs + secondary branching + canopy clusters +
+stratum-crossing blossoms + root flare). **`1.1.0`** is the phase-4 roots-privacy
+work (ADR-0005): a **minor** bump because it is strictly **additive** — root segment
+*geometry* is byte-identical to `1.0.0` from the same log+seed; the change is
+attribution (root segments carry a sector hue/index in `owner` mode) plus a new
+`rootDetail` aggregate block. No above-ground geometry moves. Taxonomy versions
+(`default-v1`) are additive-only; renames/merges need a new taxonomy id + migration note.
+
+## Root-system privacy (`config.privacy.roots`, docs/03 §6, ADR-0005)
+
+`privacy.roots` ∈ `owner | silhouette | hidden`, **default `silhouette`** (safe by
+default). It affects *only* the root system; above-ground geometry never changes.
+
+| Mode | Root segments | `rootDetail` |
+| --- | --- | --- |
+| `owner` | full geometry, **per-sector hue + index** (like above-ground) | present — per-sector private-note aggregates |
+| `silhouette` | full geometry, one neutral bark-gray hue, `sector: -1` | absent |
+| `hidden` | **none emitted** | absent |
+
+`rootDetail` is **aggregates only** (docs/03 §6 rule 3): `{ noteCount, lastNoteTs,
+topTags: [{tag, count}×≤5] }` keyed by sector index. It **never** carries private
+event ids, path hashes, or per-event rows — even in `owner` mode, because a
+`tree.json` can be embedded on a public page by mistake and must never become a
+per-note tracking surface.
 
 ## Derived per-sector drivers (replace the old hand-tuned constants)
 
@@ -78,7 +99,7 @@ Computed in `deriveDrivers()` from the raw log:
 | `level` | `1 + count(milestone events)` for the sector; authoritative `attrs.level` wins if higher; capped at 4. Gates height (which stratum the bough may reach). |
 | `act` | Log-damped share of lifetime **public** weight: `log2(1+Σweight)`, normalized so the busiest sector = 1.0. Drives limb reach/thickness/leaf mass. |
 | `recent` | Share of the sector's own events landing in the **last 30 days** before the now-anchor, normalized max→1.0. Drives foliage freshness + fireflies. |
-| `roots` | Share of **private**-event weight, normalized max→1.0. Drives root-flare size (docs/03 §6: private → roots only). |
+| `roots` | Share of **private**-event weight, normalized max→1.0. Drives root-flare size (docs/03 §6: private → roots only). Root *visibility/attribution* is a separate `privacy.roots` concern (see above). |
 
 Unclassified events (sector not in the taxonomy, docs/03 §3 rule 4) become faint
 gray shoots at the trunk base — visible nagging to classify them, never dropped.
@@ -87,7 +108,7 @@ gray shoots at the trunk base — visible nagging to classify them, never droppe
 
 ```jsonc
 {
-  "algoVersion": "1.0.0",
+  "algoVersion": "1.1.0",
   "seed": "webmemo-code",
   "taxonomy": "default-v1",
   "generatedFrom": { "events": 329, "earliestTs": "...", "latestTs": "...", "unclassified": 3 },
@@ -102,7 +123,9 @@ gray shoots at the trunk base — visible nagging to classify them, never droppe
     "born": 0..1,      // growth-front time (ts-derived; replay sweeps uGrow across it)
     "dist": 0..1,      // 0 = root, 1 = tip (bark darkening + sap-light)
     "hue": 6982399,
-    "sector": 8        // sector index 0..8, or -1 for shared (trunk / roots / gray shoots)
+    "sector": 8        // sector index 0..8, or -1 for shared (trunk / gray shoots; roots too
+                       //   in silhouette mode). In OWNER mode root segments carry their sector.
+                       //   Roots are identifiable geometrically: the whole segment sits below y=0.
   } ],
   "leafClusters": [ {                                            // canopy blobs; pickable anchors
     "center": [x,y,z], "radius": n, "born": 0..1,
@@ -117,6 +140,9 @@ gray shoots at the trunk base — visible nagging to classify them, never droppe
   "fireflies": [ { "pos": [x,y,z], "hue": n, "sector": 8, "eventId": "gh:…" } ], // last-7d event refs
   "eventMeta": {                                                 // public event metadata for detail panels
     "gh:owner/repo:sha": { "id": "…", "kind": "commit", "sector": "…", "project": "…", "ts": "…", "url"?: "…" }
+  },
+  "rootDetail": {                                                // OWNER mode only; aggregates ONLY (docs/03 §6.3)
+    "4": { "noteCount": 15, "lastNoteTs": "…", "topTags": [ { "tag": "ai/seo", "count": 15 } ] } // keyed by sector index
   },
   "bounds": { "min": [x,y,z], "max": [x,y,z] }
 }
