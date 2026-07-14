@@ -53,5 +53,7 @@ this folder is its source of truth.
 
 ## What is deliberately NOT here
 
-Any grove *instance*. Walter's own grove — like anyone's — belongs in its own
-repo, planted from the template. This repo only ships the seeds.
+Any grove *instance*. Walter's own grove — like anyone's — lives in its own
+repo, planted from the template: **the first real grove** is
+[webmemo-code/my-ai-learning-journey](https://github.com/webmemo-code/my-ai-learning-journey),
+with this repo's tree at commons slot 0. This repo only ships the seeds.

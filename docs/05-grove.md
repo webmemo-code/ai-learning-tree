@@ -209,3 +209,9 @@ template-first, everything in the open, a registry that is only an index.
   (G5): first-person night walk with a stroll mode that flies between clearings;
   every member an instanced impostor from `tree.json` bounds + sector hues, real
   members fetched live; click a tree to meet its grower and visit its full renderer.
+  Walks any real grove via `?grove=<base-url>`.
+- **The first real grove is planted** 🌱:
+  [`webmemo-code/my-ai-learning-journey`](https://github.com/webmemo-code/my-ai-learning-journey)
+  — created from the template on 2026-07-14; this repo's own tree took commons
+  slot 0 through the ceremony PR (validated by its own CI, merged by the keeper).
+  Dogfooding to the last step: the repo that defines the ceremony joined by it.
