@@ -52,6 +52,15 @@
     padding: 2px 4px; border-radius: 5px; background: none; border: none;
   }
   #detail .x:hover { color: #eaf2fb; background: rgba(120, 160, 230, 0.2); }
+  #err {
+    position: fixed; inset: 0; display: none; place-items: center; z-index: 50;
+    background: rgba(5, 7, 13, 0.92); color: #cfd8e3; text-align: center; padding: 24px;
+  }
+  #err.on { display: grid; }
+  #err .box { max-width: 520px; }
+  #err h2 { color: #ff9d9d; font-size: 18px; margin: 0 0 10px; }
+  #err p { font-size: 13.5px; line-height: 1.6; color: #aab8c9; }
+  #err code { background: rgba(120, 160, 230, 0.16); padding: 2px 6px; border-radius: 5px; color: #eaf2fb; }
 </style>
 </head>
 <body>
@@ -81,7 +90,17 @@
   <div id="detailBody"></div>
 </div>
 
-<div class="panel" id="note">phase 2 · interaction sketch · click a sector / leaf / blossom, hover a stratum</div>
+<div class="panel" id="note">phase 2 · data-driven from data/tree.json · click a sector / leaf / blossom, hover a stratum</div>
+
+<div id="err"><div class="box">
+  <h2>Couldn't load the tree</h2>
+  <p id="errMsg"></p>
+  <p>This page fetches <code>../../data/tree.json</code>, so it must be served over
+  http(s). Opening the file directly (<code>file://</code>) blocks the fetch.
+  From the repo root run <code>python -m http.server 8123</code> and visit
+  <code>/prototypes/mood-sketch/</code>. Rebuild the data with
+  <code>node generator/build.mjs</code>.</p>
+</div></div>
 
 <script type="importmap">
 { "imports": {
@@ -98,7 +117,13 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
-// ---------- deterministic PRNG (seeded — same seed, same tree, always) ----------
+const deg = d => (d * Math.PI) / 180;
+const V3 = (...a) => new THREE.Vector3(...a);
+
+// ---------- renderer-local PRNG (foliage scatter ONLY — visual, never affects tree.json) ----------
+// The tree's geometry is generated deterministically upstream (generator/grow.mjs).
+// Here we only scatter leaf billboards inside pre-computed cluster volumes; seeding
+// from tree.seed keeps that scatter stable across reloads so screenshots match.
 function mulberry32(a) {
   return function () {
     a |= 0; a = (a + 0x6D2B79F5) | 0;
@@ -107,35 +132,35 @@ function mulberry32(a) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-const rand = mulberry32(20260713);
-const R = (lo, hi) => lo + rand() * (hi - lo);
+function strHash(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+}
 
-// ---------- the four strata (Section levels × forest stratification) ----------
-const STRATA = [
-  { name: 'Forest floor', level: 'Novice',       y0: 0,  y1: 3.0,  tint: 0x5aa66a },
-  { name: 'Understory',   level: 'Experimenter', y0: 3.0, y1: 7.0, tint: 0x4fd8c4 },
-  { name: 'Canopy',       level: 'Practitioner', y0: 7.0, y1: 12.0, tint: 0xffcf6e },
-  { name: 'Emergent',     level: 'Expert',       y0: 12.0, y1: 16.5, tint: 0xe8ecff },
-];
-const ceilingFor = lvl => STRATA[Math.max(0, Math.min(3, lvl - 1))].y1 - 0.35;
-const STRATUM_BOUNDARIES = STRATA.slice(1).map(st => st.y0); // heights where a level-up blossom can sit
+// ---------- full-screen error panel (fetch failure / file:// hint) ----------
+function fatal(msg) {
+  document.getElementById('errMsg').textContent = String(msg);
+  document.getElementById('err').classList.add('on');
+}
 
-// ---------- sector compass (limb → sectors), mock "Walter-ish" profile ----------
-// level: Section level reached (gates height) · act: lifetime activity 0..1 (mass)
-// recent: share of recent work 0..1 (foliage freshness + fireflies) · roots: private note mass
-const SECTORS = [
-  { id: 'copy',      limb: 'CREATE',     az: 15,  hue: 0xffb454, level: 3, act: 0.62, recent: 0.45, roots: 0.5 },
-  { id: 'images',    limb: 'CREATE',     az: 55,  hue: 0xff6ec7, level: 2, act: 0.48, recent: 0.30, roots: 0.35 },
-  { id: 'video',     limb: 'CREATE',     az: 95,  hue: 0xff5d73, level: 1, act: 0.20, recent: 0.65, roots: 0.85 }, // big roots, tiny shoot: growth foreshadowed
-  { id: 'workflows', limb: 'AUTOMATE',   az: 140, hue: 0x7ce65a, level: 2, act: 0.42, recent: 0.40, roots: 0.4 },
-  { id: 'seo',       limb: 'DISTRIBUTE', az: 185, hue: 0x35d0ba, level: 3, act: 0.85, recent: 0.55, roots: 0.6 },
-  { id: 'geo',       limb: 'DISTRIBUTE', az: 225, hue: 0x4aa8ff, level: 3, act: 0.70, recent: 0.90, roots: 0.7 },
-  { id: 'no-code',   limb: 'BUILD',      az: 270, hue: 0xb59aff, level: 2, act: 0.30, recent: 0.20, roots: 0.3 },
-  { id: 'low-code',  limb: 'BUILD',      az: 310, hue: 0x8f7bff, level: 2, act: 0.36, recent: 0.30, roots: 0.35 },
-  { id: 'pro-code',  limb: 'BUILD',      az: 350, hue: 0x6a8dff, level: 4, act: 1.00, recent: 1.00, roots: 0.8 }, // the emergent hero limb
-];
-const deg = d => (d * Math.PI) / 180;
-const secIndex = new Map(SECTORS.map((s, i) => [s.id, i])); // sector id → 0..8, the aSector value
+// ---------- load the generated tree (a pure geometry/metadata graph) ----------
+let TREE;
+try {
+  const res = await fetch('../../data/tree.json', { cache: 'no-cache' });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching ../../data/tree.json');
+  TREE = await res.json();
+} catch (e) {
+  fatal(e.message || e);
+  throw e;
+}
+
+// ---------- strata + sectors come from the data now (no hardcoded aggregates) ----------
+const STRATA = TREE.strata;                       // [{ name, level, y0, y1, tint }]
+const SECTORS = TREE.sectors;                     // [{ id, label, limb, az, hue, index, level, act, recent, roots }]
+const secIndex = new Map(SECTORS.map((s, i) => [s.label, i])); // public identity = short label (seo, pro-code)
+const NOW = Date.parse(TREE.generatedFrom.latestTs); // the log's now-anchor (relative dates key off this)
+const DAY = 86400000;
 
 // ---------- scene scaffold ----------
 const scene = new THREE.Scene();
@@ -182,202 +207,28 @@ const U = {
   uBandGain: { value: 0 },                            // eased 0→~0.6 while a stratum row is hovered
 };
 
-// ---------- branch skeleton via instanced tapered cylinders ----------
-const segs = []; // { start:V3, dir:V3, len, r, born, dist(0 root→1 tip), hue }
-const V3 = (...a) => new THREE.Vector3(...a);
-const smoothstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
-
-let leafCount = 0;
-const leafClusters = []; // { center:V3, radius, born, sector, density } — canopy blobs
-const blossoms = [];     // { pos, born, hue }
-
-function pushSeg(start, dir, len, r, born, dist, hue, sec = -1) {
-  segs.push({ start: start.clone(), dir: dir.clone().normalize(), len, r, born, dist, hue, sec });
-}
-
-// ---- the trunk: ONE dominant vertical axis with a slow organic waver ----
-// A single leader rising to the canopy stratum, tapering base→top; everything
-// else forks off it, so the silhouette reads "trunk", never "burst".
-const TRUNK_H = 8.4;
-const TRUNK_STEPS = 15;
-const TRUNK_BASE_R = 0.54, TRUNK_TOP_R = 0.135;
-const trunkNodes = []; // { pos, dir, r, dist, born, frac }
+// ---------- branch skeleton: instanced tapered cylinders, straight from tree.segments ----------
+// Each segment carries { start, dir, len, r, born, dist, hue, sector }. The generator already
+// placed and coloured them; the renderer just uploads and animates the growth front.
 {
-  const leanAz = R(0, Math.PI * 2), lean = R(0.05, 0.09);
-  const waver = R(0.03, 0.06);
-  let p = V3(0, -0.35, 0), dir = V3(0, 1, 0);
-  for (let i = 0; i < TRUNK_STEPS; i++) {
-    const t = i / (TRUNK_STEPS - 1);
-    const r = TRUNK_TOP_R + (TRUNK_BASE_R - TRUNK_TOP_R) * Math.pow(1 - t, 1.5); // thick near the ground
-    const dist = 0.32 * t;
-    const born = 0.15 * t; // trunk grows in first (0 → 0.15)
-    trunkNodes.push({ pos: p.clone(), dir: dir.clone().normalize(), r, dist, born, frac: t });
-    // target heading: mostly straight up, a gentle constant lean + a slow S-waver
-    const bend = lean * t + waver * Math.sin(t * Math.PI * 1.7 + 0.6);
-    const target = V3(Math.cos(leanAz) * bend, 1, Math.sin(leanAz) * bend).normalize();
-    dir.lerp(target, 0.4).normalize(); // curvature memory — never snaps
-    const len = (TRUNK_H / TRUNK_STEPS) * (0.9 + 0.2 * (1 - t));
-    pushSeg(p, dir, len, r, born, dist, 0x8a7a68);
-    p = p.clone().addScaledVector(dir, len);
-  }
-}
-// sample the trunk at a height fraction, for limb attachment (position + parent radius)
-function trunkAt(frac) {
-  const f = Math.min(0.999, Math.max(0, frac));
-  const x = f * (trunkNodes.length - 1);
-  const i = Math.floor(x), k = x - i;
-  const a = trunkNodes[i], b = trunkNodes[Math.min(trunkNodes.length - 1, i + 1)];
-  return {
-    pos: a.pos.clone().lerp(b.pos, k),
-    dir: a.dir.clone().lerp(b.dir, k).normalize(),
-    r: a.r + (b.r - a.r) * k,
-    dist: a.dist + (b.dist - a.dist) * k,
-    born: a.born + (b.born - a.born) * k,
-  };
-}
-
-// ---- a limb / branch: smooth eased curve, gravity sag + phototropic tip-curl ----
-// Curvature memory (dir.lerp toward a force-blended target) replaces raw jitter, so
-// limbs arc like limbs. Children fan out in the OUTER half → twigs. Foliage clusters
-// live only at branch tips → canopy blobs, not sparks along the whole ray.
-function growBranch(p0, dir0, r0, opts) {
-  const {
-    steps, stepLen, az, azKeep, ceil, hue, born0, bornSpan,
-    depth, dist0, dist1, sector, isMain, ctx, gravity, tropism, taper,
-  } = opts;
-  let p = p0.clone(), dir = dir0.clone().normalize(), r = r0;
-  const secIdx = opts.sector ? secIndex.get(opts.sector.id) : -1; // -1 = trunk/roots (shared)
-  for (let i = 0; i < steps; i++) {
-    const t = steps > 1 ? i / (steps - 1) : 0;
-    // build a target direction from smooth "forces", then ease toward it
-    const target = dir.clone();
-    // 1) azimuth keeping — steer the horizontal heading gently back to the sector azimuth
-    const rXZ = Math.hypot(target.x, target.z) || 1e-4;
-    const curAz = Math.atan2(target.z, target.x);
-    const dAz = Math.atan2(Math.sin(az - curAz), Math.cos(az - curAz));
-    const newAz = curAz + dAz * azKeep;
-    target.x = Math.cos(newAz) * rXZ; target.z = Math.sin(newAz) * rXZ;
-    // 2) gravity — the limb sags mid-span under its own weight
-    target.y -= gravity * Math.sin(Math.min(1, t) * Math.PI);
-    // 3) phototropism — the tip curls back up toward the light
-    target.y += tropism * smoothstep(0.5, 1.0, t);
-    // 4) stratum ceiling — flatten & spread beneath it instead of piercing it
-    if (p.y + target.y * stepLen > ceil) {
-      target.y = Math.min(target.y, (ceil - p.y) / stepLen);
-      if (target.y < 0) target.y *= 0.3;
-    }
-    target.normalize();
-    dir.lerp(target, 0.3).normalize(); // curvature memory → smooth arc
-
-    const len = stepLen * (1 - 0.35 * t);
-    const dist = dist0 + (dist1 - dist0) * t;
-    const born = born0 + bornSpan * t;
-    pushSeg(p, dir, len, r, born, dist, hue, secIdx);
-    const pPrev = p.clone();
-    p = p.clone().addScaledVector(dir, len);
-    r *= taper;
-
-    // record stratum-boundary crossings on the main axis, for blossom (level-up) markers
-    if (isMain && ctx) {
-      for (const b of STRATUM_BOUNDARIES) {
-        if ((pPrev.y - b) * (p.y - b) <= 0 && Math.abs(pPrev.y - b) < 2.0) ctx.crossings.push({ y: b, pos: p.clone(), born });
-      }
-    }
-
-    // children — secondary/tertiary branches concentrated in the OUTER half, fanning to twigs
-    if (depth > 0 && t > 0.45 && rand() < 0.55) {
-      const childArea = R(0.32, 0.5);              // da Vinci: child takes a share of the cross-section…
-      const childR = r * Math.sqrt(childArea);
-      r *= Math.sqrt(1 - childArea);               // …and the parent thins by the remainder at the fork
-      const side = rand() < 0.5 ? 1 : -1;
-      const spreadAz = az + side * R(0.35, 0.85);
-      const up = R(0.2, 0.55);
-      const fan = V3(Math.cos(spreadAz) * (1 - up), up + 0.2, Math.sin(spreadAz) * (1 - up)).normalize();
-      const cDir = dir.clone().lerp(fan, 0.6).normalize();
-      growBranch(p, cDir, childR, {
-        ...opts,
-        steps: Math.max(3, Math.round((steps - i) * 0.7)), stepLen: stepLen * 0.72,
-        az: spreadAz, azKeep: azKeep * 0.55, born0: born, bornSpan: bornSpan * (1 - t) * 0.9,
-        depth: depth - 1, dist0: dist, isMain: false, gravity: gravity * 1.1, tropism: tropism * 1.15,
-      });
-    }
-  }
-  // foliage clusters only at branch tips (twigs, secondary tips, and each limb tip) → crown blobs
-  if (sector && (depth <= 1 || isMain)) {
-    const cr = 0.4 + sector.act * 0.4 + (2 - depth) * 0.12;
-    leafClusters.push({ center: p.clone(), radius: cr, born: born0 + bornSpan, sector, density: depth === 0 ? 1.0 : 1.4 });
-  }
-  return p;
-}
-
-// ---- 9 sector limbs fork OFF the trunk at staggered heights, each near its azimuth ----
-const TOP_DEPTH = 2;
-for (const s of SECTORS) {
-  const az = deg(s.az);
-  // higher Section level → attaches higher up the trunk (and reaches higher); jitter staggers siblings
-  const lf = (s.level - 1) / 3;
-  const attachFrac = Math.min(0.86, Math.max(0.14, 0.16 + lf * 0.55 + R(-0.05, 0.12)));
-  const node = trunkAt(attachFrac);
-  // leaves the trunk at a believable branch angle (~34°–56° from vertical); higher levels stand more upright
-  const branchAngle = deg(62 - s.level * 6 + R(-6, 8));
-  const horiz = V3(Math.cos(az), 0, Math.sin(az));
-  const dir0 = horiz.clone().multiplyScalar(Math.sin(branchAngle)).add(V3(0, Math.cos(branchAngle), 0)).normalize();
-  const start = node.pos.clone().addScaledVector(horiz, node.r * 0.8).add(V3(0, R(-0.05, 0.05), 0));
-  // taper continuity: the limb is always thinner than the trunk at the fork
-  const r0 = Math.min(node.r * 0.72, 0.1 + s.act * 0.14);
-  // reach scales with activity & level (the level-4 limb becomes the emergent hero above the canopy)
-  const reach = (3.2 + s.act * 3.2 + (s.level - 1) * 1.1) * (0.5 + 0.5 * (s.level / 4));
-  const steps = Math.round(6 + s.act * 6 + s.level * 1.2);
-  const born0 = 0.14 + attachFrac * 0.12 + R(0, 0.04); // limbs born after the trunk, staggered by height
-  const ctx = { crossings: [] };
-  growBranch(start, dir0, r0, {
-    steps, stepLen: reach / steps, az, azKeep: 0.35, ceil: ceilingFor(s.level), hue: s.hue,
-    born0, bornSpan: 0.9 - born0, depth: TOP_DEPTH, dist0: node.dist, dist1: 1.0,
-    sector: s, isMain: true, ctx, gravity: 0.13, tropism: 0.17, taper: 0.9,
-  });
-  // blossoms mark each stratum boundary this sector crossed (the level-up moments)
-  for (let lvl = 2; lvl <= s.level; lvl++) {
-    const boundary = STRATA[lvl - 1].y0;
-    const near = ctx.crossings.filter(c => Math.abs(c.y - boundary) < 0.01);
-    const c = near.length ? near[(rand() * near.length) | 0] : null;
-    // lvl is the Section level newly reached; STRATA[lvl-1] is the stratum this crossing enters
-    if (c) blossoms.push({
-      pos: c.pos.clone().add(V3(R(-0.15, 0.15), R(0, 0.25), R(-0.15, 0.15))),
-      born: Math.min(0.95, c.born + 0.03), hue: s.hue,
-      sec: secIndex.get(s.id), sectorId: s.id, stratum: STRATA[lvl - 1].name, levelLabel: STRATA[lvl - 1].level, lvl,
-    });
-  }
-  // roots mirror the compass below ground — spread outward and DOWN like a root flare, dim
-  const nRoots = 1 + Math.round(s.roots * 2);
-  for (let k = 0; k < nRoots; k++) {
-    const ra = az + R(-0.4, 0.4);
-    const rd = V3(Math.cos(ra) * 0.85, -0.9, Math.sin(ra) * 0.85).normalize();
-    const rStart = V3(Math.cos(az) * TRUNK_BASE_R * 0.6, -0.2, Math.sin(az) * TRUNK_BASE_R * 0.6);
-    growBranch(rStart, rd, 0.06 + s.roots * 0.06, {
-      steps: 4 + Math.round(s.roots * 4), stepLen: 0.5, az: ra, azKeep: 0.4, ceil: -0.05,
-      hue: 0x36503f, born0: 0.03 + R(0, 0.25), bornSpan: 0.3, depth: 1, dist0: 0.12, dist1: 0.02,
-      sector: null, isMain: false, ctx: null, gravity: 0.06, tropism: -0.04, taper: 0.86,
-    });
-  }
-}
-
-// build the instanced mesh for all segments
-{
+  const segs = TREE.segments;
   const geo = new THREE.CylinderGeometry(0.62, 1, 1, 6, 1, true);
   geo.translate(0, 0.5, 0); // base at origin so growth scales upward from the base
   const n = segs.length;
   const mesh = new THREE.InstancedMesh(geo, null, n);
   const aColor = new Float32Array(n * 3), aBorn = new Float32Array(n), aDist = new Float32Array(n), aSector = new Float32Array(n);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = V3(0, 1, 0), sc = V3();
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = V3(0, 1, 0), sc = V3(), st = V3(), di = V3();
   const bark = new THREE.Color(0x241d18), c = new THREE.Color();
   segs.forEach((s2, i) => {
-    q.setFromUnitVectors(up, s2.dir);
+    st.set(s2.start[0], s2.start[1], s2.start[2]);
+    di.set(s2.dir[0], s2.dir[1], s2.dir[2]);
+    q.setFromUnitVectors(up, di);
     sc.set(s2.r, s2.len, s2.r);
-    m.compose(s2.start, q, sc);
+    m.compose(st, q, sc);
     mesh.setMatrixAt(i, m);
     c.set(s2.hue).lerp(bark, 1 - Math.min(1, s2.dist * 0.55 + 0.12)); // bark darkens toward the root
     aColor.set([c.r, c.g, c.b], i * 3);
-    aBorn[i] = s2.born; aDist[i] = s2.dist; aSector[i] = s2.sec;
+    aBorn[i] = s2.born; aDist[i] = s2.dist; aSector[i] = s2.sector;
   });
   geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(aColor, 3));
   geo.setAttribute('aBorn', new THREE.InstancedBufferAttribute(aBorn, 1));
@@ -428,13 +279,21 @@ for (const s of SECTORS) {
   scene.add(mesh);
 }
 
-// ---------- leaves: instanced billboards, hue = sector, freshness = recency ----------
+// ---------- leaf clusters (canopy blobs) — pickable anchors carrying real event ids ----------
+const leafClusters = TREE.leafClusters.map(c => ({
+  center: V3(c.center[0], c.center[1], c.center[2]),
+  radius: c.radius, born: c.born, sector: c.sector, count: c.count, eventIds: c.eventIds,
+}));
+
+// ---------- leaves: instanced billboards scattered inside each cluster volume ----------
+let leafCount = 0;
 {
+  const rand = mulberry32(strHash(TREE.seed + '|leaves'));
+  const R = (lo, hi) => lo + rand() * (hi - lo);
   const spots = [];
   for (const cl of leafClusters) {
-    const s = cl.sector;
-    const count = Math.round((3 + s.act * 7) * cl.density);
-    for (let i = 0; i < count; i++) {
+    const s = SECTORS[cl.sector];
+    for (let i = 0; i < cl.count; i++) {
       // scatter inside an ellipsoid around the cluster centre → a canopy blob, not a streak
       let ox, oy, oz, d2;
       do { ox = R(-1, 1); oy = R(-1, 1); oz = R(-1, 1); d2 = ox * ox + oy * oy + oz * oz; } while (d2 > 1);
@@ -462,7 +321,7 @@ for (const s of SECTORS) {
     born[i] = Math.min(0.98, ls.born + R(0.01, 0.06));
     phase[i] = R(0, Math.PI * 2);
     size[i] = R(0.13, 0.30);
-    sect[i] = secIndex.get(s.id);
+    sect[i] = s.index;
   });
   geo.setAttribute('aOffset', new THREE.InstancedBufferAttribute(off, 3));
   geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(col, 3));
@@ -519,18 +378,17 @@ for (const s of SECTORS) {
   };
 }
 
-// ---------- blossoms 🌸 — persistent markers of the level-up moments ----------
+// ---------- blossoms 🌸 — persistent markers of the level-up moments (real milestones) ----------
 const blossomMeshes = [];
 {
   const g = new THREE.SphereGeometry(0.15, 14, 14);
-  for (const b of blossoms) {
+  for (const b of TREE.blossoms) {
     const c = new THREE.Color(b.hue).lerp(new THREE.Color(0xfff0f6), 0.72).multiplyScalar(2.4); // hot → blooms hard
     const m2 = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: c.clone() }));
-    m2.position.copy(b.pos);
+    m2.position.set(b.pos[0], b.pos[1], b.pos[2]);
     m2.userData.born = b.born;
     // pick + dim metadata: blossoms are plain meshes, so we lerp material.color instead of a shader dim
-    m2.userData.sec = b.sec; m2.userData.sectorId = b.sectorId; m2.userData.stratum = b.stratum;
-    m2.userData.levelLabel = b.levelLabel; m2.userData.lvl = b.lvl;
+    m2.userData.sec = b.sector; m2.userData.blossom = b;
     m2.userData.baseColor = c.clone();
     m2.userData.gray = new THREE.Color().setScalar((c.r + c.g + c.b) / 3);
     m2.userData.dim = 1;
@@ -539,27 +397,19 @@ const blossomMeshes = [];
   }
 }
 
-// ---------- fireflies ✨ — the last seven days of work, alive around the branches ----------
-{
-  const pts = [];
-  for (const s of SECTORS) {
-    const nf = Math.round(s.recent * 22);
-    const anchors = leafClusters.filter(l => l.sector === s);
-    for (let i = 0; i < nf && anchors.length; i++) {
-      const a = anchors[(rand() * anchors.length) | 0];
-      pts.push({ center: a.center, radius: a.radius, hue: s.hue, sec: secIndex.get(s.id) });
-    }
-  }
-  const n = pts.length;
+// ---------- fireflies ✨ — the last seven days of work (explicit refs from the log) ----------
+if (TREE.fireflies.length) {
+  const fs = TREE.fireflies;
+  const rand = mulberry32(strHash(TREE.seed + '|fireflies'));
+  const n = fs.length;
   const pos = new Float32Array(n * 3), col = new Float32Array(n * 3), ph = new Float32Array(n), sect = new Float32Array(n);
   const c = new THREE.Color(), warm = new THREE.Color(0xfffbe0);
-  pts.forEach((f, i) => {
-    const rr = f.radius * 1.25; // fireflies hover around the same canopy blobs the leaves cluster in
-    pos.set([f.center.x + R(-rr, rr), f.center.y + R(-rr * 0.7, rr), f.center.z + R(-rr, rr)], i * 3);
+  fs.forEach((f, i) => {
+    pos.set([f.pos[0], f.pos[1], f.pos[2]], i * 3);
     c.set(f.hue).lerp(warm, 0.6).multiplyScalar(2.0);
     col.set([c.r, c.g, c.b], i * 3);
-    ph[i] = R(0, Math.PI * 2);
-    sect[i] = f.sec;
+    ph[i] = rand() * Math.PI * 2;
+    sect[i] = f.sector;
   });
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -657,7 +507,7 @@ let groundMesh;
     ctx.rotate(a + Math.PI / 2);
     ctx.font = '500 30px "Segoe UI", sans-serif';
     ctx.fillStyle = 'rgba(180,205,230,0.42)';
-    ctx.fillText(s.id, 0, 0);
+    ctx.fillText(s.label, 0, 0);
     ctx.restore();
     // sector tint hint near the rim
     ctx.strokeStyle = 'rgba(' + [(s.hue >> 16) & 255, (s.hue >> 8) & 255, s.hue & 255].join(',') + ',0.22)';
@@ -761,7 +611,7 @@ function cancelTour() { // hand control back to the user without a jump
 }
 function tourToSector(idx) {
   const s = SECTORS[idx];
-  const clusters = leafClusters.filter(c => c.sector === s);
+  const clusters = leafClusters.filter(c => c.sector === idx);
   const centroid = new THREE.Vector3();
   if (clusters.length) { for (const c of clusters) centroid.add(c.center); centroid.multiplyScalar(1 / clusters.length); }
   else centroid.set(Math.cos(deg(s.az)) * 6, 6, Math.sin(deg(s.az)) * 6);
@@ -818,45 +668,61 @@ function doPick(x, y) {
   return null;
 }
 
-// ---- detail panel (mock data, deterministic — never consumes the tree's PRNG) ----
+// ---- detail panel (REAL data from tree.json's public event refs) ----
 const elDetail = document.getElementById('detail');
 const elTitle = document.getElementById('detailTitle');
 const elBody = document.getElementById('detailBody');
 document.getElementById('detailClose').addEventListener('click', closePanel);
 function closePanel() { elDetail.classList.remove('on'); }
 function panelVisible() { return elDetail.classList.contains('on'); }
-const LEAF_TITLES = ['committed a draft', 'shipped an experiment', 'refined a prompt', 'published a note',
-  'reviewed a workflow', 'tuned a pipeline', 'logged a finding', 'merged an improvement'];
-const LEAF_TAGS = ['draft', 'shipped', 'evergreen', 'wip', 'insight', 'refactor', 'cloud', 'local'];
-const hashSeed = (a, b) => (Math.imul(a ^ 0x9e3779b9, 2654435761) ^ Math.imul(b + 1, 40503)) >>> 0;
-function relDate(days) { // deterministic, human-ish
-  if (days < 1) return 'today';
+const KIND_ICON = { commit: '🔧', note: '📝', milestone: '🌸', shipped: '🚀' };
+function relDate(days) { // relative to the log's now-anchor
+  if (days <= 0) return 'today';
   if (days < 14) return `${days} day${days > 1 ? 's' : ''} ago`;
   if (days < 60) return `${Math.round(days / 7)} weeks ago`;
   return `${Math.round(days / 30)} months ago`;
 }
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function commitLink(meta) {                       // gh:<owner>/<repo>:<sha> → github commit url
+  if (meta.kind !== 'commit' || !meta.id.startsWith('gh:')) return null;
+  const rest = meta.id.slice(3);
+  const at = rest.lastIndexOf(':');
+  if (at < 0) return null;
+  const repo = rest.slice(0, at), sha = rest.slice(at + 1);
+  if (/[^0-9a-f]/i.test(sha)) return null;        // only real commit hashes get a link
+  return `https://github.com/${repo}/commit/${sha}`;
+}
+const shortId = (id) => id.split(':').pop();
 function showLeaf(i) {
-  const cl = leafClusters[i], s = cl.sector;
-  const pr = mulberry32(hashSeed(i, secIndex.get(s.id)));  // second, independent stream — geometry untouched
-  const title = LEAF_TITLES[(pr() * LEAF_TITLES.length) | 0];
-  const days = 1 + Math.floor(pr() * (s.recent > 0.5 ? 12 : 200)); // fresher sectors → more recent event
-  const sha = (pr() * 0xfffffff | 0).toString(16).padStart(7, '0').slice(0, 7);
-  const t1 = LEAF_TAGS[(pr() * LEAF_TAGS.length) | 0], t2 = LEAF_TAGS[(pr() * LEAF_TAGS.length) | 0];
+  const cl = leafClusters[i], s = SECTORS[cl.sector];
+  const metas = cl.eventIds.map(id => TREE.eventMeta[id]).filter(Boolean)
+    .sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts));
   elTitle.textContent = `🍃 ${s.id}`;
-  elBody.innerHTML =
-    `<div class="meta">${title} · <b>${relDate(days)}</b></div>` +
-    `<div class="meta">link: <a href="#" onclick="return false">github.com/webmemo-code/${s.limb.toLowerCase()}/commit/${sha}</a></div>` +
-    `<div class="tags"><span class="tag">${t1}</span>${t2 !== t1 ? `<span class="tag">${t2}</span>` : ''}</div>`;
+  const rows = metas.slice(0, 4).map(m => {
+    const icon = KIND_ICON[m.kind] || '•';
+    const rel = relDate(Math.floor((NOW - Date.parse(m.ts)) / DAY));
+    const link = commitLink(m);
+    const label = esc(shortId(m.id));
+    const idHtml = link ? `<a href="${link}" target="_blank" rel="noopener">${label}</a>` : label;
+    const proj = m.project ? ` · ${esc(m.project)}` : '';
+    return `<div class="meta">${icon} ${idHtml}${proj} · <b>${rel}</b></div>`;
+  }).join('');
+  const more = metas.length > 4 ? `<div class="meta">+${metas.length - 4} more in this cluster</div>` : '';
+  elBody.innerHTML = rows + more +
+    `<div class="tags"><span class="tag">${esc(s.limb.toLowerCase())}</span>` +
+    `<span class="tag">${metas.length} event${metas.length > 1 ? 's' : ''}</span></div>`;
   elDetail.classList.add('on');
 }
 function showBlossom(mesh) {
-  const u = mesh.userData;
-  const pr = mulberry32(hashSeed(u.lvl, u.sec));
-  const mo = String(1 + (pr() * 6 | 0)).padStart(2, '0'), da = String(1 + (pr() * 27 | 0)).padStart(2, '0'); // Jan–Jun: mock milestones stay in the past
+  const b = mesh.userData.blossom;
+  const meta = b.eventId ? TREE.eventMeta[b.eventId] : null;
+  const date = meta ? meta.ts.slice(0, 10) : '';
   elTitle.textContent = `🌸 Level-up`;
-  elBody.innerHTML =
-    `<div class="meta"><b>${u.sectorId}</b> reached <b>${u.stratum}</b> · ${u.levelLabel}</div>` +
-    `<div class="meta">Milestone: certification badge · 2026-${mo}-${da}</div>`;
+  let html = `<div class="meta"><b>${esc(SECTORS[b.sector].id)}</b> reached <b>${esc(b.stratum)}</b> · ${esc(b.levelLabel)}</div>`;
+  if (date) html += `<div class="meta">Milestone · ${date}</div>`;
+  if (b.evidence) html += `<div class="meta">evidence: <a href="${esc(b.evidence)}" target="_blank" rel="noopener">${esc(b.evidence.replace(/^https?:\/\//, ''))}</a></div>`;
+  if (b.note) html += `<div class="meta">${esc(b.note)}</div>`;
+  elBody.innerHTML = html;
   elDetail.classList.add('on');
 }
 
@@ -890,7 +756,7 @@ SECTORS.forEach((s, i) => {
   const el = document.createElement('span');
   el.className = 'sec'; el.dataset.sec = i;
   el.setAttribute('role', 'button'); el.tabIndex = 0; el.setAttribute('aria-pressed', 'false');
-  el.innerHTML = `<span class="dot" style="color:#${new THREE.Color(s.hue).getHexString()};background:#${new THREE.Color(s.hue).getHexString()}"></span>${s.id}`;
+  el.innerHTML = `<span class="dot" style="color:#${new THREE.Color(s.hue).getHexString()};background:#${new THREE.Color(s.hue).getHexString()}"></span>${s.label}`;
   const toggle = () => applyFilter(i === filterIndex ? -1 : i);
   el.addEventListener('click', toggle);
   el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
@@ -996,11 +862,11 @@ new ResizeObserver(syncSize).observe(document.body);
 syncSize();
 
 window.__dbg = {
-  U, camera, controls, segs: segs.length, leaves: leafCount, clusters: leafClusters.length, blossoms: blossoms.length, trunkH: TRUNK_H,
+  U, camera, controls, tree: TREE, segs: TREE.segments.length, leaves: leafCount, clusters: leafClusters.length, blossoms: blossomMeshes.length,
   // ---- phase-2 hooks for the Playwright verifier (in addition to real pointer events) ----
   setFilter: id => applyFilter(id == null ? -1 : (secIndex.has(id) ? secIndex.get(id) : -1)), // id string or null
   pickAt: (x, y) => doPick(x, y),                                                              // CSS px → runs the pick pipeline
-  state: () => ({ filter: filterIndex < 0 ? null : SECTORS[filterIndex].id, panelVisible: panelVisible(), tourActive: !!tour }),
+  state: () => ({ filter: filterIndex < 0 ? null : SECTORS[filterIndex].label, panelVisible: panelVisible(), tourActive: !!tour }),
 };
 </script>
 </body>
