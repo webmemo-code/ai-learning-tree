@@ -106,13 +106,16 @@ export function specSynthetic(id) {
   return { height, clusters, blossoms, real: false };
 }
 
-// default "visit this tree" target: the member's own GitHub repo
+// default "visit this tree" target: derived from the member's published URL —
+// a real planting always carries one (ceremony rule) and its owner is verified
+// there. A bare owner/repo-SHAPED id alone is deliberately NOT enough evidence:
+// synthetic/mock ids match that shape and would produce broken links.
 function defaultVisitLink(member) {
-  if (member.url && /^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\//.test(member.url)) {
-    const m = member.url.match(/^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\//);
-    return `https://github.com/${m[1]}/${m[2]}`;
-  }
-  if (/^[\w.-]+\/[\w.-]+$/.test(member.tree || '')) return `https://github.com/${member.tree}`;
+  const u = String(member.url || '');
+  let m = u.match(/^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\//);
+  if (m) return `https://github.com/${m[1]}/${m[2]}`;
+  m = u.match(/^https:\/\/([\w-]+)\.github\.io\/([^/]+)\//);
+  if (m) return `https://github.com/${m[1]}/${m[2]}`;
   return null;
 }
 
