@@ -18,7 +18,7 @@
   #hud .sub { color: #8fa3ba; font-size: 11.5px; margin-bottom: 10px; }
   .stratum { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-size: 12px; }
   .dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
-  #controls { display: flex; gap: 8px; margin-top: 12px; }
+  #controls { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
   button {
     all: unset; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 12.5px;
     color: #eaf2fb; background: rgba(90, 140, 220, 0.22); border: 1px solid rgba(140, 180, 240, 0.35);
@@ -27,6 +27,7 @@
   button:hover { background: rgba(110, 160, 240, 0.38); }
   button[aria-pressed="true"] { background: rgba(120, 170, 240, 0.42); color: #fff; border-color: rgba(160, 195, 250, 0.6); }
   #note { bottom: 14px; right: 16px; font-size: 11px; color: #7f93aa; padding: 8px 12px; }
+  @media (max-width: 1100px) { #note { display: none; } } /* yields to the timeline on narrow windows */
   #legendSectors { bottom: 14px; left: 16px; font-size: 11px; padding: 10px 12px; color: #9fb2c8; max-width: 248px; }
   #legendSectors b { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 6px; }
   #legendSectors .secGrid { display: grid; grid-template-columns: repeat(3, auto); gap: 3px 8px; }
@@ -53,6 +54,32 @@
     padding: 2px 4px; border-radius: 5px; background: none; border: none;
   }
   #detail .x:hover { color: #eaf2fb; background: rgba(120, 160, 230, 0.2); }
+  /* ---- phase 5 · Bloom: cinema mode, letterbox, captions, timeline, toast ---- */
+  .panel, #timeline { transition: opacity 0.9s; }
+  body.cinema .panel, body.cinema #timeline { opacity: 0; pointer-events: none; }
+  body.nohud .panel, body.nohud #timeline { display: none; } /* ?hud=0 — clean embed */
+  .cbar { position: fixed; left: 0; right: 0; height: 0; background: #000; z-index: 40; transition: height 1.1s cubic-bezier(.4, 0, .2, 1); }
+  #barTop { top: 0; } #barBot { bottom: 0; }
+  body.cinema .cbar { height: 7vh; }
+  #reelCap { position: fixed; left: 0; right: 0; bottom: calc(7vh + 18px); text-align: center; z-index: 45; pointer-events: none; }
+  #capMs { font-size: 15.5px; color: #f2e9f4; text-shadow: 0 0 22px rgba(255, 170, 215, 0.45); opacity: 0; transition: opacity 0.7s; min-height: 22px; }
+  #capMs.on { opacity: 1; }
+  #capDate { margin-top: 6px; font-size: 11.5px; letter-spacing: 0.22em; text-transform: uppercase; color: #8fa3ba; opacity: 0; transition: opacity 1.2s; }
+  body.cinema #capDate { opacity: 0.9; }
+  #timeline { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); width: min(380px, 40vw); z-index: 30; }
+  #tlDate { text-align: center; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #7f93aa; margin-bottom: 4px; user-select: none; }
+  #tlTrack { position: relative; height: 18px; cursor: pointer; touch-action: none; }
+  #tlTrack::before { content: ''; position: absolute; left: 0; right: 0; top: 8px; height: 3px; border-radius: 2px; background: rgba(140, 170, 210, 0.22); }
+  #tlFill { position: absolute; left: 0; top: 8px; height: 3px; border-radius: 2px; width: 0;
+    background: linear-gradient(90deg, #5aa66a, #4fd8c4 55%, #ffcf6e); box-shadow: 0 0 8px rgba(79, 216, 196, 0.35); }
+  #tlHandle { position: absolute; top: 4px; left: 0; width: 11px; height: 11px; border-radius: 50%; margin-left: -5px;
+    background: #eaf2fb; box-shadow: 0 0 10px rgba(160, 200, 250, 0.8); }
+  #toast {
+    position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%); z-index: 60; pointer-events: none;
+    background: rgba(16, 26, 42, 0.92); border: 1px solid rgba(140, 180, 240, 0.4); color: #eaf2fb;
+    font-size: 12.5px; padding: 9px 16px; border-radius: 9px; opacity: 0; transition: opacity 0.4s; max-width: 78vw;
+  }
+  #toast.on { opacity: 1; }
   #err {
     position: fixed; inset: 0; display: none; place-items: center; z-index: 50;
     background: rgba(5, 7, 13, 0.92); color: #cfd8e3; text-align: center; padding: 24px;
@@ -75,9 +102,12 @@
   <div class="stratum" data-stratum="1"><span class="dot" style="color:#4fd8c4; background:#4fd8c4"></span> Understory · <i>Experimenter</i></div>
   <div class="stratum" data-stratum="0"><span class="dot" style="color:#5aa66a; background:#5aa66a"></span> Forest floor · <i>Novice</i></div>
   <div id="controls">
-    <button id="replay">▶ Replay growth</button>
+    <button id="replay" title="The tree regrows from seed in 30s under an authored camera">🎬 Replay journey</button>
     <button id="spin">⏸ Orbit</button>
     <button id="rootsBtn" type="button" aria-pressed="false" title="Dip below ground to the private root system">🕳 Roots</button>
+    <button id="recBtn" type="button" title="Replay the journey and save it as a .webm clip">🎥 Record clip</button>
+    <button id="soundBtn" type="button" aria-pressed="false" title="Night-garden ambience + level-up chimes">🔊</button>
+    <button id="shareBtn" type="button" title="Copy a link that opens with the 30s replay">⤴ Share</button>
   </div>
 </div>
 
@@ -92,7 +122,15 @@
   <div id="detailBody"></div>
 </div>
 
-<div class="panel" id="note">phase 2 · data-driven from data/tree.json · click a sector / leaf / blossom, hover a stratum</div>
+<div class="panel" id="note">phase 5 · click a sector / leaf / blossom · 🎬 replay · timeline time-travel</div>
+
+<div class="cbar" id="barTop"></div><div class="cbar" id="barBot"></div>
+<div id="reelCap"><div id="capMs"></div><div id="capDate"></div></div>
+<div id="timeline">
+  <div id="tlDate"></div>
+  <div id="tlTrack" title="Drag to travel through time · double-click → today"><div id="tlFill"></div><div id="tlHandle"></div></div>
+</div>
+<div id="toast"></div>
 
 <div id="err"><div class="box">
   <h2>Couldn't load the tree</h2>
@@ -146,9 +184,14 @@ function fatal(msg) {
   document.getElementById('err').classList.add('on');
 }
 
+// ---------- URL params (deep links, docs in prototypes/README.md) ----------
+// ?data=mock · ?dpr=1 · ?reel=1 (autoplay the journey) · ?filter=<label> · ?roots=1 · ?hud=0 (clean embed)
+const PARAMS = new URLSearchParams(location.search);
+if (PARAMS.get('hud') === '0') document.body.classList.add('nohud');
+
 // ---------- load the generated tree (a pure geometry/metadata graph) ----------
 // ?data=mock -> load the frozen data/mock/ fixture instead of the real (harvester-fed) tree.
-const useMock = new URLSearchParams(location.search).get('data') === 'mock';
+const useMock = PARAMS.get('data') === 'mock';
 const treePath = useMock ? '../../data/mock/tree.json' : '../../data/tree.json';
 if (useMock) document.getElementById('note').textContent += ' · mock data';
 let TREE;
@@ -168,6 +211,21 @@ const secIndex = new Map(SECTORS.map((s, i) => [s.label, i])); // public identit
 const NOW = Date.parse(TREE.generatedFrom.latestTs); // the log's now-anchor (relative dates key off this)
 const DAY = 86400000;
 
+// ---------- time axis (phase 5): uGrow ↔ real dates ----------
+// Mirrors generator/grow.mjs tNorm(): the trunk occupies the first TRUNK_SPAN of the
+// sweep, then born maps linearly across [earliestTs, latestTs]. Inverting that gives
+// the replay its date readout and the timeline its scrubber semantics.
+const TRUNK_SPAN = 0.12;
+const T0 = Date.parse(TREE.generatedFrom.earliestTs || TREE.generatedFrom.latestTs);
+const SPAN = Math.max(1, NOW - T0);
+const growToMs = (g) => T0 + SPAN * Math.min(1, Math.max(0, (g - TRUNK_SPAN) / (1 - TRUNK_SPAN)));
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// young trees (a few months of log) read day-level; older ones month-level
+const fmtDate = (ms) => {
+  const d = new Date(ms);
+  return (SPAN < 150 * DAY ? d.getUTCDate() + ' ' : '') + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+};
+
 // ---------- scene scaffold ----------
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x05070d);
@@ -178,8 +236,10 @@ camera.position.set(19, 9.5, 19);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
-// ?dpr=1 (or lower) tames cost on software-GL / low-power embeds
-const dprCap = parseFloat(new URLSearchParams(location.search).get('dpr') || '2');
+// ?dpr=1 (or lower) tames cost on software-GL / low-power embeds; an explicit value
+// also disables the adaptive-quality guard (see tick loop) — you asked for that ratio
+const dprExplicit = PARAMS.has('dpr');
+const dprCap = parseFloat(PARAMS.get('dpr') || '2');
 renderer.setPixelRatio(Math.min(devicePixelRatio, dprCap));
 document.getElementById('app').appendChild(renderer.domElement);
 
@@ -832,6 +892,7 @@ function showBlossom(mesh) {
   if (b.note) html += `<div class="meta">${esc(b.note)}</div>`;
   elBody.innerHTML = html;
   elDetail.classList.add('on');
+  chime(b.sector); // the level-up chime, replayed on demand (docs/02 §4.2)
 }
 
 // ---- roots detail (OWNER mode: aggregates only; NEVER per-note data — docs/03 §6.3) ----
@@ -863,7 +924,7 @@ function showRootPrivate() {                      // silhouette mode: nothing at
 const dom = renderer.domElement;
 let downX = 0, downY = 0, downT = 0;
 let downPrimary = false; // only the primary button picks — right/middle stay pure camera input
-dom.addEventListener('pointerdown', e => { downPrimary = e.button === 0; downX = e.clientX; downY = e.clientY; downT = performance.now(); cancelTour(); });
+dom.addEventListener('pointerdown', e => { downPrimary = e.button === 0; downX = e.clientX; downY = e.clientY; downT = performance.now(); cancelTour(); if (reel) endReel(true); });
 dom.addEventListener('pointerup', e => {
   if (e.button !== 0 || !downPrimary) return;
   const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
@@ -882,12 +943,14 @@ dom.addEventListener('pointermove', e => {
   dom.style.cursor = over ? 'pointer' : '';
 });
 
-// ---- keyboard: Escape — precedence: leave the roots reveal FIRST (it's the "place" you're
-// visiting), only then clear a sector filter. A filter can stay live across the roots reveal,
-// so exiting roots shouldn't also drop it; a second Escape does that. The panel always closes. ----
+// ---- keyboard: Escape — precedence: leave the reel first (you're mid-show), then the
+// roots reveal (it's the "place" you're visiting), only then clear a sector filter. A
+// filter can stay live across the roots reveal, so exiting roots shouldn't also drop it;
+// a second Escape does that. The panel always closes. ----
 addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (rootsMode) setRootsMode(false);
+  if (reel) endReel(true);
+  else if (rootsMode) setRootsMode(false);
   else applyFilter(-1);
   closePanel();
 });
@@ -919,16 +982,253 @@ document.querySelectorAll('#hud .stratum').forEach(row => {
   row.addEventListener('mouseleave', () => { hoveredStratum = -1; });
 });
 
-// ---------- growth / replay (wall-clock driven — frame-rate independent) ----------
+// ================= PHASE 5 · BLOOM 🌸 =================
+// The Replay 🎬 (docs/00 "the time-lapse", docs/02 §4.1) + timeline scrub + sound +
+// share/embed + clip recording + adaptive quality. Renderer-only: tree.json untouched.
+
+// ---------- growth front — three drivers, exactly one active per frame ----------
+// a timed sweep (initial grow-in, or the continuation after a cancelled reel),
+// a scrub hold (timeline drag), or the reel (which computes uGrow from its own clock).
 let growStart = performance.now(), growDur = 4500; // initial load: the 4.5s grow-in echo
-document.getElementById('replay').addEventListener('click', () => {
-  growStart = performance.now(); growDur = 22000; // the full 22s journey
-});
+let growHold = -1;                                  // >=0 → frozen at that value (timeline scrub)
 const spinBtn = document.getElementById('spin');
 spinBtn.addEventListener('click', () => {
   controls.autoRotate = !controls.autoRotate;
   spinBtn.textContent = controls.autoRotate ? '⏸ Orbit' : '▶ Orbit';
 });
+
+// ---------- the reel 🎬 — authored camera synced to the growth-front sweep ----------
+// ~30s: ground-level sprout → understory rise → canopy orbit → in among the blossoms →
+// pull-back landing EXACTLY on the load pose (derived, not hardcoded), so the handoff
+// back to OrbitControls is seamless. One smooth full turn of azimuth over the whole reel.
+const REEL_DUR = 30;
+const HERO = (() => {
+  const off = defaultCamPos.clone().sub(defaultTarget);
+  return { r: off.length(), pol: Math.acos(off.y / off.length()), az: Math.atan2(off.z, off.x), ty: defaultTarget.y };
+})();
+const REEL_K = [ // keyframes for (radius, polar, target height); azimuth is its own channel
+  { u: 0.00, r: 9.0,  pol: deg(87), ty: 1.8 },   // lying in the grass, watching the sprout
+  { u: 0.18, r: 11.5, pol: deg(72), ty: 3.4 },   // rising with the understory
+  { u: 0.45, r: 14.5, pol: deg(58), ty: 5.8 },   // canopy orbit
+  { u: 0.72, r: 12.5, pol: deg(52), ty: 7.8 },   // in among the blossoms
+  { u: 1.00, r: HERO.r, pol: HERO.pol, ty: HERO.ty }, // the hero pull-back = load pose
+];
+const msByBorn = [...TREE.blossoms].sort((a, b) => a.born - b.born); // milestone caption queue
+let reel = null; // { start, dur, wasAuto, msIdx, seeded, today }
+const _reelTgt = V3();
+function reelChan(u, key) { // cosine-eased keyframe channel — zero slope at keys, no jerks
+  let a = REEL_K[0], b = REEL_K[REEL_K.length - 1];
+  for (let i = 0; i < REEL_K.length - 1; i++) if (u >= REEL_K[i].u && u <= REEL_K[i + 1].u) { a = REEL_K[i]; b = REEL_K[i + 1]; break; }
+  const t = b.u === a.u ? 0 : (u - a.u) / (b.u - a.u);
+  return a[key] + (b[key] - a[key]) * (0.5 - 0.5 * Math.cos(Math.PI * t));
+}
+function startReel(dur = REEL_DUR) {
+  if (reel) return;
+  cancelTour(); closePanel();
+  // the user's real orbit preference: roots/filter modes park autoRotate and stash it
+  const wasAuto = rootsMode ? spinBeforeRoots : (filterIndex >= 0 ? autoRotatePrev : controls.autoRotate);
+  if (rootsMode) setRootsMode(false);   // the journey shows the public tree
+  applyFilter(-1);
+  tour = null;                          // the reel drives the camera itself
+  growHold = -1;
+  // wall-clock anchored: a 30s journey is 30s even when the frame rate dips
+  // (essential for the recorded clip's duration; dropped frames just skip ahead)
+  reel = { start: performance.now(), dur, wasAuto, msIdx: 0, seeded: false, today: false };
+  controls.autoRotate = false;
+  document.body.classList.add('cinema');
+  swoosh();
+}
+function endReel(cancelled) {
+  if (!reel) return;
+  const r = reel; reel = null;
+  document.body.classList.remove('cinema');
+  capMs.classList.remove('on');
+  stopRecording();                      // a clip covers exactly the reel it was started with
+  if (cancelled) {
+    // hand the camera over where it is; growth continues as a sweep from the current front
+    controls.target.copy(_reelTgt);
+    const g = U.uGrow.value;
+    growDur = 8000; growStart = performance.now() - g * growDur;
+  } else {
+    camera.position.copy(defaultCamPos); controls.target.copy(defaultTarget);
+    growStart = performance.now() - 1e7; growDur = 4500; // settled fully grown
+  }
+  controls.autoRotate = r.wasAuto;
+  spinBtn.textContent = controls.autoRotate ? '⏸ Orbit' : '▶ Orbit';
+}
+document.getElementById('replay').addEventListener('click', () => { if (!reel) startReel(); });
+
+// ---- cinematic captions: the seed date, each level-up, "today" ----
+const capMs = document.getElementById('capMs'), capDate = document.getElementById('capDate');
+let capTimer = 0;
+function caption(text) {
+  capMs.textContent = text;
+  capMs.classList.add('on');
+  clearTimeout(capTimer);
+  capTimer = setTimeout(() => capMs.classList.remove('on'), 2600);
+}
+
+// ---------- sound 🔊 — synthesized night-garden ambience + level-up chimes ----------
+// docs/02 §4/§6 vocabulary, zero assets: wind = looped noise through a slowly wandering
+// lowpass, pad = two soft sines, blossom = pentatonic chime, camera-swoosh = noise swell.
+// Preference persists (mute survives reloads); the AudioContext itself can only start on
+// a user gesture (autoplay policy), so init is lazy and hooked to the first pointerdown.
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* sandboxed iframe */ } },
+};
+let soundOn = store.get('tree-sound') !== '0'; // ambience defaults ON (it stays silent until a gesture)
+let audio = null;                              // { ctx, master, noiseBuf } once running
+function audioInit() {
+  if (audio || !soundOn) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  const ctx = new AC();
+  const master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+  const len = ctx.sampleRate * 2, noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const ch = noiseBuf.getChannelData(0);
+  for (let i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
+  // wind: looped noise through a lowpass whose cutoff wanders on a very slow LFO
+  const noise = ctx.createBufferSource(); noise.buffer = noiseBuf; noise.loop = true;
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 320; lp.Q.value = 0.6;
+  const ng = ctx.createGain(); ng.gain.value = 0.05;
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 0.07;
+  const lfoG = ctx.createGain(); lfoG.gain.value = 140;
+  lfo.connect(lfoG); lfoG.connect(lp.frequency);
+  noise.connect(lp); lp.connect(ng); ng.connect(master);
+  // pad: two soft sines breathing very quietly under the wind
+  for (const [f, g] of [[110, 0.012], [164.8, 0.008]]) {
+    const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+    const og = ctx.createGain(); og.gain.value = g;
+    o.connect(og); og.connect(master); o.start();
+  }
+  noise.start(); lfo.start();
+  master.gain.linearRampToValueAtTime(1, ctx.currentTime + 2.5); // fade the garden in, don't slam it
+  audio = { ctx, master, noiseBuf };
+}
+function chime(sector) { // blossom = level-up chime: a pentatonic note + a whisper of octave
+  if (!audio || !soundOn) return;
+  const ctx = audio.ctx, t = ctx.currentTime;
+  const freqs = [523.25, 659.25, 783.99, 880, 1046.5];
+  const f = freqs[((sector % freqs.length) + freqs.length) % freqs.length];
+  for (const [mult, amp] of [[1, 0.1], [2.01, 0.03]]) {
+    const o = ctx.createOscillator(); o.frequency.value = f * mult;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(amp, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+    o.connect(g); g.connect(audio.master); o.start(t); o.stop(t + 2.3);
+  }
+}
+function swoosh() { // camera-swoosh: a soft band-passed noise swell under the reel start
+  if (!audio || !soundOn) return;
+  const ctx = audio.ctx, t = ctx.currentTime;
+  const src = ctx.createBufferSource(); src.buffer = audio.noiseBuf; src.loop = true;
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.setValueAtTime(280, t);
+  bp.frequency.exponentialRampToValueAtTime(900, t + 1.6); bp.Q.value = 1.1;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.06, t + 0.7);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+  src.connect(bp); bp.connect(g); g.connect(audio.master); src.start(t); src.stop(t + 2.3);
+}
+const soundBtn = document.getElementById('soundBtn');
+function refreshSoundBtn() { soundBtn.textContent = soundOn ? '🔊' : '🔇'; soundBtn.setAttribute('aria-pressed', String(soundOn)); }
+refreshSoundBtn();
+soundBtn.addEventListener('click', () => {
+  soundOn = !soundOn;
+  store.set('tree-sound', soundOn ? '1' : '0');
+  refreshSoundBtn();
+  if (soundOn) { audioInit(); if (audio) audio.ctx.resume(); }
+  else if (audio) audio.ctx.suspend();
+});
+// the first real gesture anywhere wakes the ambience (if the preference allows it)
+addEventListener('pointerdown', () => { audioInit(); if (audio && soundOn) audio.ctx.resume(); }, { once: true });
+
+// ---------- clip recording 🎥 — MediaRecorder over the canvas (+ live audio if on) ----------
+// The exit criterion of phase 5 is literally "the 30-second clip exists and gets shared"
+// (docs/04). Record = run the reel while capturing the WebGL canvas; the .webm downloads
+// when the reel ends (or is cancelled — you keep the partial clip).
+let recorder = null, recChunks = [];
+function startRecording() {
+  if (recorder || !renderer.domElement.captureStream || typeof MediaRecorder === 'undefined') {
+    if (!recorder) toast('Recording is not supported in this browser');
+    return false;
+  }
+  const stream = renderer.domElement.captureStream(30);
+  if (audio && soundOn) { // mix the garden + chimes into the clip
+    const dst = audio.ctx.createMediaStreamDestination();
+    audio.master.connect(dst);
+    for (const tr of dst.stream.getAudioTracks()) stream.addTrack(tr);
+  }
+  const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+  recChunks = [];
+  try { recorder = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 8e6 } : undefined); }
+  catch { toast('Recording is not supported in this browser'); recorder = null; return false; }
+  recorder.ondataavailable = (e) => { if (e.data.size) recChunks.push(e.data); };
+  recorder.onstop = () => {
+    const type = (recorder && recorder.mimeType) || 'video/webm';
+    recorder = null;
+    const blob = new Blob(recChunks, { type });
+    recChunks = [];
+    if (!blob.size) { toast('The recording came out empty'); return; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ai-learning-tree-journey.webm';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+    toast('🎥 Clip saved — ai-learning-tree-journey.webm');
+  };
+  recorder.start(1000);
+  return true;
+}
+function stopRecording() { if (recorder && recorder.state !== 'inactive') recorder.stop(); }
+function recordJourney(dur) { if (!reel && startRecording()) startReel(dur); }
+document.getElementById('recBtn').addEventListener('click', () => recordJourney());
+
+// ---------- share ⤴ — a link that opens with the 30s replay ----------
+function journeyUrl() {
+  const u = new URL(location.href);
+  u.search = ''; u.hash = '';
+  u.searchParams.set('reel', '1');
+  if (useMock) u.searchParams.set('data', 'mock');
+  return u.toString();
+}
+document.getElementById('shareBtn').addEventListener('click', async () => {
+  const url = journeyUrl();
+  try {
+    await navigator.clipboard.writeText(url);
+    toast('⤴ Journey link copied — it opens with the 30s replay');
+  } catch {
+    window.prompt('Copy the journey link:', url); // clipboard blocked (http, permissions)
+  }
+});
+const toastEl = document.getElementById('toast');
+let toastTimer = 0;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('on'), 3400);
+}
+
+// ---------- timeline — scrub the growth front through the tree's history ----------
+const tlDate = document.getElementById('tlDate'), tlFill = document.getElementById('tlFill'),
+      tlHandle = document.getElementById('tlHandle'), tlTrack = document.getElementById('tlTrack');
+let scrubbing = false;
+function scrubTo(clientX) {
+  const rect = tlTrack.getBoundingClientRect();
+  growHold = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+}
+tlTrack.addEventListener('pointerdown', (e) => {
+  if (reel) endReel(true);
+  cancelTour();
+  scrubbing = true;
+  tlTrack.setPointerCapture(e.pointerId);
+  scrubTo(e.clientX);
+});
+tlTrack.addEventListener('pointermove', (e) => { if (scrubbing) scrubTo(e.clientX); });
+tlTrack.addEventListener('pointerup', () => { scrubbing = false; }); // released → front stays put
+tlTrack.addEventListener('dblclick', () => { growHold = -1; growStart = performance.now() - 1e7; }); // → today
 
 // ---- roots reveal 🕳 button (hidden entirely when there are no roots to visit) ----
 const noteEl = document.getElementById('note');
@@ -939,11 +1239,60 @@ rootsBtn.addEventListener('click', () => setRootsMode(!rootsMode));
 
 // ---------- loop ----------
 const clock = new THREE.Clock();
+let fpsAcc = 0, fpsN = 0;
 function tick() {
   requestAnimationFrame(tick);
-  const dt = Math.min(clock.getDelta(), 0.05);
+  const rawDt = clock.getDelta();          // true elapsed (for the fps guard)
+  const dt = Math.min(rawDt, 0.05);        // clamped (easing shouldn't jump after a stall)
   U.uTime.value += dt;
-  U.uGrow.value = Math.min(1, (performance.now() - growStart) / growDur);
+
+  // ---- growth front + reel (phase 5) ----
+  if (reel) {
+    const u = Math.min(1, (performance.now() - reel.start) / 1000 / reel.dur);
+    // growth starts once the camera has settled at ground level, completes before the pull-back
+    const g = Math.min(1, Math.max(0, (u - 0.06) / 0.86));
+    U.uGrow.value = g;
+    // captions: the seed date, then each level-up as the growth front passes it, then today
+    if (!reel.seeded && u > 0.015) { reel.seeded = true; caption('🌱 ' + fmtDate(T0)); }
+    while (reel.msIdx < msByBorn.length && msByBorn[reel.msIdx].born <= g) {
+      const b = msByBorn[reel.msIdx++];
+      caption(`🌸 ${SECTORS[b.sector].id} → ${b.stratum} · ${b.levelLabel}`);
+      chime(b.sector);
+    }
+    if (!reel.today && u > 0.955) { reel.today = true; caption('🌳 ' + fmtDate(NOW)); }
+    capDate.textContent = fmtDate(g <= 0 ? T0 : growToMs(g));
+    // authored camera: keyframed (radius, polar, target height); azimuth makes one smooth
+    // full turn that lands exactly on the hero azimuth (smoothstep = gentle start/stop)
+    const az = HERO.az + Math.PI * 2 * (u * u * (3 - 2 * u) - 1);
+    const r = reelChan(u, 'r'), pol = reelChan(u, 'pol'), ty = reelChan(u, 'ty');
+    _reelTgt.set(0, ty, 0);
+    camera.position.set(r * Math.sin(pol) * Math.cos(az), ty + r * Math.cos(pol), r * Math.sin(pol) * Math.sin(az));
+    camera.lookAt(_reelTgt);
+    if (u >= 1) endReel(false);
+  } else {
+    U.uGrow.value = growHold >= 0 ? growHold : Math.min(1, (performance.now() - growStart) / growDur);
+  }
+
+  // ---- timeline mirrors the growth front (hidden in cinema / nohud, but cheap to keep true) ----
+  {
+    const g = U.uGrow.value;
+    tlFill.style.width = (g * 100) + '%';
+    tlHandle.style.left = (g * 100) + '%';
+    tlDate.textContent = fmtDate(g <= 0 ? T0 : growToMs(g)) + (growHold >= 0 && growHold < 1 ? ' · scrubbed' : '');
+  }
+
+  // ---- adaptive quality: step the pixel ratio down when the frame budget blows ----
+  // (the LOD guard of docs/04 §risks — explicit ?dpr= opts out; never steps back up, no flicker)
+  fpsAcc += rawDt; fpsN++;
+  if (fpsAcc >= 2) {
+    const fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0;
+    const pr = renderer.getPixelRatio();
+    if (!dprExplicit && fps < 28 && pr > 0.75) {
+      const next = Math.max(0.75, pr - 0.25);
+      renderer.setPixelRatio(next); composer.setPixelRatio(next);
+      renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+    }
+  }
 
   // ---- ease interaction state toward targets (~0.4s settle, frame-rate independent) ----
   const k = 1 - Math.exp(-dt / 0.13);
@@ -991,15 +1340,15 @@ function tick() {
     if (rm > 0.001) b.material.color.multiplyScalar(1 - 0.85 * rm); // fall to silhouette in the roots reveal
   }
 
-  // camera: run the tour, else hand off to OrbitControls
-  if (tour) {
+  // camera: the reel drives it directly (above); else run the tour; else OrbitControls
+  if (tour && !reel) {
     tour.t += dt;
     const u = easeInOutCubic(Math.min(1, tour.t / tour.dur));
     camera.position.lerpVectors(tour.p0, tour.p1, u);
     controls.target.lerpVectors(tour.tg0, tour.tg1, u);
     camera.lookAt(controls.target);
     if (tour.t >= tour.dur) { const ra = tour.restoreAuto; tour = null; if (ra) controls.autoRotate = autoRotatePrev; }
-  } else {
+  } else if (!reel) {
     controls.update();
   }
   composer.render();
@@ -1020,6 +1369,16 @@ addEventListener('resize', syncSize);
 new ResizeObserver(syncSize).observe(document.body);
 syncSize();
 
+// ---------- deep links: ?reel=1 (autoplay the journey) · ?filter=<label> · ?roots=1 ----------
+// reel takes precedence (it clears filter/roots itself); the others compose like in-app clicks
+if (PARAMS.get('reel') === '1') {
+  startReel();
+} else {
+  const f = PARAMS.get('filter');
+  if (f && secIndex.has(f)) applyFilter(secIndex.get(f));
+  if (PARAMS.get('roots') === '1' && hasRoots) setRootsMode(true);
+}
+
 window.__dbg = {
   U, camera, controls, tree: TREE, segs: TREE.segments.length, leaves: leafCount, clusters: leafClusters.length, blossoms: blossomMeshes.length,
   // ---- phase-2 hooks for the Playwright verifier (in addition to real pointer events) ----
@@ -1027,7 +1386,21 @@ window.__dbg = {
   setRoots: on => setRootsMode(on),                                                            // roots reveal toggle
   pickAt: (x, y) => doPick(x, y),                                                              // CSS px → runs the pick pipeline
   hasRoots, rootClusters: rootClusters.length,
-  state: () => ({ filter: filterIndex < 0 ? null : SECTORS[filterIndex].label, panelVisible: panelVisible(), tourActive: !!tour, rootsMode }),
+  // ---- phase-5 hooks ----
+  startReel: (dur) => startReel(dur),               // dur seconds, default REEL_DUR
+  stopReel: () => endReel(true),
+  recordJourney: (dur) => recordJourney(dur),       // reel + MediaRecorder → .webm download
+  setGrow: (g) => {                                 // scrub hold; null → release to today
+    if (g == null) { growHold = -1; growStart = performance.now() - 1e7; }
+    else growHold = Math.min(1, Math.max(0, g));
+  },
+  journeyUrl,
+  state: () => ({
+    filter: filterIndex < 0 ? null : SECTORS[filterIndex].label, panelVisible: panelVisible(),
+    tourActive: !!tour, rootsMode, reel: !!reel, grow: +U.uGrow.value.toFixed(4),
+    sound: soundOn, audioLive: !!audio, recording: !!recorder, dpr: renderer.getPixelRatio(),
+    date: fmtDate(U.uGrow.value <= 0 ? T0 : growToMs(U.uGrow.value)),
+  }),
 };
 </script>
 </body>
