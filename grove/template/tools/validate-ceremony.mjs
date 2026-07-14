@@ -2,8 +2,9 @@
 //
 // A joining PR appends line(s) to plantings.jsonl. This validator enforces the
 // mechanics a keeper shouldn't have to eyeball:
-//   1. APPEND-ONLY: the head file must start byte-for-byte with the base file —
-//      no edits, no reorders, no deletions of history.
+//   1. APPEND-ONLY: the head file must start with the base file's exact lines —
+//      no edits, no reorders, no deletions of history. (Only trailing-newline
+//      differences are tolerated: a final-newline touch-up is not a rewrite.)
 //   2. The full log must still place: parse + placeGrove() (dupes, unknown
 //      clearings, capacity) using this grove's grove.yml constants.
 //   3. Each new `planted` line is well-formed: owner/repo id, an https URL that
@@ -52,7 +53,8 @@ export function validateCeremony({ baseText, headText, actor, config = {} }) {
   const base = String(baseText ?? '');
   const head = String(headText ?? '');
 
-  // 1) append-only — history is never edited, reordered, or deleted
+  // 1) append-only — history is never edited, reordered, or deleted; only a
+  // trailing-newline difference is forgiven (editors fight over final newlines)
   const baseTrim = base.replace(/\n+$/, '');
   if (baseTrim && !(head === base || head.replace(/\n+$/, '') === baseTrim || head.startsWith(baseTrim + '\n'))) {
     errors.push('append-only violated: the existing planting log was modified — a ceremony may only ADD lines at the end');
