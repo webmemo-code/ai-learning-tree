@@ -57,7 +57,8 @@
   /* ---- phase 5 · Bloom: cinema mode, letterbox, captions, timeline, toast ---- */
   .panel, #timeline { transition: opacity 0.9s; }
   body.cinema .panel, body.cinema #timeline { opacity: 0; pointer-events: none; }
-  body.nohud .panel, body.nohud #timeline { display: none; } /* ?hud=0 — clean embed */
+  /* ?hud=0 — clean embed: NO overlay may appear, including cinema chrome and toasts */
+  body.nohud .panel, body.nohud #timeline, body.nohud .cbar, body.nohud #reelCap, body.nohud #toast { display: none; }
   .cbar { position: fixed; left: 0; right: 0; height: 0; background: #000; z-index: 40; transition: height 1.1s cubic-bezier(.4, 0, .2, 1); }
   #barTop { top: 0; } #barBot { bottom: 0; }
   body.cinema .cbar { height: 7vh; }
@@ -236,10 +237,12 @@ camera.position.set(19, 9.5, 19);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
-// ?dpr=1 (or lower) tames cost on software-GL / low-power embeds; an explicit value
-// also disables the adaptive-quality guard (see tick loop) — you asked for that ratio
-const dprExplicit = PARAMS.has('dpr');
-const dprCap = parseFloat(PARAMS.get('dpr') || '2');
+// ?dpr=1 (or lower) tames cost on software-GL / low-power embeds; a valid explicit value
+// also disables the adaptive-quality guard (see tick loop) — you asked for that ratio.
+// Garbage (?dpr=foo → NaN) falls back to the default cap and keeps the guard active.
+const dprParsed = parseFloat(PARAMS.get('dpr'));
+const dprExplicit = Number.isFinite(dprParsed) && dprParsed > 0;
+const dprCap = dprExplicit ? dprParsed : 2;
 renderer.setPixelRatio(Math.min(devicePixelRatio, dprCap));
 document.getElementById('app').appendChild(renderer.domElement);
 
@@ -1034,6 +1037,7 @@ function startReel(dur = REEL_DUR) {
   // wall-clock anchored: a 30s journey is 30s even when the frame rate dips
   // (essential for the recorded clip's duration; dropped frames just skip ahead)
   reel = { start: performance.now(), dur, wasAuto, msIdx: 0, seeded: false, today: false };
+  _reelTgt.set(0, REEL_K[0].ty, 0); // valid handoff target even if cancelled before the first frame
   controls.autoRotate = false;
   document.body.classList.add('cinema');
   swoosh();
@@ -1132,7 +1136,11 @@ function swoosh() { // camera-swoosh: a soft band-passed noise swell under the r
   src.connect(bp); bp.connect(g); g.connect(audio.master); src.start(t); src.stop(t + 2.3);
 }
 const soundBtn = document.getElementById('soundBtn');
-function refreshSoundBtn() { soundBtn.textContent = soundOn ? '🔊' : '🔇'; soundBtn.setAttribute('aria-pressed', String(soundOn)); }
+function refreshSoundBtn() {
+  soundBtn.textContent = soundOn ? '🔊' : '🔇';
+  soundBtn.setAttribute('aria-pressed', String(soundOn));
+  soundBtn.setAttribute('aria-label', soundOn ? 'Mute ambience and chimes' : 'Unmute ambience and chimes');
+}
 refreshSoundBtn();
 soundBtn.addEventListener('click', () => {
   soundOn = !soundOn;
@@ -1155,8 +1163,9 @@ function startRecording() {
     return false;
   }
   const stream = renderer.domElement.captureStream(30);
+  let dst = null;
   if (audio && soundOn) { // mix the garden + chimes into the clip
-    const dst = audio.ctx.createMediaStreamDestination();
+    dst = audio.ctx.createMediaStreamDestination();
     audio.master.connect(dst);
     for (const tr of dst.stream.getAudioTracks()) stream.addTrack(tr);
   }
@@ -1166,6 +1175,7 @@ function startRecording() {
   catch { toast('Recording is not supported in this browser'); recorder = null; return false; }
   recorder.ondataavailable = (e) => { if (e.data.size) recChunks.push(e.data); };
   recorder.onstop = () => {
+    if (dst) { try { audio.master.disconnect(dst); } catch { /* already gone */ } dst = null; }
     const type = (recorder && recorder.mimeType) || 'video/webm';
     recorder = null;
     const blob = new Blob(recChunks, { type });
