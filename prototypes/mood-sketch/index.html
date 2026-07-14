@@ -26,8 +26,31 @@
   }
   button:hover { background: rgba(110, 160, 240, 0.38); }
   #note { bottom: 14px; right: 16px; font-size: 11px; color: #7f93aa; padding: 8px 12px; }
-  #legendSectors { bottom: 14px; left: 16px; font-size: 11px; padding: 10px 12px; color: #9fb2c8; }
-  #legendSectors b { color: #cfe0f2; font-weight: 600; }
+  #legendSectors { bottom: 14px; left: 16px; font-size: 11px; padding: 10px 12px; color: #9fb2c8; max-width: 200px; }
+  #legendSectors b { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 6px; }
+  #legendSectors .secGrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 8px; }
+  #legendSectors .sec {
+    display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 1px 3px; border-radius: 5px;
+    transition: background 0.15s, color 0.15s;
+  }
+  #legendSectors .sec:hover { background: rgba(120, 160, 230, 0.18); color: #eaf2fb; }
+  #legendSectors .sec.active { background: rgba(120, 170, 240, 0.32); color: #fff; }
+  #legendSectors .sec .dot { width: 8px; height: 8px; }
+  .stratum { border-radius: 6px; transition: background 0.15s; } /* resting look unchanged; hover adds a wash */
+  .stratum:hover { background: rgba(120, 160, 230, 0.14); }
+  #detail { top: 16px; right: 16px; max-width: 290px; display: none; }
+  #detail.on { display: block; }
+  #detail h2 { font-size: 13.5px; margin: 0 0 6px; font-weight: 600; color: #eef4fb; padding-right: 18px; }
+  #detail .meta { color: #9fb2c8; font-size: 11.5px; margin: 3px 0; }
+  #detail a { color: #86b7ff; text-decoration: none; }
+  #detail a:hover { text-decoration: underline; }
+  #detail .tags { margin-top: 8px; display: flex; gap: 5px; flex-wrap: wrap; }
+  #detail .tag { font-size: 10.5px; color: #bcd0e6; background: rgba(120, 160, 230, 0.18); padding: 2px 7px; border-radius: 999px; }
+  #detail .x {
+    position: absolute; top: 8px; right: 10px; cursor: pointer; color: #8fa3ba; font-size: 16px; line-height: 1;
+    padding: 2px 4px; border-radius: 5px;
+  }
+  #detail .x:hover { color: #eaf2fb; background: rgba(120, 160, 230, 0.2); }
 </style>
 </head>
 <body>
@@ -36,10 +59,10 @@
 <div class="panel" id="hud">
   <h1>AI Learning Tree</h1>
   <div class="sub">mood sketch 001 · bioluminescent night garden</div>
-  <div class="stratum"><span class="dot" style="color:#e8ecff; background:#e8ecff"></span> Emergent · <i>Expert</i></div>
-  <div class="stratum"><span class="dot" style="color:#ffcf6e; background:#ffcf6e"></span> Canopy · <i>Practitioner</i></div>
-  <div class="stratum"><span class="dot" style="color:#4fd8c4; background:#4fd8c4"></span> Understory · <i>Experimenter</i></div>
-  <div class="stratum"><span class="dot" style="color:#5aa66a; background:#5aa66a"></span> Forest floor · <i>Novice</i></div>
+  <div class="stratum" data-stratum="3"><span class="dot" style="color:#e8ecff; background:#e8ecff"></span> Emergent · <i>Expert</i></div>
+  <div class="stratum" data-stratum="2"><span class="dot" style="color:#ffcf6e; background:#ffcf6e"></span> Canopy · <i>Practitioner</i></div>
+  <div class="stratum" data-stratum="1"><span class="dot" style="color:#4fd8c4; background:#4fd8c4"></span> Understory · <i>Experimenter</i></div>
+  <div class="stratum" data-stratum="0"><span class="dot" style="color:#5aa66a; background:#5aa66a"></span> Forest floor · <i>Novice</i></div>
   <div id="controls">
     <button id="replay">▶ Replay growth</button>
     <button id="spin">⏸ Orbit</button>
@@ -47,12 +70,17 @@
 </div>
 
 <div class="panel" id="legendSectors">
-  <b>Limbs:</b> CREATE (copy · images · video) &nbsp;·&nbsp; AUTOMATE (workflows)<br/>
-  DISTRIBUTE (SEO · GEO) &nbsp;·&nbsp; BUILD (no-code · low-code · pro-code)<br/>
-  Mock data — roots (private knowledge) ghost below the ground.
+  <b>Sectors — click to filter</b>
+  <div class="secGrid" id="secGrid"></div>
 </div>
 
-<div class="panel" id="note">phase 1 concept · geometry &amp; palette are placeholders, the feeling is the spec</div>
+<div class="panel" id="detail">
+  <span class="x" id="detailClose">×</span>
+  <h2 id="detailTitle"></h2>
+  <div id="detailBody"></div>
+</div>
+
+<div class="panel" id="note">phase 2 · interaction sketch · click a sector / leaf / blossom, hover a stratum</div>
 
 <script type="importmap">
 { "imports": {
@@ -106,6 +134,7 @@ const SECTORS = [
   { id: 'pro-code',  limb: 'BUILD',      az: 350, hue: 0x6a8dff, level: 4, act: 1.00, recent: 1.00, roots: 0.8 }, // the emergent hero limb
 ];
 const deg = d => (d * Math.PI) / 180;
+const secIndex = new Map(SECTORS.map((s, i) => [s.id, i])); // sector id → 0..8, the aSector value
 
 // ---------- scene scaffold ----------
 const scene = new THREE.Scene();
@@ -140,7 +169,17 @@ composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
 // ---------- growth state (uGrow sweeps 0→1; every element knows when it was born) ----------
-const U = { uTime: { value: 0 }, uGrow: { value: 0 } };
+// Shared across the three shader materials (segments / leaves / fireflies) BY REFERENCE, so
+// filter + stratum-band easing driven from one place. uFilterSector<0 → no filter (identical
+// output to phase 1). uSectorDim[i]/uSharedDim ease toward targets each frame (no snapping).
+const U = {
+  uTime: { value: 0 }, uGrow: { value: 0 },
+  uFilterSector: { value: -1 },                       // -1 = no sector filter engaged
+  uSectorDim: { value: new Array(9).fill(1) },        // per-sector brightness, eased
+  uSharedDim: { value: 1 },                           // trunk + roots (shared → dim to ~0.5)
+  uBandY0: { value: -1e6 }, uBandY1: { value: -1e6 }, // stratum-hover band, sentinel = inactive
+  uBandGain: { value: 0 },                            // eased 0→~0.6 while a stratum row is hovered
+};
 
 // ---------- branch skeleton via instanced tapered cylinders ----------
 const segs = []; // { start:V3, dir:V3, len, r, born, dist(0 root→1 tip), hue }
@@ -151,8 +190,8 @@ let leafCount = 0;
 const leafClusters = []; // { center:V3, radius, born, sector, density } — canopy blobs
 const blossoms = [];     // { pos, born, hue }
 
-function pushSeg(start, dir, len, r, born, dist, hue) {
-  segs.push({ start: start.clone(), dir: dir.clone().normalize(), len, r, born, dist, hue });
+function pushSeg(start, dir, len, r, born, dist, hue, sec = -1) {
+  segs.push({ start: start.clone(), dir: dir.clone().normalize(), len, r, born, dist, hue, sec });
 }
 
 // ---- the trunk: ONE dominant vertical axis with a slow organic waver ----
@@ -206,6 +245,7 @@ function growBranch(p0, dir0, r0, opts) {
     depth, dist0, dist1, sector, isMain, ctx, gravity, tropism, taper,
   } = opts;
   let p = p0.clone(), dir = dir0.clone().normalize(), r = r0;
+  const secIdx = opts.sector ? secIndex.get(opts.sector.id) : -1; // -1 = trunk/roots (shared)
   for (let i = 0; i < steps; i++) {
     const t = steps > 1 ? i / (steps - 1) : 0;
     // build a target direction from smooth "forces", then ease toward it
@@ -231,7 +271,7 @@ function growBranch(p0, dir0, r0, opts) {
     const len = stepLen * (1 - 0.35 * t);
     const dist = dist0 + (dist1 - dist0) * t;
     const born = born0 + bornSpan * t;
-    pushSeg(p, dir, len, r, born, dist, hue);
+    pushSeg(p, dir, len, r, born, dist, hue, secIdx);
     const pPrev = p.clone();
     p = p.clone().addScaledVector(dir, len);
     r *= taper;
@@ -299,7 +339,12 @@ for (const s of SECTORS) {
     const boundary = STRATA[lvl - 1].y0;
     const near = ctx.crossings.filter(c => Math.abs(c.y - boundary) < 0.01);
     const c = near.length ? near[(rand() * near.length) | 0] : null;
-    if (c) blossoms.push({ pos: c.pos.clone().add(V3(R(-0.15, 0.15), R(0, 0.25), R(-0.15, 0.15))), born: Math.min(0.95, c.born + 0.03), hue: s.hue });
+    // lvl is the Section level newly reached; STRATA[lvl-1] is the stratum this crossing enters
+    if (c) blossoms.push({
+      pos: c.pos.clone().add(V3(R(-0.15, 0.15), R(0, 0.25), R(-0.15, 0.15))),
+      born: Math.min(0.95, c.born + 0.03), hue: s.hue,
+      sec: secIndex.get(s.id), sectorId: s.id, stratum: STRATA[lvl - 1].name, levelLabel: STRATA[lvl - 1].level, lvl,
+    });
   }
   // roots mirror the compass below ground — spread outward and DOWN like a root flare, dim
   const nRoots = 1 + Math.round(s.roots * 2);
@@ -321,7 +366,7 @@ for (const s of SECTORS) {
   geo.translate(0, 0.5, 0); // base at origin so growth scales upward from the base
   const n = segs.length;
   const mesh = new THREE.InstancedMesh(geo, null, n);
-  const aColor = new Float32Array(n * 3), aBorn = new Float32Array(n), aDist = new Float32Array(n);
+  const aColor = new Float32Array(n * 3), aBorn = new Float32Array(n), aDist = new Float32Array(n), aSector = new Float32Array(n);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = V3(0, 1, 0), sc = V3();
   const bark = new THREE.Color(0x241d18), c = new THREE.Color();
   segs.forEach((s2, i) => {
@@ -331,31 +376,50 @@ for (const s of SECTORS) {
     mesh.setMatrixAt(i, m);
     c.set(s2.hue).lerp(bark, 1 - Math.min(1, s2.dist * 0.55 + 0.12)); // bark darkens toward the root
     aColor.set([c.r, c.g, c.b], i * 3);
-    aBorn[i] = s2.born; aDist[i] = s2.dist;
+    aBorn[i] = s2.born; aDist[i] = s2.dist; aSector[i] = s2.sec;
   });
   geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(aColor, 3));
   geo.setAttribute('aBorn', new THREE.InstancedBufferAttribute(aBorn, 1));
   geo.setAttribute('aDist', new THREE.InstancedBufferAttribute(aDist, 1));
+  geo.setAttribute('aSector', new THREE.InstancedBufferAttribute(aSector, 1));
   mesh.material = new THREE.ShaderMaterial({
     uniforms: U,
     vertexShader: /* glsl */`
-      attribute vec3 aColor; attribute float aBorn, aDist;
-      varying vec3 vColor; varying float vDist;
+      attribute vec3 aColor; attribute float aBorn, aDist, aSector;
+      varying vec3 vColor; varying float vDist, vDim, vBand;
       uniform float uGrow;
+      uniform int uFilterSector;
+      uniform float uSectorDim[9], uSharedDim, uBandY0, uBandY1, uBandGain;
       void main() {
         float s = clamp((uGrow - aBorn) / 0.05, 0.0, 1.0);   // sprout when the growth front arrives
         vec3 p = position * s;
         vColor = aColor; vDist = aDist;
+        vec4 world = modelMatrix * instanceMatrix * vec4(p, 1.0);
+        // sector dim (dim-not-hide): trunk/roots (aSector<0) share one factor; loop index keeps
+        // the array access a constant-index-expression → safe on every driver
+        float dim = 1.0;
+        if (uFilterSector >= 0) {
+          if (aSector < -0.5) dim = uSharedDim;
+          else { for (int k = 0; k < 9; k++) if (k == int(aSector + 0.5)) dim = uSectorDim[k]; }
+        }
+        vDim = dim;
+        // stratum-hover band gain, soft-edged, sentinel-safe
+        float band = smoothstep(uBandY0 - 0.2, uBandY0 + 0.2, world.y) * (1.0 - smoothstep(uBandY1 - 0.2, uBandY1 + 0.2, world.y));
+        vBand = band * uBandGain;
         gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.0);
       }`,
     fragmentShader: /* glsl */`
-      varying vec3 vColor; varying float vDist;
+      varying vec3 vColor; varying float vDist, vDim, vBand;
       uniform float uTime;
       void main() {
         // sap-light: a slow luminous pulse climbing from trunk to tips
         float front = fract(uTime * 0.09);
         float sap = exp(-pow((vDist - front) * 7.0, 2.0)) * 0.5;
         vec3 col = vColor * 0.75 + vColor * sap + vec3(0.9, 1.0, 0.8) * sap * 0.25;
+        // desaturate toward silhouette as the sector dims, then scale brightness (vDim==1 → identity)
+        float luma = dot(col, vec3(0.299, 0.587, 0.114));
+        col = mix(vec3(luma), col, clamp(vDim * 1.15, 0.0, 1.0)) * vDim;
+        col *= (1.0 + vBand);   // stratum highlight, 0 when idle
         gl_FragColor = vec4(col, 1.0);
       }`,
   });
@@ -384,7 +448,7 @@ for (const s of SECTORS) {
   const quad = new THREE.PlaneGeometry(1, 1);
   geo.index = quad.index; geo.attributes.position = quad.attributes.position; geo.attributes.uv = quad.attributes.uv;
   const off = new Float32Array(n * 3), col = new Float32Array(n * 3);
-  const born = new Float32Array(n), phase = new Float32Array(n), size = new Float32Array(n);
+  const born = new Float32Array(n), phase = new Float32Array(n), size = new Float32Array(n), sect = new Float32Array(n);
   const c = new THREE.Color(), fresh = new THREE.Color(0xa8ff9e), gold = new THREE.Color(0xffb84d);
   spots.forEach((ls, i) => {
     const s = ls.sector;
@@ -397,25 +461,39 @@ for (const s of SECTORS) {
     born[i] = Math.min(0.98, ls.born + R(0.01, 0.06));
     phase[i] = R(0, Math.PI * 2);
     size[i] = R(0.13, 0.30);
+    sect[i] = secIndex.get(s.id);
   });
   geo.setAttribute('aOffset', new THREE.InstancedBufferAttribute(off, 3));
   geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(col, 3));
   geo.setAttribute('aBorn', new THREE.InstancedBufferAttribute(born, 1));
   geo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phase, 1));
   geo.setAttribute('aSize', new THREE.InstancedBufferAttribute(size, 1));
+  geo.setAttribute('aSector', new THREE.InstancedBufferAttribute(sect, 1));
   const mat = new THREE.ShaderMaterial({
     uniforms: { ...U, uCamRight: { value: V3(1, 0, 0) }, uCamUp: { value: V3(0, 1, 0) } },
     transparent: true, depthWrite: false,
     vertexShader: /* glsl */`
-      attribute vec3 aOffset, aColor; attribute float aBorn, aPhase, aSize;
+      attribute vec3 aOffset, aColor; attribute float aBorn, aPhase, aSize, aSector;
       uniform vec3 uCamRight, uCamUp; uniform float uGrow, uTime;
+      uniform int uFilterSector;
+      uniform float uSectorDim[9], uSharedDim, uBandY0, uBandY1, uBandGain;
       varying vec3 vColor; varying vec2 vUv; varying float vTw;
       void main() {
         float s = clamp((uGrow - aBorn) / 0.04, 0.0, 1.0);
         s = s * (1.6 - 0.6 * s); // overshoot pop when a leaf sprouts
         vec3 sway = vec3(sin(uTime * 1.3 + aPhase), 0.0, cos(uTime * 1.1 + aPhase)) * 0.045; // wind
         vec3 world = aOffset + sway + (uCamRight * position.x + uCamUp * position.y) * aSize * s;
-        vColor = aColor; vUv = uv; vTw = aPhase;
+        // sector dim + stratum band folded into the emitted color (idle → identity)
+        float dim = 1.0;
+        if (uFilterSector >= 0) {
+          if (aSector < -0.5) dim = uSharedDim;
+          else { for (int k = 0; k < 9; k++) if (k == int(aSector + 0.5)) dim = uSectorDim[k]; }
+        }
+        float band = smoothstep(uBandY0 - 0.2, uBandY0 + 0.2, world.y) * (1.0 - smoothstep(uBandY1 - 0.2, uBandY1 + 0.2, world.y));
+        vec3 lc = aColor;
+        float luma = dot(lc, vec3(0.299, 0.587, 0.114));
+        lc = mix(vec3(luma), lc, clamp(dim * 1.15, 0.0, 1.0)) * dim * (1.0 + band * uBandGain);
+        vColor = lc; vUv = uv; vTw = aPhase;
         gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
       }`,
     fragmentShader: /* glsl */`
@@ -446,9 +524,15 @@ const blossomMeshes = [];
   const g = new THREE.SphereGeometry(0.15, 14, 14);
   for (const b of blossoms) {
     const c = new THREE.Color(b.hue).lerp(new THREE.Color(0xfff0f6), 0.72).multiplyScalar(2.4); // hot → blooms hard
-    const m2 = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: c }));
+    const m2 = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: c.clone() }));
     m2.position.copy(b.pos);
     m2.userData.born = b.born;
+    // pick + dim metadata: blossoms are plain meshes, so we lerp material.color instead of a shader dim
+    m2.userData.sec = b.sec; m2.userData.sectorId = b.sectorId; m2.userData.stratum = b.stratum;
+    m2.userData.levelLabel = b.levelLabel; m2.userData.lvl = b.lvl;
+    m2.userData.baseColor = c.clone();
+    m2.userData.gray = new THREE.Color().setScalar((c.r + c.g + c.b) / 3);
+    m2.userData.dim = 1;
     scene.add(m2);
     blossomMeshes.push(m2);
   }
@@ -462,11 +546,11 @@ const blossomMeshes = [];
     const anchors = leafClusters.filter(l => l.sector === s);
     for (let i = 0; i < nf && anchors.length; i++) {
       const a = anchors[(rand() * anchors.length) | 0];
-      pts.push({ center: a.center, radius: a.radius, hue: s.hue });
+      pts.push({ center: a.center, radius: a.radius, hue: s.hue, sec: secIndex.get(s.id) });
     }
   }
   const n = pts.length;
-  const pos = new Float32Array(n * 3), col = new Float32Array(n * 3), ph = new Float32Array(n);
+  const pos = new Float32Array(n * 3), col = new Float32Array(n * 3), ph = new Float32Array(n), sect = new Float32Array(n);
   const c = new THREE.Color(), warm = new THREE.Color(0xfffbe0);
   pts.forEach((f, i) => {
     const rr = f.radius * 1.25; // fireflies hover around the same canopy blobs the leaves cluster in
@@ -474,20 +558,28 @@ const blossomMeshes = [];
     c.set(f.hue).lerp(warm, 0.6).multiplyScalar(2.0);
     col.set([c.r, c.g, c.b], i * 3);
     ph[i] = R(0, Math.PI * 2);
+    sect[i] = f.sec;
   });
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
   g.setAttribute('aPhase', new THREE.BufferAttribute(ph, 1));
+  g.setAttribute('aSector', new THREE.BufferAttribute(sect, 1));
   const m2 = new THREE.ShaderMaterial({
     uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     vertexShader: /* glsl */`
-      attribute vec3 aColor; attribute float aPhase;
-      uniform float uTime, uGrow; varying vec3 vColor; varying float vA;
+      attribute vec3 aColor; attribute float aPhase, aSector;
+      uniform float uTime, uGrow; uniform int uFilterSector; uniform float uSectorDim[9], uSharedDim;
+      varying vec3 vColor; varying float vA;
       void main() {
         vec3 p = position + vec3(sin(uTime * 0.7 + aPhase) * 0.35, sin(uTime * 0.5 + aPhase * 2.1) * 0.25, cos(uTime * 0.6 + aPhase) * 0.35);
-        vColor = aColor;
-        vA = (0.55 + 0.45 * sin(uTime * 2.2 + aPhase * 3.7)) * smoothstep(0.85, 1.0, uGrow);
+        float dim = 1.0;
+        if (uFilterSector >= 0) {
+          if (aSector < -0.5) dim = uSharedDim;
+          else { for (int k = 0; k < 9; k++) if (k == int(aSector + 0.5)) dim = uSectorDim[k]; }
+        }
+        vColor = aColor * dim;
+        vA = (0.55 + 0.45 * sin(uTime * 2.2 + aPhase * 3.7)) * smoothstep(0.85, 1.0, uGrow) * dim; // dimmed motes fade out
         vec4 mv = viewMatrix * vec4(p, 1.0);
         gl_PointSize = 26.0 / max(1.0, -mv.z);
         gl_Position = projectionMatrix * mv;
@@ -506,6 +598,7 @@ const blossomMeshes = [];
 }
 
 // ---------- strata bands — atmosphere you can read, not gridlines ----------
+const strataRings = []; // { mesh, y } — one boundary ring per stratum floor (i=1..3)
 for (let i = 1; i < STRATA.length; i++) {
   const s = STRATA[i];
   const ring = new THREE.Mesh(
@@ -514,7 +607,9 @@ for (let i = 1; i < STRATA.length; i++) {
   );
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = s.y0;
+  ring.material.userData = { base: 0.018 }; // rest opacity, restored on mouse-leave
   scene.add(ring);
+  strataRings.push({ mesh: ring, y: s.y0 });
 }
 // stratum labels as small billboarded sprites at the rim
 function labelSprite(text, color) {
@@ -529,13 +624,16 @@ function labelSprite(text, color) {
   sp.scale.set(4.6, 1.15, 1);
   return sp;
 }
+const strataLabels = []; // index-aligned with STRATA, for the legend-hover brighten
 STRATA.forEach((s, i) => {
   const sp = labelSprite(`${s.name} · ${s.level}`, '#' + new THREE.Color(s.tint).getHexString());
   sp.position.set(11.6, (s.y0 + s.y1) / 2, 0);
   scene.add(sp);
+  strataLabels.push(sp);
 });
 
 // ---------- ground: the compass rose, drawn once into a canvas texture ----------
+let groundMesh;
 {
   const cv = document.createElement('canvas'); cv.width = cv.height = 1024;
   const ctx = cv.getContext('2d');
@@ -573,7 +671,223 @@ STRATA.forEach((s, i) => {
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -0.02;
   scene.add(ground);
+  groundMesh = ground;
 }
+
+// ---------- compass wedge highlight — a glowing arc under the selected sector's limb ----------
+// Built in world XZ directly (azimuth = atan2(z,x), matching how limbs place themselves), so the
+// glow always sits beneath the real bough regardless of the ground texture's UV orientation.
+const wedge = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({
+  transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+}));
+wedge.position.y = 0.01; wedge.renderOrder = 2; wedge.visible = false;
+scene.add(wedge);
+let wedgeTargetOpacity = 0;
+function buildWedge(azCenter, half, rIn, rOut, steps) {
+  const g = new THREE.BufferGeometry();
+  const pos = [], idx = [];
+  for (let i = 0; i <= steps; i++) {
+    const a = azCenter - half + (2 * half) * (i / steps);
+    pos.push(Math.cos(a) * rIn, 0, Math.sin(a) * rIn);
+    pos.push(Math.cos(a) * rOut, 0, Math.sin(a) * rOut);
+  }
+  for (let i = 0; i < steps; i++) {
+    const b = i * 2; idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+  }
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  return g;
+}
+function updateWedge(idx) {
+  if (idx < 0) { wedgeTargetOpacity = 0; return; }
+  const s = SECTORS[idx];
+  wedge.geometry.dispose();
+  wedge.geometry = buildWedge(deg(s.az), deg(20), 4.6, 14.2, 16); // per-sector az ±20°
+  wedge.material.color.set(s.hue);
+  wedge.visible = true;
+  wedgeTargetOpacity = 0.5;
+}
+
+// ================= INTERACTION MODEL (phase 2) =================
+// picking (drag-vs-click discriminated) · sector filter (dim-not-hide) · Sector Walk tour ·
+// leaf/blossom detail panel · stratum-legend hover. All eased; idle output == phase 1.
+const raycaster = new THREE.Raycaster();
+const easeInOutCubic = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const defaultCamPos = camera.position.clone();     // the load framing we return to
+const defaultTarget = controls.target.clone();
+
+// ---- sector filter state ----
+let filterIndex = -1;                 // -1 = no filter
+let autoRotatePrev = controls.autoRotate;
+function applyFilter(idx) {           // idx: 0..8 sets, -1 clears (no toggle here — callers decide)
+  if (idx === filterIndex) return;
+  const wasFiltered = filterIndex >= 0;
+  filterIndex = idx;
+  updateWedge(idx);
+  refreshLegendActive();
+  if (idx >= 0) {
+    U.uFilterSector.value = idx;                 // engage immediately; dims ease in
+    if (!wasFiltered) autoRotatePrev = controls.autoRotate;
+    tourToSector(idx);                           // Sector Walk
+  } else {
+    startTour(defaultCamPos.clone(), defaultTarget.clone(), 1.6, true); // return + restore autoRotate
+  }
+}
+
+// ---- camera tour (ease-in-out, cancelled by any manual orbit) ----
+let tour = null; // { t, dur, p0, p1, tg0, tg1, restoreAuto }
+function startTour(p1, tg1, dur, restoreAuto) {
+  tour = { t: 0, dur, p0: camera.position.clone(), p1, tg0: controls.target.clone(), tg1, restoreAuto: !!restoreAuto };
+  controls.autoRotate = false; // never spin mid-flight
+}
+function cancelTour() { // hand control back to the user without a jump
+  if (!tour) return;
+  if (tour.restoreAuto) controls.autoRotate = autoRotatePrev;
+  tour = null;
+}
+function tourToSector(idx) {
+  const s = SECTORS[idx];
+  const clusters = leafClusters.filter(c => c.sector === s);
+  const centroid = new THREE.Vector3();
+  if (clusters.length) { for (const c of clusters) centroid.add(c.center); centroid.multiplyScalar(1 / clusters.length); }
+  else centroid.set(Math.cos(deg(s.az)) * 6, 6, Math.sin(deg(s.az)) * 6);
+  const dir = V3(Math.cos(deg(s.az)), 0, Math.sin(deg(s.az)));
+  const dist = 11 + s.act * 4 + s.level * 0.6;                       // frame the whole limb
+  const camPos = centroid.clone().addScaledVector(dir, dist).add(V3(0, 2.6, 0));
+  startTour(camPos, centroid.clone(), 1.6, false);
+}
+
+// ---- pick pipeline ----
+const pointerNDC = (x, y, out) => out.set((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1);
+const _ndc = new THREE.Vector2(), _v = new THREE.Vector3();
+function nearestLeafCluster(x, y, maxPx) {        // screen-space nearest (leaves aren't raycastable)
+  let best = -1, bestD = maxPx * maxPx;
+  for (let i = 0; i < leafClusters.length; i++) {
+    _v.copy(leafClusters[i].center).project(camera);
+    if (_v.z > 1) continue;                       // behind camera
+    const sx = (_v.x * 0.5 + 0.5) * innerWidth, sy = (-_v.y * 0.5 + 0.5) * innerHeight;
+    const d = (sx - x) * (sx - x) + (sy - y) * (sy - y);
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  return best;
+}
+function azToSector(az) {                          // az radians → nearest sector index
+  let best = 0, bestD = 1e9;
+  for (let i = 0; i < SECTORS.length; i++) {
+    let d = Math.abs(((deg(SECTORS[i].az) - az + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  return best;
+}
+function doPick(x, y) {
+  pointerNDC(x, y, _ndc);
+  raycaster.setFromCamera(_ndc, camera);
+  // 1) blossoms — raycast the little spheres directly (does NOT touch the filter)
+  const bHit = raycaster.intersectObjects(blossomMeshes, false);
+  if (bHit.length) { showBlossom(bHit[0].object); return 'blossom'; }
+  // 2) leaves — nearest projected cluster within ~24px (also filter-neutral)
+  const li = nearestLeafCluster(x, y, 24);
+  if (li >= 0) { showLeaf(li); return 'leaf'; }
+  // 3) ground compass wedge → toggle sector filter
+  if (groundMesh) {
+    const gHit = raycaster.intersectObject(groundMesh, false);
+    if (gHit.length) {
+      const p = gHit[0].point;
+      const idx = azToSector(Math.atan2(p.z, p.x));
+      applyFilter(idx === filterIndex ? -1 : idx);
+      closePanel();
+      return 'sector';
+    }
+  }
+  // 4) empty space → clear everything
+  applyFilter(-1); closePanel();
+  return null;
+}
+
+// ---- detail panel (mock data, deterministic — never consumes the tree's PRNG) ----
+const elDetail = document.getElementById('detail');
+const elTitle = document.getElementById('detailTitle');
+const elBody = document.getElementById('detailBody');
+document.getElementById('detailClose').addEventListener('click', closePanel);
+function closePanel() { elDetail.classList.remove('on'); }
+function panelVisible() { return elDetail.classList.contains('on'); }
+const LEAF_TITLES = ['committed a draft', 'shipped an experiment', 'refined a prompt', 'published a note',
+  'reviewed a workflow', 'tuned a pipeline', 'logged a finding', 'merged an improvement'];
+const LEAF_TAGS = ['draft', 'shipped', 'evergreen', 'wip', 'insight', 'refactor', 'cloud', 'local'];
+const hashSeed = (a, b) => (Math.imul(a ^ 0x9e3779b9, 2654435761) ^ Math.imul(b + 1, 40503)) >>> 0;
+function relDate(days) { // deterministic, human-ish
+  if (days < 1) return 'today';
+  if (days < 14) return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (days < 60) return `${Math.round(days / 7)} weeks ago`;
+  return `${Math.round(days / 30)} months ago`;
+}
+function showLeaf(i) {
+  const cl = leafClusters[i], s = cl.sector;
+  const pr = mulberry32(hashSeed(i, secIndex.get(s.id)));  // second, independent stream — geometry untouched
+  const title = LEAF_TITLES[(pr() * LEAF_TITLES.length) | 0];
+  const days = 1 + Math.floor(pr() * (s.recent > 0.5 ? 12 : 200)); // fresher sectors → more recent event
+  const sha = (pr() * 0xfffffff | 0).toString(16).padStart(7, '0').slice(0, 7);
+  const t1 = LEAF_TAGS[(pr() * LEAF_TAGS.length) | 0], t2 = LEAF_TAGS[(pr() * LEAF_TAGS.length) | 0];
+  elTitle.textContent = `🍃 ${s.id}`;
+  elBody.innerHTML =
+    `<div class="meta">${title} · <b>${relDate(days)}</b></div>` +
+    `<div class="meta">link: <a href="#" onclick="return false">github.com/webmemo-code/${s.limb.toLowerCase()}/commit/${sha}</a></div>` +
+    `<div class="tags"><span class="tag">${t1}</span>${t2 !== t1 ? `<span class="tag">${t2}</span>` : ''}</div>`;
+  elDetail.classList.add('on');
+}
+function showBlossom(mesh) {
+  const u = mesh.userData;
+  const pr = mulberry32(hashSeed(u.lvl, u.sec));
+  const mo = String(2 + (pr() * 6 | 0)).padStart(2, '0'), da = String(1 + (pr() * 27 | 0)).padStart(2, '0');
+  elTitle.textContent = `🌸 Level-up`;
+  elBody.innerHTML =
+    `<div class="meta"><b>${u.sectorId}</b> reached <b>${u.stratum}</b> · ${u.levelLabel}</div>` +
+    `<div class="meta">Milestone: certification badge · 2026-${mo}-${da}</div>`;
+  elDetail.classList.add('on');
+}
+
+// ---- pointer: drag-vs-click discriminator (click only if <5px AND <200ms) ----
+const dom = renderer.domElement;
+let downX = 0, downY = 0, downT = 0;
+dom.addEventListener('pointerdown', e => { downX = e.clientX; downY = e.clientY; downT = performance.now(); cancelTour(); });
+dom.addEventListener('pointerup', e => {
+  const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
+  if (moved <= 5 && performance.now() - downT <= 200) doPick(e.clientX, e.clientY); // a click, not an orbit drag
+});
+// hover affordance — pointer cursor over a pickable, throttled
+let hoverT = 0;
+dom.addEventListener('pointermove', e => {
+  const now = performance.now();
+  if (now - hoverT < 60) return; hoverT = now;
+  pointerNDC(e.clientX, e.clientY, _ndc);
+  raycaster.setFromCamera(_ndc, camera);
+  const over = raycaster.intersectObjects(blossomMeshes, false).length > 0 || nearestLeafCluster(e.clientX, e.clientY, 24) >= 0;
+  dom.style.cursor = over ? 'pointer' : '';
+});
+
+// ---- keyboard: Escape clears filter + closes panel ----
+addEventListener('keydown', e => { if (e.key === 'Escape') { applyFilter(-1); closePanel(); } });
+
+// ---- sector legend: 9 clickable chips with hue dots ----
+const secGrid = document.getElementById('secGrid');
+SECTORS.forEach((s, i) => {
+  const el = document.createElement('span');
+  el.className = 'sec'; el.dataset.sec = i;
+  el.innerHTML = `<span class="dot" style="color:#${new THREE.Color(s.hue).getHexString()};background:#${new THREE.Color(s.hue).getHexString()}"></span>${s.id}`;
+  el.addEventListener('click', () => applyFilter(i === filterIndex ? -1 : i));
+  secGrid.appendChild(el);
+});
+function refreshLegendActive() {
+  [...secGrid.children].forEach((el, i) => el.classList.toggle('active', i === filterIndex));
+}
+
+// ---- stratum legend hover: highlight a height band ----
+let hoveredStratum = -1;
+document.querySelectorAll('#hud .stratum').forEach(row => {
+  const k = +row.dataset.stratum; // HUD lists strata top-down; data-stratum maps to the STRATA index
+  row.addEventListener('mouseenter', () => { hoveredStratum = k; U.uBandY0.value = STRATA[k].y0; U.uBandY1.value = STRATA[k].y1; });
+  row.addEventListener('mouseleave', () => { hoveredStratum = -1; });
+});
 
 // ---------- growth / replay (wall-clock driven — frame-rate independent) ----------
 let growStart = performance.now(), growDur = 4500; // initial load: the 4.5s grow-in echo
@@ -593,12 +907,53 @@ function tick() {
   const dt = Math.min(clock.getDelta(), 0.05);
   U.uTime.value += dt;
   U.uGrow.value = Math.min(1, (performance.now() - growStart) / growDur);
+
+  // ---- ease interaction state toward targets (~0.4s settle, frame-rate independent) ----
+  const k = 1 - Math.exp(-dt / 0.13);
+  for (let i = 0; i < 9; i++) {
+    const tgt = filterIndex < 0 ? 1 : (i === filterIndex ? 1 : 0.2);
+    U.uSectorDim.value[i] += (tgt - U.uSectorDim.value[i]) * k;
+  }
+  U.uSharedDim.value += ((filterIndex < 0 ? 1 : 0.5) - U.uSharedDim.value) * k;
+  // once a cleared filter has fully eased back to full, drop the uniform to -1 (keeps output byte-identical to idle)
+  if (filterIndex < 0 && U.uFilterSector.value >= 0) {
+    let mx = Math.abs(U.uSharedDim.value - 1);
+    for (let i = 0; i < 9; i++) mx = Math.max(mx, Math.abs(U.uSectorDim.value[i] - 1));
+    if (mx < 0.01) U.uFilterSector.value = -1;
+  }
+  U.uBandGain.value += ((hoveredStratum >= 0 ? 0.6 : 0) - U.uBandGain.value) * k;
+
+  // wedge glow + stratum ring/label brighten (all eased)
+  wedge.material.opacity += (wedgeTargetOpacity - wedge.material.opacity) * k;
+  if (wedge.material.opacity < 0.01 && wedgeTargetOpacity === 0) wedge.visible = false;
+  for (const rg of strataRings) {
+    const near = hoveredStratum >= 0 && (Math.abs(rg.y - STRATA[hoveredStratum].y0) < 0.01 || Math.abs(rg.y - STRATA[hoveredStratum].y1) < 0.01);
+    rg.mesh.material.opacity += ((near ? 0.10 : rg.mesh.material.userData.base) - rg.mesh.material.opacity) * k;
+  }
+  strataLabels.forEach((sp, i) => { sp.material.opacity += ((hoveredStratum === i ? 1.0 : 0.6) - sp.material.opacity) * k; });
+
+  // blossoms: pop scale (unchanged) + eased dim (plain meshes → lerp material.color)
   for (const b of blossomMeshes) {
     const s = Math.max(0.0001, Math.min(1, (U.uGrow.value - b.userData.born) / 0.05));
     const pop = s * (1.7 - 0.7 * s);
     b.scale.setScalar(pop * (1 + 0.12 * Math.sin(U.uTime.value * 2.0 + b.position.y)));
+    const dimT = filterIndex < 0 ? 1 : (b.userData.sec === filterIndex ? 1 : 0.2);
+    b.userData.dim += (dimT - b.userData.dim) * k;
+    const d = b.userData.dim;
+    b.material.color.copy(b.userData.baseColor).lerp(b.userData.gray, (1 - d) * 0.7).multiplyScalar(0.2 + 0.8 * d);
   }
-  controls.update();
+
+  // camera: run the tour, else hand off to OrbitControls
+  if (tour) {
+    tour.t += dt;
+    const u = easeInOutCubic(Math.min(1, tour.t / tour.dur));
+    camera.position.lerpVectors(tour.p0, tour.p1, u);
+    controls.target.lerpVectors(tour.tg0, tour.tg1, u);
+    camera.lookAt(controls.target);
+    if (tour.t >= tour.dur) { const ra = tour.restoreAuto; tour = null; if (ra) controls.autoRotate = autoRotatePrev; }
+  } else {
+    controls.update();
+  }
   composer.render();
 }
 tick();
@@ -617,7 +972,13 @@ addEventListener('resize', syncSize);
 new ResizeObserver(syncSize).observe(document.body);
 syncSize();
 
-window.__dbg = { U, camera, controls, segs: segs.length, leaves: leafCount, clusters: leafClusters.length, blossoms: blossoms.length, trunkH: TRUNK_H };
+window.__dbg = {
+  U, camera, controls, segs: segs.length, leaves: leafCount, clusters: leafClusters.length, blossoms: blossoms.length, trunkH: TRUNK_H,
+  // ---- phase-2 hooks for the Playwright verifier (in addition to real pointer events) ----
+  setFilter: id => applyFilter(id == null ? -1 : (secIndex.has(id) ? secIndex.get(id) : -1)), // id string or null
+  pickAt: (x, y) => doPick(x, y),                                                              // CSS px → runs the pick pipeline
+  state: () => ({ filter: filterIndex < 0 ? null : SECTORS[filterIndex].id, panelVisible: panelVisible(), tourActive: !!tour }),
+};
 </script>
 </body>
 </html>
