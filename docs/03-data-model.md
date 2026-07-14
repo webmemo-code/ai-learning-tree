@@ -54,8 +54,8 @@ version-controlled. Rebuilding from scratch is always possible and always identi
 - ts: 2026-05-30
   sector: distribute.geo
   level: 3            # → Practitioner: bough may now grow into the canopy band
-  evidence: "https://www.webmemo.ch/...  (GEO workflow in production)"
-  note: "Repeatable GEO audit workflow, used weekly"
+  evidence: "https://www.webmemo.ch/geo-audit-workflow/"   # URL only — prose goes in note
+  note: "GEO workflow in production — repeatable audit, used weekly"
 ```
 
 - **Shipped** (`kind: shipped`): fruit 🍎 — launched site, published article,
