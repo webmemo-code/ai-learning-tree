@@ -10,10 +10,11 @@ as something alive — and something worth showing to other knowledge workers to
 
 > **Status: 🌲🌲 Forest phase (6 of 6).** The tree pipeline is live (nightly GitHub +
 > Obsidian harvest → deterministic `tree.json` → interactive renderer with the 30s
-> replay), and the community layer is taking shape: grove coordination is decided
-> (ADR-0006/0007), the [grove template](grove/template/) exists, and the
-> [walkable grove](prototypes/grove-walk/) has its first prototype. The origin
-> brain dump lives in [issue #1](https://github.com/webmemo-code/ai-learning-tree/issues/1).
+> replay), grove coordination is decided (ADR-0006/0007), and **the
+> [first real grove is planted](https://github.com/webmemo-code/my-ai-learning-journey)** —
+> this repo's own tree stands at slot 0 of its commons, joined by the same
+> [planting ceremony](grove/template/README.md) every future member will use. The
+> origin brain dump lives in [issue #1](https://github.com/webmemo-code/ai-learning-tree/issues/1).
 
 Sibling project: [ai-periodic-cube](https://github.com/webmemo-code/ai-periodic-cube) —
 the Periodic Cube of AI, whose visual language (bloom, camera choreography, sound,
