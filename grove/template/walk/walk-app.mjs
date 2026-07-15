@@ -61,8 +61,11 @@ export async function loadGrove(base, parsePlantings) {
   return { config, events: parsePlantings(await logRes.text()) };
 }
 
-// the tree taxonomy's nine sector hues (docs/03) — synthetic impostors draw from these
-export const HUES = [0xffb54d, 0xff6f91, 0xff4d6d, 0x7bd88f, 0x4fd8c4, 0x3fa7ff, 0xb28dff, 0x8f7bff, 0x5aa0e6];
+// hand-tuned approximations of the taxonomy sector hues (docs/03), ordered to match
+// generator/taxonomy.mjs SECTORS (index 9 = create.3d). These are NOT the exact
+// taxonomy values — synthetic impostors only need a plausible palette, so small
+// drift is fine. Real impostors read exact hues from tree.json (specFromTreeJson).
+export const HUES = [0xffb54d, 0xff6f91, 0xff4d6d, 0x7bd88f, 0x4fd8c4, 0x3fa7ff, 0xb28dff, 0x8f7bff, 0x5aa0e6, 0xff8f4d];
 
 // impostor from a member's REAL tree.json: bounds + sector hues (docs/05 G5)
 export function specFromTreeJson(T) {
@@ -84,7 +87,7 @@ export function specSynthetic(id) {
   const level = 1 + Math.floor(Math.min(3.999, R() * R() * 6));   // most trees young — honest demographics
   const height = 3.5 + level * 2.4 + R() * 2;
   const crownR = 2.2 + level * 1.1 + R();
-  const domHue = HUES[Math.floor(R() * 9)], altHue = HUES[Math.floor(R() * 9)];
+  const domHue = HUES[Math.floor(R() * HUES.length)], altHue = HUES[Math.floor(R() * HUES.length)];
   const clusters = [];
   const count = 4 + level * 4 + Math.floor(R() * 7);
   for (let i = 0; i < count; i++) {

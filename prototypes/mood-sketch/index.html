@@ -209,6 +209,8 @@ try {
 // ---------- strata + sectors come from the data now (no hardcoded aggregates) ----------
 const STRATA = TREE.strata;                       // [{ name, level, y0, y1, tint }]
 const SECTORS = TREE.sectors;                     // [{ id, label, limb, az, hue, index, level, act, recent, roots }]
+const NSEC = SECTORS.length;                       // sector count, taxonomy-driven (was hardcoded 9);
+                                                   // interpolated into the GLSL uSectorDim[] size + loops
 const secIndex = new Map(SECTORS.map((s, i) => [s.label, i])); // public identity = short label (seo, pro-code)
 const NOW = Date.parse(TREE.generatedFrom.latestTs); // the log's now-anchor (relative dates key off this)
 const DAY = 86400000;
@@ -271,7 +273,7 @@ composer.addPass(new OutputPass());
 const U = {
   uTime: { value: 0 }, uGrow: { value: 0 },
   uFilterSector: { value: -1 },                       // -1 = no sector filter engaged
-  uSectorDim: { value: new Array(9).fill(1) },        // per-sector brightness, eased
+  uSectorDim: { value: new Array(NSEC).fill(1) },     // per-sector brightness, eased
   uSharedDim: { value: 1 },                           // trunk + roots (shared → dim to ~0.5)
   uBandY0: { value: -1e6 }, uBandY1: { value: -1e6 }, // stratum-hover band, sentinel = inactive
   uBandGain: { value: 0 },                            // eased 0→~0.6 while a stratum row is hovered
@@ -341,7 +343,7 @@ const rootClusters = [];            // owner mode: per-sector root centroids, pi
       varying vec3 vColor, vGlow; varying float vDist, vDim, vBand, vRoot;
       uniform float uGrow;
       uniform int uFilterSector;
-      uniform float uSectorDim[9], uSharedDim, uBandY0, uBandY1, uBandGain;
+      uniform float uSectorDim[${NSEC}], uSharedDim, uBandY0, uBandY1, uBandGain;
       void main() {
         float s = clamp((uGrow - aBorn) / 0.05, 0.0, 1.0);   // sprout when the growth front arrives
         vec3 p = position * s;
@@ -352,7 +354,7 @@ const rootClusters = [];            // owner mode: per-sector root centroids, pi
         float dim = 1.0;
         if (uFilterSector >= 0) {
           if (aSector < -0.5) dim = uSharedDim;
-          else { for (int k = 0; k < 9; k++) if (k == int(aSector + 0.5)) dim = uSectorDim[k]; }
+          else { for (int k = 0; k < ${NSEC}; k++) if (k == int(aSector + 0.5)) dim = uSectorDim[k]; }
         }
         vDim = dim;
         // stratum-hover band gain, soft-edged, sentinel-safe
@@ -450,7 +452,7 @@ let leafCount = 0;
       attribute vec3 aOffset, aColor; attribute float aBorn, aPhase, aSize, aSector;
       uniform vec3 uCamRight, uCamUp; uniform float uGrow, uTime, uRootsMode;
       uniform int uFilterSector;
-      uniform float uSectorDim[9], uSharedDim, uBandY0, uBandY1, uBandGain;
+      uniform float uSectorDim[${NSEC}], uSharedDim, uBandY0, uBandY1, uBandGain;
       varying vec3 vColor; varying vec2 vUv; varying float vTw;
       void main() {
         float s = clamp((uGrow - aBorn) / 0.04, 0.0, 1.0);
@@ -461,7 +463,7 @@ let leafCount = 0;
         float dim = 1.0;
         if (uFilterSector >= 0) {
           if (aSector < -0.5) dim = uSharedDim;
-          else { for (int k = 0; k < 9; k++) if (k == int(aSector + 0.5)) dim = uSectorDim[k]; }
+          else { for (int k = 0; k < ${NSEC}; k++) if (k == int(aSector + 0.5)) dim = uSectorDim[k]; }
         }
         float band = smoothstep(uBandY0 - 0.2, uBandY0 + 0.2, world.y) * (1.0 - smoothstep(uBandY1 - 0.2, uBandY1 + 0.2, world.y));
         vec3 lc = aColor;
@@ -536,14 +538,14 @@ if (TREE.fireflies.length) {
     uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     vertexShader: /* glsl */`
       attribute vec3 aColor; attribute float aPhase, aSector;
-      uniform float uTime, uGrow, uRootsMode; uniform int uFilterSector; uniform float uSectorDim[9], uSharedDim;
+      uniform float uTime, uGrow, uRootsMode; uniform int uFilterSector; uniform float uSectorDim[${NSEC}], uSharedDim;
       varying vec3 vColor; varying float vA;
       void main() {
         vec3 p = position + vec3(sin(uTime * 0.7 + aPhase) * 0.35, sin(uTime * 0.5 + aPhase * 2.1) * 0.25, cos(uTime * 0.6 + aPhase) * 0.35);
         float dim = 1.0;
         if (uFilterSector >= 0) {
           if (aSector < -0.5) dim = uSharedDim;
-          else { for (int k = 0; k < 9; k++) if (k == int(aSector + 0.5)) dim = uSectorDim[k]; }
+          else { for (int k = 0; k < ${NSEC}; k++) if (k == int(aSector + 0.5)) dim = uSectorDim[k]; }
         }
         float rootDim = 1.0 - 0.88 * uRootsMode;                 // motes fade with the rest of the crown
         vColor = aColor * dim * rootDim;
@@ -701,7 +703,7 @@ const defaultTarget = controls.target.clone();
 // ---- sector filter state ----
 let filterIndex = -1;                 // -1 = no filter
 let autoRotatePrev = controls.autoRotate;
-function applyFilter(idx) {           // idx: 0..8 sets, -1 clears (no toggle here — callers decide)
+function applyFilter(idx) {           // idx: 0..NSEC-1 sets, -1 clears (no toggle here — callers decide)
   if (idx === filterIndex) return;
   const wasFiltered = filterIndex >= 0;
   filterIndex = idx;
@@ -959,7 +961,7 @@ addEventListener('keydown', e => {
   closePanel();
 });
 
-// ---- sector legend: 9 clickable chips with hue dots ----
+// ---- sector legend: one clickable chip per sector, with hue dots ----
 const secGrid = document.getElementById('secGrid');
 SECTORS.forEach((s, i) => {
   const el = document.createElement('span');
@@ -1307,7 +1309,7 @@ function tick() {
 
   // ---- ease interaction state toward targets (~0.4s settle, frame-rate independent) ----
   const k = 1 - Math.exp(-dt / 0.13);
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < NSEC; i++) {
     const tgt = filterIndex < 0 ? 1 : (i === filterIndex ? 1 : 0.2);
     U.uSectorDim.value[i] += (tgt - U.uSectorDim.value[i]) * k;
   }
@@ -1315,7 +1317,7 @@ function tick() {
   // once a cleared filter has fully eased back to full, drop the uniform to -1 (keeps output byte-identical to idle)
   if (filterIndex < 0 && U.uFilterSector.value >= 0) {
     let mx = Math.abs(U.uSharedDim.value - 1);
-    for (let i = 0; i < 9; i++) mx = Math.max(mx, Math.abs(U.uSectorDim.value[i] - 1));
+    for (let i = 0; i < NSEC; i++) mx = Math.max(mx, Math.abs(U.uSectorDim.value[i] - 1));
     if (mx < 0.01) U.uFilterSector.value = -1;
   }
   U.uBandGain.value += ((hoveredStratum >= 0 ? 0.6 : 0) - U.uBandGain.value) * k;

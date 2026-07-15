@@ -21,7 +21,7 @@ owner: webmemo-code
 seed: "webmemo-code"          # determinism anchor for the growth generator PRNG, do not change
                                # casually — changing it reshuffles every PRNG stream and every
                                # existing branch/leaf/root will look different on next build.
-taxonomy: default-v1           # the 9-sector CREATE/AUTOMATE/DISTRIBUTE/BUILD taxonomy (generator/taxonomy.mjs)
+taxonomy: default-v1           # the CREATE/AUTOMATE/DISTRIBUTE/BUILD taxonomy (generator/taxonomy.mjs, 10 sectors)
 
 # ----------------------------------------------------------------------------------------
 # 1. explicit repo -> sector mapping (highest-priority classification rule)
@@ -35,6 +35,8 @@ repos:
   github-intro-skill:                  build.pro-code
   claude-memory-template:              build.pro-code
   claude-code-global-config:           build.pro-code
+  ai-skills-assessment-wordpress:      build.pro-code
+  claude-flow:                         build.pro-code
 
   # DISTRIBUTE / seo — search + knowledge-graph tooling
   entity-map:                          distribute.seo
@@ -48,6 +50,8 @@ repos:
   wp-categories-enhancer:              create.copy
   wp-custom-sidebar:                   create.copy
   wp-rm-tm-translation:                create.copy
+  schaerers-info:                      create.copy
+  schaerers.info:                      create.copy
 
   # CREATE / images — photo & image asset pipelines
   photo-gallery:                       create.images
@@ -56,6 +60,7 @@ repos:
   # CREATE / 3D — interactive visualizations
   ai-periodic-cube:                    create.3d
   vrml-converter-viewer:               create.3d
+  cryptoprice360:                      create.3d
 
   # CREATE / video — programmatic video creation
   programmatic-video:                  create.video
@@ -64,6 +69,10 @@ repos:
   flickr-to-instagram-automation:      automate.workflows
   api_asana_content_retriever:         automate.workflows
   lightroom-metadata-translator:       automate.workflows
+  batch-rename-files-powershell-script: automate.workflows
+  obsidian-ai:                         automate.workflows
+  my-ai-learning-journey:              automate.workflows
+  android-app-seerenbachfaelle:        automate.workflows
 
   # BUILD / no-code
   lovable:                             build.no-code
@@ -124,6 +133,7 @@ vault:
     "ai/copy":      create.copy
     "ai/images":    create.images
     "ai/video":     create.video
+    "ai/3d":        create.3d
     "ai/workflows": automate.workflows
     "ai/seo":       distribute.seo
     "ai/geo":       distribute.geo

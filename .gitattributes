@@ -1,0 +1,21 @@
+# Normalize all text files to LF in the repo, on every platform.
+#
+# Why this matters here: the generator's hand-rolled YAML parser
+# (generator/serialize.mjs) strips a trailing comment with /\s+#.*$/, a regex
+# that does NOT match when the line ends in CRLF — `.` won't cross the \r and
+# `$` won't sit before it. On a Windows checkout with core.autocrlf=true, that
+# left `taxonomy: default-v1  # ...` parsed WITH the comment glued on, breaking
+# build.mjs and the determinism/harvest tests. Forcing LF keeps the parser (and
+# byte-for-byte determinism of data/tree.json) stable regardless of the cloner's
+# git config. See tree.config.yml's header note about the fragile parser.
+* text=auto eol=lf
+
+# Binary assets — never touch line endings.
+*.jpg  binary
+*.JPG  binary
+*.jpeg binary
+*.png  binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary

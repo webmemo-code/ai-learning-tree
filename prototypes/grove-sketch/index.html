@@ -48,8 +48,10 @@ function mulberry32(a) {
   };
 }
 const rand = mulberry32(20260714);
-// the tree taxonomy's nine sector hues (docs/03) — a planting gets a dominant sector
-const HUES = [0xffb54d, 0xff6f91, 0xff4d6d, 0x7bd88f, 0x4fd8c4, 0x3fa7ff, 0xb28dff, 0x8f7bff, 0x5aa0e6];
+// hand-tuned approximations of the taxonomy sector hues (docs/03), ordered to match
+// generator/taxonomy.mjs SECTORS (index 9 = create.3d) — a planting gets a dominant
+// sector. NOT the exact taxonomy values; this sketch only needs a plausible palette.
+const HUES = [0xffb54d, 0xff6f91, 0xff4d6d, 0x7bd88f, 0x4fd8c4, 0x3fa7ff, 0xb28dff, 0x8f7bff, 0x5aa0e6, 0xff8f4d];
 const log = [];
 const meta = new Map(); // tree id -> { hue, act } (mock render attributes)
 let n = 0;
@@ -57,7 +59,7 @@ function plantMock(clearing, count) {
   for (let i = 0; i < count; i++) {
     const id = `member/tree-${++n}`;
     log.push({ kind: 'planted', tree: id, url: null, clearing });
-    meta.set(id, { hue: HUES[Math.floor(rand() * 9)], act: 0.25 + rand() * 0.75 });
+    meta.set(id, { hue: HUES[Math.floor(rand() * HUES.length)], act: 0.25 + rand() * 0.75 });
   }
 }
 plantMock('commons', 34);
