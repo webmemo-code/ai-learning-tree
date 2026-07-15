@@ -12,8 +12,11 @@ them in the log (§3 below). Either one alone changes nothing.
 
 ## 1. Create the fine-grained PAT (~3 minutes)
 
-1. Logged in as the tree's owner, go to **Settings → Developer settings →
-   Personal access tokens → Fine-grained tokens → Generate new token**
+1. Log in to GitHub as the **account** that owns the private repos to harvest
+   (the tree's owner). The token is created in that account's *personal*
+   settings, not in any repository's settings: click your avatar → **Settings
+   → Developer settings → Personal access tokens → Fine-grained tokens →
+   Generate new token**
    (direct: <https://github.com/settings/personal-access-tokens/new>).
 2. Fill in:
    - **Token name:** something recognizable, e.g. `ai-learning-tree-harvest`.
@@ -35,8 +38,11 @@ prefer fine-grained.
 
 ## 2. Add the repo secret
 
-In this repo: **Settings → Secrets and variables → Actions → New repository
-secret**, name it exactly `HARVEST_TOKEN`, paste the token as the value.
+The secret lives in the **tree repository itself** (this `ai-learning-tree`
+repo — where the nightly workflow runs), not in the private repos being
+harvested and not in your account settings from §1. On the tree repo's page:
+**Settings → Secrets and variables → Actions → New repository secret**, name
+it exactly `HARVEST_TOKEN`, paste the token as the value.
 
 That's the whole plumbing. Precedence is `HARVEST_TOKEN` > `GITHUB_TOKEN` >
 none: the harvester picks the PAT up automatically on the next run, and since
