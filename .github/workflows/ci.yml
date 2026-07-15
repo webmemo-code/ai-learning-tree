@@ -10,8 +10,8 @@ jobs:
     name: Harvester unit tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - run: node harvester/test-harvest.mjs
@@ -24,8 +24,8 @@ jobs:
     name: Grove placement + ceremony tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - run: node grove/test-place.mjs
@@ -39,8 +39,8 @@ jobs:
     name: "Determinism — the one test that must never break"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - run: node generator/test-determinism.mjs
