@@ -31,11 +31,10 @@ taxonomy: default-v1           # the 9-sector CREATE/AUTOMATE/DISTRIBUTE/BUILD t
 repos:
   # BUILD / pro-code — hand-written software, this repo included (dogfooding, docs/04 §2)
   ai-learning-tree:                    build.pro-code
-  ai-periodic-cube:                    build.pro-code
-  vrml-converter-viewer:               build.pro-code
   ai-knowledge-base-visualizer:        build.pro-code
-  texture-generator:                   build.pro-code
   github-intro-skill:                  build.pro-code
+  claude-memory-template:              build.pro-code
+  claude-code-global-config:           build.pro-code
 
   # DISTRIBUTE / seo — search + knowledge-graph tooling
   entity-map:                          distribute.seo
@@ -46,17 +45,30 @@ repos:
   copywriting-style-guide:             create.copy
   markdown-wp-rm-post-publisher:       create.copy
   markdown-wp-wm-linkedin-article-publisher: create.copy
+  wp-categories-enhancer:              create.copy
+  wp-custom-sidebar:                   create.copy
+  wp-rm-tm-translation:                create.copy
 
   # CREATE / images — photo & image asset pipelines
   photo-gallery:                       create.images
-  lightroom-metadata-translator:       create.images
+  texture-generator:                   create.images
+
+  # CREATE / 3D — interactive visualizations
+  ai-periodic-cube:                    create.3d
+  vrml-converter-viewer:               create.3d
+
+  # CREATE / video — programmatic video creation
+  programmatic-video:                  create.video
 
   # AUTOMATE / workflows — cross-tool glue and content-ops automation
   flickr-to-instagram-automation:      automate.workflows
   api_asana_content_retriever:         automate.workflows
+  lightroom-metadata-translator:       automate.workflows
 
   # BUILD / no-code
   lovable:                             build.no-code
+  bolt:                                build.no-code
+  v0:                                  build.no-code
 
 # ----------------------------------------------------------------------------------------
 # 2. GitHub topic -> sector fallback, used when a repo isn't explicitly mapped above
@@ -69,13 +81,14 @@ topic-map:
   geo:      distribute.geo
   comfyui:  automate.workflows
   wordpress: create.copy
+  3d: create.3d
 
 # ----------------------------------------------------------------------------------------
 # 3. harvest scope — what the nightly harvester is allowed to pull (docs/03 §6 privacy)
 # ----------------------------------------------------------------------------------------
 harvest:
-  include-forks: false     # forked repos are noise, not your own work — excluded by default
-  private-repos: false     # opt-in only; flip to true once HARVEST_TOKEN has private-repo
+  include-forks: false      # forked repos are noise, not your own work — excluded by default
+  private-repos: true       # opt-in only; flip to true once HARVEST_TOKEN has private-repo
                             # scope and you've decided private commit history should grow
                             # public canopy (see docs/03-data-model.md §6 rule 4)
 
