@@ -124,8 +124,8 @@ gray shoots at the trunk base — visible nagging to classify them, never droppe
     "dist": 0..1,      // 0 = root, 1 = tip (bark darkening + sap-light)
     "hue": 6982399,
     "sector": 8        // sector index 0..9, or -1 for shared (trunk / gray shoots; roots too
-                       //   in silhouette mode). In OWNER mode root segments carry their sector.
-                       //   Roots are identifiable geometrically: the whole segment sits below y=0.
+                       //   in silhouette mode). In OWNER mode root segments carry their sector;
+                       //   roots are identifiable geometrically — the whole segment sits below y=0.
   } ],
   "leafClusters": [ {                                            // canopy blobs; pickable anchors
     "center": [x,y,z], "radius": n, "born": 0..1,
