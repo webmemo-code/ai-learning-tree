@@ -54,6 +54,16 @@
     }
   },
   {
+    "name": "empty-repo",
+    "fork": false,
+    "private": false,
+    "language": null,
+    "topics": [],
+    "owner": {
+      "login": "faketree"
+    }
+  },
+  {
     "name": "not-mine",
     "fork": false,
     "private": false,

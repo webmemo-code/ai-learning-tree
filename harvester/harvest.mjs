@@ -278,7 +278,15 @@ async function listRepos({ owner, token, fetch_, log = () => {} }) {
 async function listCommits({ owner, repo, token, since, fetch_ }) {
   const base = `${API}/repos/${owner}/${repo}/commits?per_page=100&author=${encodeURIComponent(owner)}`;
   const sinceQ = since ? `&since=${encodeURIComponent(since)}` : '';
-  return paginate((page) => `${base}${sinceQ}&page=${page}`, token, fetch_);
+  try {
+    return await paginate((page) => `${base}${sinceQ}&page=${page}`, token, fetch_);
+  } catch (err) {
+    // GitHub answers 409 "Git Repository is empty." for a repo with no commits
+    // yet — that's a normal state for a freshly created repo, not an error;
+    // one empty repo must never abort the whole night's harvest.
+    if (err.status === 409) return [];
+    throw err;
+  }
 }
 
 async function commitDetail({ owner, repo, sha, token, fetch_ }) {

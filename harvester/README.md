@@ -53,7 +53,7 @@ The workflow (authored separately, outside this directory) should:
 1. `actions/checkout` with write permission (`contents: write`).
 2. `node harvester/harvest.mjs` with `GITHUB_TOKEN` in the env (the default
    Actions token is enough for public repos + this repo).
-3. Commit any change to `data/growth-log.jsonl` as `CHORE | Nightly growth harvest`
+3. Commit any change to `data/growth-log.jsonl` as `AUTO | Nightly growth harvest`
    (docs/04 §2), then run the generator + snapshot as desired.
 
 The harvester prints progress to **stderr** and (in `--dry-run`) the candidate
