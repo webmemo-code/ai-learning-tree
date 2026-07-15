@@ -58,6 +58,10 @@ function makeFetch(opts = {}) {
     }
     const list = url.match(/\/repos\/faketree\/([^/]+)\/commits\?/);
     if (list) {
+      if (list[1] === 'empty-repo') {
+        // a repo with no commits yet: GitHub answers the commits endpoint 409
+        return { status: 409, headers: { 'x-ratelimit-remaining': '4999' }, body: { message: 'Git Repository is empty.' } };
+      }
       if (!/page=1(\b|&|$)/.test(url)) return reply([]); // page 2+ empty
       const map = {
         'explicit-repo': 'commits-explicit-repo.json', 'topic-repo': 'commits-topic-repo.json',
@@ -110,6 +114,12 @@ ok(!calls.some((u) => u.includes('/old-fork/')), 'fork repo never triggered a co
 ok(run1.stats.skippedPrivate.includes('secret-repo'), 'private repo skipped without opt-in');
 ok(!run1.events.some((e) => e.project === 'secret-repo'), 'no private-repo events without opt-in');
 ok(!run1.events.some((e) => e.project === 'not-mine'), "another owner's repo filtered out");
+
+// an EMPTY repo (GitHub 409 "Git Repository is empty." on its commits list)
+// yields no events but must not abort the harvest — later repos still scanned.
+ok(calls.some((u) => u.includes('/empty-repo/commits')), 'empty repo: commits endpoint was queried');
+ok(!run1.events.some((e) => e.project === 'empty-repo'), 'empty repo: no events emitted');
+ok(run1.events.length > 0, 'empty repo: harvest continued past the 409 and emitted other events');
 
 // cursor: explicit-repo has a prior event, so its commit list is fetched with since=<cursor>
 const explicitList = calls.find((u) => /\/explicit-repo\/commits\?/.test(u));
