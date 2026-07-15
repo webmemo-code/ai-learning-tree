@@ -35,7 +35,7 @@ long-term visual project are metaphor mistakes, and they're free to fix now.
 
 ### Automation (from phase 3)
 - **Nightly harvest** — GitHub Action (cron) runs the harvester, appends to
-  `data/growth-log.jsonl`, commits with `CHORE | Nightly growth harvest`. The
+  `data/growth-log.jsonl`, commits with `AUTO | Nightly growth harvest`. The
   tree's growth is literally visible in `git log`.
 - **Snapshot releases** — monthly tagged release with the rendered `tree.json` +
   a beauty-shot PNG: the project's own growth rings, browsable forever.

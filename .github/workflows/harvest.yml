@@ -1,7 +1,7 @@
 name: Nightly growth harvest
 # docs/04-roadmap-and-process.md §2 "Automation (from phase 3)":
 # runs the harvester, appends to data/growth-log.jsonl, rebuilds data/tree.json,
-# and commits with the exact message "CHORE | Nightly growth harvest" — the
+# and commits with the exact message "AUTO | Nightly growth harvest" — the
 # tree's growth is literally visible in `git log`. Only commits when data/
 # actually changed, so a quiet night leaves no empty commit behind.
 
@@ -106,5 +106,5 @@ jobs:
             exit 0
           fi
           git add data/
-          git commit -m "CHORE | Nightly growth harvest"
+          git commit -m "AUTO | Nightly growth harvest"
           git push

@@ -77,7 +77,7 @@ Phase 3 ("First rings") split this directory in two:
    live half now has a real `data/growth-log.jsonl` to check double-run
    determinism and regeneration against the freshly-built `data/tree.json`.
 4. If (and only if) anything under `data/` actually changed, commits with the
-   exact message `CHORE | Nightly growth harvest` (author `github-actions[bot]`)
+   exact message `AUTO | Nightly growth harvest` (author `github-actions[bot]`)
    and pushes. A quiet night — no new commits, no note edits — leaves no
    empty commit behind.
 
