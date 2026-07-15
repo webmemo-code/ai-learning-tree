@@ -13,7 +13,7 @@
 export const TAXONOMY_VERSION = 'default-v1';
 
 // order is authoritative: the array index is the sector's aSector value in the
-// renderer (0..8). Never reorder — append only.
+// renderer (0..N-1, currently 0..9). Never reorder — append only.
 export const SECTORS = [
   { id: 'create.copy',        label: 'copy',      limb: 'CREATE',     az: 15,  hue: 0xffb454 },
   { id: 'create.images',      label: 'images',    limb: 'CREATE',     az: 55,  hue: 0xff6ec7 },
@@ -24,6 +24,10 @@ export const SECTORS = [
   { id: 'build.no-code',      label: 'no-code',   limb: 'BUILD',      az: 270, hue: 0xb59aff },
   { id: 'build.low-code',     label: 'low-code',  limb: 'BUILD',      az: 310, hue: 0x8f7bff },
   { id: 'build.pro-code',     label: 'pro-code',  limb: 'BUILD',      az: 350, hue: 0x6a8dff },
+  // Appended index 9 (append-only rule above). CREATE limb, so az sits inside the
+  // CREATE arc (< 117.5, the CREATE/AUTOMATE minimap edge) even though it's last in
+  // the array — az is a growth direction, independent of array index.
+  { id: 'create.3d',          label: '3d',        limb: 'CREATE',     az: 115, hue: 0xff8f4d },
 ];
 
 // the four strata (Section levels x forest stratification). y-bands gate height;
