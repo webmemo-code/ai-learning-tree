@@ -75,7 +75,8 @@ higher rate limit. A private repo's commits are
 harvested **only when** the token can see the repo **and** `harvest.private-repos:
 true` in `tree.config.yml` (two independent gates — docs/03 §6). For a private PAT,
 `repo` (or fine-grained *Contents: read*) scope is enough; the harvester only reads
-commit metadata.
+commit metadata. Step-by-step PAT setup, verification, and rotation:
+[docs/06-private-history-setup.md](../docs/06-private-history-setup.md).
 
 ## The cursor-in-log design (no state file)
 
