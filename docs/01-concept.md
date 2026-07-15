@@ -36,21 +36,21 @@ into four **limbs** so the silhouette stays readable:
    BUILD ──────────────(●)────────────── CREATE
                       / | \
         no-code      /  |  \     video
-              GEO       |       workflows
-                  SEO   |   (ComfyUI, Make, n8n)
-                        S
+              GEO       |       3d
+                  SEO   |   workflows
+                        S   (ComfyUI, Make, n8n)
    W: BUILD limb                E: CREATE limb
    S: DISTRIBUTE limb (SEO/GEO) S-E: AUTOMATE limb
 ```
 
 | Limb (primary bough) | Sectors (secondary boughs) |
 | --- | --- |
-| **CREATE** | GenAI for copy · GenAI for images · GenAI for video |
+| **CREATE** | GenAI for copy · GenAI for images · GenAI for video · GenAI for 3D |
 | **AUTOMATE** | Visual workflow tools (ComfyUI, Make, n8n) |
 | **DISTRIBUTE** | Programmatic SEO · Programmatic GEO |
 | **BUILD** | Vibe coding no-code · low-code · pro-code |
 
-That's 4 limbs → 9 sectors. Each sector owns a fixed azimuth wedge, a hue, and its
+That's 4 limbs → 10 sectors. Each sector owns a fixed azimuth wedge, a hue, and its
 own proficiency level (you can be Expert in SEO while a Novice in video — the tree
 should show exactly that asymmetry; asymmetric trees are also simply more beautiful).
 
@@ -60,7 +60,7 @@ a **cross-cutting attribute** rendered as leaf material — cloud-run work gets
 sky-lit, iridescent leaves; locally-run work gets earthier, denser foliage. One
 glance at the tree tells you how self-hosted a practitioner is. (❓ [ADR-0003](decisions/0003-local-vs-cloud-as-attribute.md))
 
-**Taxonomy is config.** These 9 sectors are Walter's default. Public users get this
+**Taxonomy is config.** These 10 sectors are Walter's default. Public users get this
 as a starter taxonomy plus a config file to rename/add/remove sectors. New fields
 ("More may come to mind") = new wedge, allocated from reserved azimuth space.
 
@@ -72,7 +72,7 @@ as a starter taxonomy plus a config file to rename/add/remove sectors. New field
 | **Trunk** | You — the whole practice. Thickness = total lifetime volume (strand model: trunk cross-section ≈ sum of all boughs, da Vinci's rule) | Any growth anywhere |
 | **Rings** *(cut-away / detail view)* | Time. Years of practice, dense rings = intense years | Automatically, by the calendar |
 | **Limbs** (4) | Field clusters: CREATE / AUTOMATE / DISTRIBUTE / BUILD | Their sectors grow |
-| **Boughs** (9) | Sectors — fields of practice | Activity classified into that sector |
+| **Boughs** (10) | Sectors — fields of practice | Activity classified into that sector |
 | **Branches** | Projects / repos within a sector | Commits to that repo |
 | **Twigs** | Work streams, bursts of related activity | Recent clustered activity |
 | **Leaves** | Individual artifacts: a commit, a note, a published piece | One per event (with clustering at LOD distance) |

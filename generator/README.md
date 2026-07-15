@@ -18,7 +18,7 @@ panels). Clean seam.
 | File | Role |
 | --- | --- |
 | `grow.mjs` | `grow(events, config, algoVersion) → tree` — the pure generator. No fs, no `Date.now`, no `Math.random`. |
-| `taxonomy.mjs` | `default-v1` scaffold: the 9 sectors (id/label/limb/az/hue) + the 4 strata. Additive-only. |
+| `taxonomy.mjs` | `default-v1` scaffold: the 10 sectors (id/label/limb/az/hue) + the 4 strata. Additive-only. |
 | `build.mjs` | Node CLI: read log + config, run `grow()`, write `data/tree.json`. |
 | `serialize.mjs` | Stable JSON stringify (sorted keys) + a tiny no-deps YAML parser. |
 | `test-determinism.mjs` | The one test that must never break (docs/04 §CI). |
@@ -123,7 +123,7 @@ gray shoots at the trunk base — visible nagging to classify them, never droppe
     "born": 0..1,      // growth-front time (ts-derived; replay sweeps uGrow across it)
     "dist": 0..1,      // 0 = root, 1 = tip (bark darkening + sap-light)
     "hue": 6982399,
-    "sector": 8        // sector index 0..8, or -1 for shared (trunk / gray shoots; roots too
+    "sector": 8        // sector index 0..9, or -1 for shared (trunk / gray shoots; roots too
                        //   in silhouette mode). In OWNER mode root segments carry their sector.
                        //   Roots are identifiable geometrically: the whole segment sits below y=0.
   } ],
