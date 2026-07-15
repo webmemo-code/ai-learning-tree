@@ -24,14 +24,27 @@ function ok(cond, msg) { if (cond) { passed++; } else { failed++; console.error(
 function eq(a, b, msg) { ok(JSON.stringify(a) === JSON.stringify(b), `${msg} (got ${JSON.stringify(a)}, want ${JSON.stringify(b)})`); }
 
 // --- the fake network: URL -> fixture, recording every requested URL ---------
-function makeFetch() {
+// opts.installationToken: /user/repos answers the Actions-GITHUB_TOKEN 403
+//   ("Resource not accessible by integration"); the public /users/{owner}/repos
+//   serves the same fixture minus private repos (as the real endpoint would).
+// opts.rateLimited: /user/repos answers a rate-limit 403 (remaining: 0).
+function makeFetch(opts = {}) {
   const calls = [];
   const detailMap = { a: null, b: 'commit-detail-b.json', c: 'commit-detail-c.json', d: 'commit-detail-d.json', e: 'commit-detail-e.json' };
   async function fetch_(url) {
     calls.push(url);
     const reply = (body) => ({ status: 200, headers: { 'x-ratelimit-remaining': '4999' }, body });
     if (url.includes('/user/repos')) {
+      if (opts.rateLimited) {
+        return { status: 403, headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '1750000000' }, body: { message: 'API rate limit exceeded' } };
+      }
+      if (opts.installationToken) {
+        return { status: 403, headers: { 'x-ratelimit-remaining': '4999' }, body: { message: 'Resource not accessible by integration' } };
+      }
       return reply(/page=1(\b|&|$)/.test(url) ? fx('repos.json') : []); // page 2+ empty -> stop
+    }
+    if (url.includes('/users/faketree/repos')) {
+      return reply(/page=1(\b|&|$)/.test(url) ? fx('repos.json').filter((r) => !r.private) : []);
     }
     const detail = url.match(/\/commits\/(.)/); // /commits/{sha}; first char keys the fixture
     if (detail) {
@@ -125,6 +138,31 @@ const secret = run2.events.find((e) => e.project === 'secret-repo');
 ok(secret, 'private repo included with private-repos: true');
 eq(secret?.private, true, 'private-repo commit carries private: true');
 ok(run2.stats.skippedForks.includes('old-fork'), 'fork still skipped even with private opt-in');
+
+// ============================================================================
+// 4b. installation token (the Actions GITHUB_TOKEN): /user/repos answers 403
+//     "Resource not accessible by integration" -> fall back to the public
+//     /users/{owner}/repos and harvest identically (public repos only).
+// ============================================================================
+const net3 = makeFetch({ installationToken: true });
+const run3 = await harvestRepos({ owner: 'faketree', config, token: 'ghs_installation', fetch_: net3.fetch_, existing });
+ok(net3.calls.some((u) => u.includes('/user/repos')), 'installation token: /user/repos attempted first');
+ok(net3.calls.some((u) => u.includes('/users/faketree/repos')), 'installation token: fell back to public /users/{owner}/repos after 403');
+eq(
+  run3.events.map((e) => e.id).sort(),
+  run1.events.map((e) => e.id).sort(),
+  'installation token: fallback harvests the same (public) events as a PAT run',
+);
+
+// a rate-limit 403 must NOT be mistaken for the installation-token 403 — it
+// aborts the harvest instead of silently degrading to the public list.
+const net4 = makeFetch({ rateLimited: true });
+let rateLimitErr = null;
+try {
+  await harvestRepos({ owner: 'faketree', config, token: 'faketoken', fetch_: net4.fetch_, existing });
+} catch (err) { rateLimitErr = err; }
+ok(rateLimitErr && /rate limit/i.test(rateLimitErr.message), 'rate-limit 403 still aborts the harvest');
+ok(!net4.calls.some((u) => u.includes('/users/faketree/repos')), 'rate-limit 403 does not fall back to the public list');
 
 // ============================================================================
 // 5. milestone merge + dedupe (dedup key = ts+sector+level, per data/README.md)

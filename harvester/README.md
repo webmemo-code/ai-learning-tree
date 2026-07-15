@@ -67,7 +67,11 @@ JSONL to **stdout**, so `... --dry-run > preview.jsonl` captures just the events
 | `GITHUB_TOKEN` | GitHub Actions, automatically | Public repos + this repo, ~1000 req/hr. **The nightly default.** |
 | `HARVEST_TOKEN` | You, as a repo secret (opt-in PAT) | Whatever the PAT can read — including **private** repos. Needed only to grow private history. |
 
-Precedence: `HARVEST_TOKEN` > `GITHUB_TOKEN` > none. A private repo's commits are
+Precedence: `HARVEST_TOKEN` > `GITHUB_TOKEN` > none. The Actions `GITHUB_TOKEN` is
+an **installation** token (no "user" behind it), so `/user/repos` answers 403
+"Resource not accessible by integration" — the harvester detects that and falls
+back to the public `/users/{owner}/repos` list, still authenticated for the
+higher rate limit. A private repo's commits are
 harvested **only when** the token can see the repo **and** `harvest.private-repos:
 true` in `tree.config.yml` (two independent gates — docs/03 §6). For a private PAT,
 `repo` (or fine-grained *Contents: read*) scope is enough; the harvester only reads

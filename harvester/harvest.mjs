@@ -225,7 +225,9 @@ async function ghGet(url, token, fetch_) {
   if (status === 401) throw new Error('GitHub auth failed (401) — token invalid or lacks scope.');
   if (status === 404) throw new Error(`GitHub 404 for ${url} — owner/repo not found or token cannot see it.`);
   if (status < 200 || status >= 300) {
-    throw new Error(`GitHub ${status} for ${url}: ${body?.message || 'unexpected response'}`);
+    const err = new Error(`GitHub ${status} for ${url}: ${body?.message || 'unexpected response'}`);
+    err.status = status; // callers may branch on a non-rate-limit 403 (installation tokens)
+    throw err;
   }
   return res;
 }
@@ -243,16 +245,32 @@ async function paginate(urlFor, token, fetch_) {
   return out;
 }
 
-// list the owner's repos. With a token we hit /user/repos (returns public +
-// whatever private the token can see) and filter to the owner; without a token
-// we hit the public /users/{owner}/repos. The private-repos CONFIG flag gates
-// keeping them, separately from the token being able to SEE them (docs/03 §6).
-async function listRepos({ owner, token, fetch_ }) {
-  const urlFor = token
-    ? (page) => `${API}/user/repos?per_page=100&affiliation=owner&page=${page}`
-    : (page) => `${API}/users/${owner}/repos?per_page=100&page=${page}`;
-  const repos = await paginate(urlFor, token, fetch_);
-  return repos.filter((r) => !r.owner || r.owner.login === owner);
+// list the owner's repos. With a token we try /user/repos (returns public +
+// whatever private the token can see) and filter to the owner. That endpoint
+// only works for USER tokens (a PAT): the Actions GITHUB_TOKEN is an
+// installation token with no "user" behind it, so GitHub answers 403
+// "Resource not accessible by integration" — in that case we fall back to the
+// public /users/{owner}/repos, still sending the token for its higher rate
+// limit. No token goes straight to the public endpoint. The private-repos
+// CONFIG flag gates KEEPING private repos, separately from the token being
+// able to SEE them (docs/03 §6).
+async function listRepos({ owner, token, fetch_, log = () => {} }) {
+  const ownerOnly = (repos) => repos.filter((r) => !r.owner || r.owner.login === owner);
+  if (token) {
+    try {
+      return ownerOnly(await paginate(
+        (page) => `${API}/user/repos?per_page=100&affiliation=owner&page=${page}`, token, fetch_,
+      ));
+    } catch (err) {
+      // rate-limit 403s carry no .status (ghGet throws them specially) and
+      // still propagate; only the hard 403 falls through to the public list.
+      if (err.status !== 403) throw err;
+      log(`  /user/repos not accessible with this token (installation token?) — falling back to public repo list for ${owner}`);
+    }
+  }
+  return ownerOnly(await paginate(
+    (page) => `${API}/users/${owner}/repos?per_page=100&page=${page}`, token, fetch_,
+  ));
 }
 
 async function listCommits({ owner, repo, token, since, fetch_ }) {
@@ -275,7 +293,7 @@ export async function harvestRepos({ owner, config, token, fetch_, existing, sin
   const events = [];
   const stats = { repos: 0, skippedForks: [], skippedPrivate: [], commits: 0 };
 
-  let repos = await listRepos({ owner, token, fetch_ });
+  let repos = await listRepos({ owner, token, fetch_, log });
   if (onlyRepo) repos = repos.filter((r) => r.name === onlyRepo.repo);
 
   for (const repo of repos) {
