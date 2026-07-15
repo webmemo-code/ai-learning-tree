@@ -18,9 +18,10 @@ them in the log (§3 below). Either one alone changes nothing.
 2. Fill in:
    - **Token name:** something recognizable, e.g. `ai-learning-tree-harvest`.
    - **Expiration:** 90 days is a sane default. Set a rotation reminder — when
-     the token expires, the nightly run does NOT break; it silently falls back
-     to public-only harvesting (the failure mode is *missing private growth*,
-     not a red workflow).
+     the token expires, GitHub answers 401 and the nightly run **fails red**
+     (the harvester aborts loudly rather than silently degrading, and the
+     expired `HARVEST_TOKEN` still outranks `GITHUB_TOKEN` in precedence)
+     until you rotate the token or delete the secret.
    - **Resource owner:** the account that owns the repos to harvest.
    - **Repository access:** *All repositories* — or *Only select repositories*
      to whitelist which private repos may ever reach the log.
@@ -60,7 +61,8 @@ growth log with `private: true`.
 diff, or patch (the test suite enforces this) — but a private repo's **name**
 does appear as the event's `project` field. Enable only if you're comfortable
 with private repo names being public. Vault notes are a separate, stricter
-pipeline with its own privacy modes (docs/decisions/0005).
+pipeline with its own privacy modes
+([decisions/0005-roots-privacy-modes.md](decisions/0005-roots-privacy-modes.md)).
 
 ## 4. Verify
 
@@ -76,9 +78,12 @@ growth harvest → Run workflow) and check the job log:
 ## 5. Rotation & revocation
 
 - **Rotate:** generate a new token, overwrite the `HARVEST_TOKEN` secret,
-  delete the old token. No code or workflow change.
-- **Revoke / step back to public-only:** delete the secret (or let the token
-  expire). The harvest keeps running on `GITHUB_TOKEN`. Already-logged private
+  delete the old token. No code or workflow change. Rotate **before** expiry:
+  an expired token means 401s and a red nightly run, not a quiet downgrade.
+- **Step back to public-only:** **delete the secret** — the harvest then runs
+  on `GITHUB_TOKEN` again. Revoking or expiring the token while the secret
+  stays set does NOT do this: the dead token keeps winning the precedence
+  chain and the run fails until the secret is removed. Already-logged private
   events stay in the log — the log is append-only; remove their lines by hand
   if you also want them gone. Mind the cursor-in-log design
   ([../harvester/README.md](../harvester/README.md)): deleting a repo's lines
