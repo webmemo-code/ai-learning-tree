@@ -262,10 +262,12 @@ async function listRepos({ owner, token, fetch_, log = () => {} }) {
         (page) => `${API}/user/repos?per_page=100&affiliation=owner&page=${page}`, token, fetch_,
       ));
     } catch (err) {
-      // rate-limit 403s carry no .status (ghGet throws them specially) and
-      // still propagate; only the hard 403 falls through to the public list.
-      if (err.status !== 403) throw err;
-      log(`  /user/repos not accessible with this token (installation token?) — falling back to public repo list for ${owner}`);
+      // Only the installation-token 403 falls through to the public list.
+      // Rate-limit 403s carry no .status (ghGet throws them specially), and
+      // any other 403 (PAT scope/org restriction) is a real auth problem that
+      // must abort loudly, not silently degrade to a public-only harvest.
+      if (err.status !== 403 || !/not accessible by integration/i.test(err.message)) throw err;
+      log(`  /user/repos not accessible with this token (installation token) — falling back to public repo list for ${owner}`);
     }
   }
   return ownerOnly(await paginate(

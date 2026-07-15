@@ -28,6 +28,8 @@ function eq(a, b, msg) { ok(JSON.stringify(a) === JSON.stringify(b), `${msg} (go
 //   ("Resource not accessible by integration"); the public /users/{owner}/repos
 //   serves the same fixture minus private repos (as the real endpoint would).
 // opts.rateLimited: /user/repos answers a rate-limit 403 (remaining: 0).
+// opts.forbidden: /user/repos answers a non-integration hard 403 (e.g. a PAT
+//   blocked by org policy) — must abort, never fall back.
 function makeFetch(opts = {}) {
   const calls = [];
   const detailMap = { a: null, b: 'commit-detail-b.json', c: 'commit-detail-c.json', d: 'commit-detail-d.json', e: 'commit-detail-e.json' };
@@ -40,6 +42,9 @@ function makeFetch(opts = {}) {
       }
       if (opts.installationToken) {
         return { status: 403, headers: { 'x-ratelimit-remaining': '4999' }, body: { message: 'Resource not accessible by integration' } };
+      }
+      if (opts.forbidden) {
+        return { status: 403, headers: { 'x-ratelimit-remaining': '4999' }, body: { message: 'Resource protected by organization SAML enforcement.' } };
       }
       return reply(/page=1(\b|&|$)/.test(url) ? fx('repos.json') : []); // page 2+ empty -> stop
     }
@@ -163,6 +168,16 @@ try {
 } catch (err) { rateLimitErr = err; }
 ok(rateLimitErr && /rate limit/i.test(rateLimitErr.message), 'rate-limit 403 still aborts the harvest');
 ok(!net4.calls.some((u) => u.includes('/users/faketree/repos')), 'rate-limit 403 does not fall back to the public list');
+
+// ...and neither is any OTHER hard 403 (PAT scope / org restriction): that's a
+// real auth problem, so it aborts instead of degrading to a public-only harvest.
+const net5 = makeFetch({ forbidden: true });
+let forbiddenErr = null;
+try {
+  await harvestRepos({ owner: 'faketree', config, token: 'faketoken', fetch_: net5.fetch_, existing });
+} catch (err) { forbiddenErr = err; }
+ok(forbiddenErr && /GitHub 403/.test(forbiddenErr.message), 'non-integration hard 403 still aborts the harvest');
+ok(!net5.calls.some((u) => u.includes('/users/faketree/repos')), 'non-integration hard 403 does not fall back to the public list');
 
 // ============================================================================
 // 5. milestone merge + dedupe (dedup key = ts+sector+level, per data/README.md)
