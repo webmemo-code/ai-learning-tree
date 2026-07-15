@@ -96,7 +96,7 @@ Two candidate families, both proven (see [prior-art](research/prior-art.md)):
 | Control | High (grammar = law) | Emergent (steer via attractor clouds) |
 | Fit here | Good for limb skeleton | **Perfect for growth-toward-strata** |
 
-**Recommended hybrid:** a fixed **scaffold** (trunk + 4 limb directions + 9 sector
+**Recommended hybrid:** a fixed **scaffold** (trunk + 4 limb directions + 10 sector
 azimuth wedges — hand-tuned for silhouette beauty) + **space colonization inside
 each sector wedge**, where attractor points are spawned from growth events:
 an event drops attractors into its sector's wedge at the height band its current

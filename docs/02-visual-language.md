@@ -68,8 +68,8 @@ These don't exist in the cube and define the tree's own personality:
 
 ## 4. Color system
 
-- **Hue = sector** (9 hues around the wheel, grouped so each limb owns an arc):
-  CREATE warm (amber / magenta / crimson for copy / images / video), AUTOMATE
+- **Hue = sector** (10 hues around the wheel, grouped so each limb owns an arc):
+  CREATE warm (amber / magenta / crimson / coral for copy / images / video / 3D), AUTOMATE
   spring-green, DISTRIBUTE teal + azure (SEO / GEO), BUILD violet spectrum
   (no-code lavender → low-code violet → pro-code indigo).
 - **Lightness/saturation = recency** (the seasons axis) — hue never changes with

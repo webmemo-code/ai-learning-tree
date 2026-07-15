@@ -33,3 +33,11 @@ foliage. A filter toggle lets you view the tree through the local/cloud lens
 - **Own sector wedge:** rejected — category error, double-counting.
 - **Roots = local / canopy = cloud:** poetic, but collides with ADR-0002's stronger
   use of roots (privacy) and would wrongly imply local work is private.
+
+## Note (2026-07-15)
+
+The "Why" above cites *9 sectors / 4 limbs* — the count at the time of writing. The
+taxonomy has since gained `create.3d` (now **10 sectors**, still 4 limbs). This
+doesn't change the decision: local-vs-cloud is still a cross-cutting attribute, not
+one wedge among however many — the argument is count-independent. Left in place as
+append-only history rather than rewritten.
