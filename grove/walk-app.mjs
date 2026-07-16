@@ -6,10 +6,13 @@
 // stay thin shells: provide an import map for three.js, load the planting log
 // + grove.yml (or build a mock story), then call startGroveWalk().
 //
-// Impostor LOD: every member renders as glowing crown puffs on an instanced
-// trunk — derived from its published tree.json when fetchable (leaf clusters,
-// sector hues + recency, blossoms, real height), synthesized from a seeded
-// spec otherwise. All crowns draw as ONE instanced billboard mesh.
+// Impostor LOD: every member renders as an ACACIA impostor (ADR-0008) — flat
+// glowing pad lenses on a short bole with a splayed rib fan — derived from its
+// published tree.json when fetchable (leaf-cluster pads sit at their earned
+// stratum ceilings since generator algoVersion 2.0.0; sector hues + recency,
+// blossoms, real height), synthesized from a seeded spec otherwise. A member
+// is readable at distance by its pad heights alone. All pads draw as ONE
+// instanced billboard mesh; all boles and all ribs as one instanced mesh each.
 
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -67,46 +70,63 @@ export async function loadGrove(base, parsePlantings) {
 // drift is fine. Real impostors read exact hues from tree.json (specFromTreeJson).
 export const HUES = [0xffb54d, 0xff6f91, 0xff4d6d, 0x7bd88f, 0x4fd8c4, 0x3fa7ff, 0xb28dff, 0x8f7bff, 0x5aa0e6, 0xff8f4d];
 
-// impostor from a member's REAL tree.json: bounds + sector hues (docs/05 G5)
+// pad ceilings for SYNTHETIC impostors, mirroring the taxonomy strata (y1 - 0.35).
+// Plausible-palette territory like HUES above — real impostors read real heights.
+export const PAD_CEILS = [2.65, 6.65, 11.65, 16.15];
+
+// impostor from a member's REAL tree.json: pads + sector hues (docs/05 G5).
+// Since generator algoVersion 2.0.0 the leaf clusters ARE flat pads parked at
+// their earned stratum ceilings — the impostor reads those heights verbatim.
 export function specFromTreeJson(T) {
   const S = T.sectors;
   const clusters = T.leafClusters.map(c => ({
     pos: [c.center[0], c.center[1], c.center[2]],
-    r: c.radius * 1.5,
+    r: c.radius * 1.7,
     hue: S[c.sector].hue,
     glow: 0.85 + (S[c.sector].recent || 0) * 0.9,
   }));
   const height = Math.max(4, ...T.leafClusters.map(c => c.center[1]));
+  const lowestPad = clusters.length ? Math.min(...clusters.map(c => c.pos[1])) : 3;
+  const boleTop = Math.max(1.2, Math.min(2.2, lowestPad * 0.75)); // the low fork
   const blossoms = (T.blossoms || []).map(b => ({ pos: [b.pos[0], b.pos[1], b.pos[2]], hue: b.hue }));
-  return { height, clusters, blossoms, real: true };
+  return { height, boleTop, clusters, blossoms, real: true };
 }
 
-// seeded plausible impostor for members whose tree.json isn't fetchable
+// seeded plausible impostor for members whose tree.json isn't fetchable —
+// acacia habit: a few sector limbs, each parking its pads at an earned ceiling
 export function specSynthetic(id) {
   const R = mulberry32(strHash('impostor|' + id));
   const level = 1 + Math.floor(Math.min(3.999, R() * R() * 6));   // most trees young — honest demographics
-  const height = 3.5 + level * 2.4 + R() * 2;
-  const crownR = 2.2 + level * 1.1 + R();
+  const boleTop = 1.3 + R() * 0.9;
+  const limbCount = 2 + Math.floor(R() * 3);                      // 2-4 visible sector limbs
   const domHue = HUES[Math.floor(R() * HUES.length)], altHue = HUES[Math.floor(R() * HUES.length)];
-  const clusters = [];
-  const count = 4 + level * 4 + Math.floor(R() * 7);
-  for (let i = 0; i < count; i++) {
-    const h = height * (0.38 + 0.62 * R());
-    const rr = crownR * (1 - (h / height) * 0.55) * Math.sqrt(R());
-    const a = R() * Math.PI * 2;
-    clusters.push({
-      pos: [Math.cos(a) * rr, h, Math.sin(a) * rr],
-      r: 0.8 + R() * 1.3 + level * 0.25,
-      hue: R() < 0.72 ? domHue : altHue,
-      glow: 0.55 + R() * 0.75,
-    });
+  const clusters = [], blossoms = [];
+  let height = 4;
+  for (let l = 0; l < limbCount; l++) {
+    const lvl = l === 0 ? level : 1 + Math.floor(R() * level);    // the tallest limb carries the tree's level
+    const ceil = PAD_CEILS[lvl - 1];
+    const az = R() * Math.PI * 2;
+    const spread = 1.6 + lvl * 1.15 + R() * 1.2;                  // earned height also earns reach
+    const hue = R() < 0.7 ? domHue : altHue;
+    const pads = 1 + Math.floor(R() * 2) + (lvl > 1 ? 1 : 0);
+    for (let i = 0; i < pads; i++) {
+      const rr = spread * (0.55 + 0.45 * R());
+      const a = az + (R() - 0.5) * 0.7;
+      clusters.push({
+        pos: [Math.cos(a) * rr, ceil - 0.2 + (R() - 0.5) * 0.25, Math.sin(a) * rr],
+        r: 1.1 + R() * 1.1 + lvl * 0.3,
+        hue,
+        glow: 0.55 + R() * 0.75,
+      });
+    }
+    height = Math.max(height, ceil);
+    for (let b = 2; b <= lvl; b++) {                              // a blossom at each crossed boundary
+      const bd = PAD_CEILS[b - 2] + 0.35;                         // boundary = the ceiling below it + the 0.35 margin
+      const rb = spread * (bd / ceil) * 0.8;
+      blossoms.push({ pos: [Math.cos(az) * rb, bd + 0.2, Math.sin(az) * rb], hue: 0xffd9ec });
+    }
   }
-  const blossoms = [];
-  for (let i = 0; i < level - 1; i++) {
-    const c = clusters[Math.floor(R() * clusters.length)];
-    blossoms.push({ pos: [c.pos[0], c.pos[1] + 0.4, c.pos[2]], hue: 0xffd9ec });
-  }
-  return { height, clusters, blossoms, real: false };
+  return { height, boleTop, clusters, blossoms, real: false };
 }
 
 // default "visit this tree" target: derived from the member's published URL —
@@ -257,7 +277,8 @@ export async function startGroveWalk({ placeGrove, config, events, title, subtit
     scene.add(plate);
   }
 
-  // trunks — one InstancedMesh for the whole forest
+  // boles — short and stout (the acacia forks low) — one InstancedMesh for the forest
+  const forkOf = (spec) => spec.boleTop || spec.height * 0.72; // fallback: pre-acacia preset specs
   if (ALIVE.length) {
     const geo = new THREE.CylinderGeometry(0.55, 1.1, 1, 7, 1);
     geo.translate(0, 0.5, 0);
@@ -268,14 +289,44 @@ export async function startGroveWalk({ placeGrove, config, events, title, subtit
       const R = mulberry32(strHash('tilt|' + t.tree));
       q.setFromEuler(new THREE.Euler((R() - 0.5) * 0.09, R() * Math.PI * 2, (R() - 0.5) * 0.09));
       p.set(t.pos[0], 0, t.pos[1]);
-      s.set(0.5 + spec.height * 0.05, spec.height * 0.72, 0.5 + spec.height * 0.05);
+      s.set(0.55 + spec.height * 0.03, forkOf(spec) * 1.05, 0.55 + spec.height * 0.03);
       m.compose(p, q, s);
       mesh.setMatrixAt(i, m);
     });
     scene.add(mesh);
   }
 
-  // crowns — every cluster of every tree in ONE instanced billboard draw
+  // ribs — the splayed limb fan that makes an acacia read as an acacia at distance:
+  // one thin tapered cylinder per pad, fork -> pad underside, ONE instanced draw
+  {
+    const ribs = [];
+    for (const t of ALIVE) {
+      const spec = specs.get(t.tree);
+      for (const c of spec.clusters) ribs.push({ t, c, fork: forkOf(spec) });
+    }
+    if (ribs.length) {
+      const geo = new THREE.CylinderGeometry(0.3, 1, 1, 5, 1);
+      geo.translate(0, 0.5, 0);
+      const mesh = new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({ color: 0x2a211a }), ribs.length);
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = V3(), a = V3(), b = V3(), d = V3(), up = V3(0, 1, 0);
+      ribs.forEach((rb, i) => {
+        a.set(rb.t.pos[0], rb.fork * 0.9, rb.t.pos[1]);
+        b.set(rb.t.pos[0] + rb.c.pos[0], rb.c.pos[1] - 0.25, rb.t.pos[1] + rb.c.pos[2]);
+        d.subVectors(b, a);
+        const len = Math.max(0.1, d.length());
+        if (d.lengthSq() < 1e-8) d.set(0, 1, 0); else d.normalize(); // zero-length rib -> point it up, never NaN
+        q.setFromUnitVectors(up, d);
+        const r = Math.min(0.28, 0.09 + rb.c.r * 0.05);
+        s.set(r, len, r);
+        m.compose(a, q, s);
+        mesh.setMatrixAt(i, m);
+      });
+      scene.add(mesh);
+    }
+  }
+
+  // pads — every foliage pad of every tree in ONE instanced billboard draw,
+  // squashed into flat-topped lenses so the umbrella tiers read at any distance
   {
     const puffs = [];
     for (const t of ALIVE) for (const c of specs.get(t.tree).clusters) puffs.push({ t, c });
@@ -306,7 +357,8 @@ export async function startGroveWalk({ placeGrove, config, events, title, subtit
           varying vec3 vColor; varying vec2 vUv; varying float vTw;
           void main() {
             vec3 sway = vec3(sin(uTime * 0.7 + aPhase), 0.0, cos(uTime * 0.6 + aPhase)) * 0.12;
-            vec3 world = aOffset + sway + (uCamRight * position.x + uCamUp * position.y) * aSize;
+            // pad lens: full width, squashed height — an umbrella tier, not a puff
+            vec3 world = aOffset + sway + (uCamRight * position.x + uCamUp * position.y * 0.42) * aSize;
             vColor = aColor; vUv = uv; vTw = aPhase;
             gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
           }`,
@@ -314,11 +366,13 @@ export async function startGroveWalk({ placeGrove, config, events, title, subtit
           varying vec3 vColor; varying vec2 vUv; varying float vTw;
           uniform float uTime;
           void main() {
-            float d = length(vUv - 0.5);
-            float a = smoothstep(0.5, 0.12, d);
+            vec2 uv = vUv - 0.5;
+            if (uv.y > 0.0) uv.y *= 1.45;   // crisper top edge — the pad plane; fuzzier underside
+            float d = length(uv);
+            float a = 1.0 - smoothstep(0.16, 0.5, d); // explicit inversion — reversed smoothstep edges are UB per spec
             if (a < 0.02) discard;
             float tw = 0.82 + 0.22 * sin(uTime * 1.1 + vTw * 3.0);
-            gl_FragColor = vec4(vColor * tw, a * 0.6);
+            gl_FragColor = vec4(vColor * tw, a * 0.66);
           }`,
       });
       const crowns = new THREE.Mesh(geo, mat);
@@ -346,8 +400,28 @@ export async function startGroveWalk({ placeGrove, config, events, title, subtit
       });
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-      const pts = new THREE.Points(g, new THREE.PointsMaterial({ size: 3.4, vertexColors: true, transparent: true, opacity: 0.95, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+      g.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+      // soft round sparks (PointsMaterial draws SQUARES — up close, with many
+      // blossoms per acacia, that read as blown-out white rectangles)
+      const pts = new THREE.Points(g, new THREE.ShaderMaterial({
+        transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+        vertexShader: /* glsl */`
+          attribute vec3 aColor; varying vec3 vColor;
+          void main() {
+            vColor = aColor;
+            vec4 mv = viewMatrix * vec4(position, 1.0);
+            gl_PointSize = min(34.0, 240.0 / max(1.0, -mv.z));
+            gl_Position = projectionMatrix * mv;
+          }`,
+        fragmentShader: /* glsl */`
+          varying vec3 vColor;
+          void main() {
+            float d = length(gl_PointCoord - 0.5);
+            float a = 1.0 - smoothstep(0.08, 0.5, d); // explicit inversion — reversed smoothstep edges are UB per spec
+            if (a < 0.02) discard;
+            gl_FragColor = vec4(vColor, a * 0.9);
+          }`,
+      }));
       pts.frustumCulled = false;
       scene.add(pts);
     }
