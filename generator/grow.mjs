@@ -385,10 +385,17 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
       const p = v(node.pos[0] * 0.4 + Math.cos(az) * rho, y, node.pos[2] * 0.4 + Math.sin(az) * rho);
       if (prev) {
         emit(prev, p, r0 * (1 - 0.78 * ((i - 1) / RIB_STEPS)), bornAt(t), distAt(t));
+        const tPrev = (i - 1) / RIB_STEPS;
         for (const b of STRATUM_BOUNDARIES) {
           if ((prev[1] - b) * (p[1] - b) <= 0 && prev[1] !== p[1] && Math.abs(prev[1] - b) < 2.0) {
+            // interpolate position AND born with the same fraction — the blossom's
+            // replay moment must match the exact crossing, not the segment's end
             const k = (b - prev[1]) / (p[1] - prev[1]);
-            crossings.push({ y: b, pos: [prev[0] + (p[0] - prev[0]) * k, b, prev[2] + (p[2] - prev[2]) * k], born: bornAt(t) });
+            crossings.push({
+              y: b,
+              pos: [prev[0] + (p[0] - prev[0]) * k, b, prev[2] + (p[2] - prev[2]) * k],
+              born: bornAt(tPrev + (t - tPrev) * k),
+            });
           }
         }
       }

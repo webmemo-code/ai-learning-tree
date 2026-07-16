@@ -210,9 +210,10 @@ try {
 
 // The generator emits the acacia natively since algoVersion 2.0.0 (the regrow step
 // this sketch pioneered was ported into generator/grow.mjs) — tree.json IS the acacia.
-if (TREE.algoVersion && TREE.algoVersion.split(".")[0] < 2) {
-  fatal(`this sketch expects an acacia tree.json (algoVersion >= 2.0.0, got ${TREE.algoVersion}) — rebuild with: node generator/build.mjs`);
-  throw new Error("algoVersion too old");
+const algoMajor = parseInt(String(TREE.algoVersion || '0'), 10) || 0; // missing/invalid → 0
+if (algoMajor < 2) {
+  fatal(`this sketch expects an acacia tree.json (algoVersion >= 2.0.0, got ${TREE.algoVersion || 'none'}) — rebuild with: node generator/build.mjs`);
+  throw new Error('algoVersion too old');
 }
 
 // ---------- strata + sectors come from the data now (no hardcoded aggregates) ----------

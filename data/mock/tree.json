@@ -2,7 +2,7 @@
   "algoVersion": "2.0.0",
   "blossoms": [
     {
-      "born": 0.2529,
+      "born": 0.2417,
       "eventId": "manual:copy-level-2",
       "evidence": "https://www.webmemo.ch/blog/ai-copy-first-repeatable-brief-workflow",
       "hue": 16757844,
@@ -34,7 +34,7 @@
       "stratum": "Canopy"
     },
     {
-      "born": 0.3918,
+      "born": 0.3333,
       "eventId": "manual:images-level-2",
       "evidence": "https://www.webmemo.ch/blog/ai-image-experimenter",
       "hue": 16740039,
@@ -50,7 +50,7 @@
       "stratum": "Understory"
     },
     {
-      "born": 0.4566,
+      "born": 0.4149,
       "eventId": "manual:workflows-level-2",
       "evidence": "https://www.webmemo.ch/blog/comfyui-flows-experimenter",
       "hue": 8185434,
@@ -162,7 +162,7 @@
       "stratum": "Understory"
     },
     {
-      "born": 0.2893,
+      "born": 0.2697,
       "eventId": "manual:pro-code-level-2",
       "evidence": "https://www.webmemo.ch/blog/pro-code-experimenter",
       "hue": 6983167,
