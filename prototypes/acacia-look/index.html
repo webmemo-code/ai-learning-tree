@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Learning Tree — acacia look, concept board 001</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; background: #05070d; color: #cfd8e3; font-family: "Segoe UI", system-ui, sans-serif; }
+  #wrap { max-width: 1280px; margin: 0 auto; padding: 28px 20px 60px; }
+  header h1 { font-size: 20px; margin: 0; font-weight: 600; color: #eef4fb; letter-spacing: 0.02em; }
+  header .sub { color: #8fa3ba; font-size: 12.5px; margin: 4px 0 6px; }
+  header .bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  button {
+    all: unset; cursor: pointer; padding: 6px 13px; border-radius: 8px; font-size: 12.5px;
+    color: #eaf2fb; background: rgba(90, 140, 220, 0.22); border: 1px solid rgba(140, 180, 240, 0.35);
+  }
+  button:hover { background: rgba(110, 160, 240, 0.38); }
+  .seed { font-size: 11.5px; color: #7f93aa; }
+  a { color: #86b7ff; text-decoration: none; } a:hover { text-decoration: underline; }
+  #grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 22px; }
+  .card {
+    background: rgba(10, 16, 28, 0.55); border: 1px solid rgba(140, 170, 210, 0.16);
+    border-radius: 14px; overflow: hidden;
+  }
+  .card.wide { grid-column: 1 / -1; }
+  .card canvas { display: block; width: 100%; height: auto; }
+  .cap { padding: 12px 16px 14px; border-top: 1px solid rgba(140, 170, 210, 0.12); }
+  .cap h2 { font-size: 13.5px; margin: 0 0 4px; color: #eef4fb; font-weight: 600; }
+  .cap h2 .tag { font-size: 10.5px; color: #8fa3ba; font-weight: 400; margin-left: 6px; }
+  .cap p { font-size: 12px; line-height: 1.55; color: #9fb2c8; margin: 0; }
+  .cap b { color: #cfe0f2; font-weight: 600; }
+  .reco { padding: 16px 18px; font-size: 12.5px; line-height: 1.6; color: #9fb2c8; }
+  .reco h2 { font-size: 13.5px; margin: 0 0 8px; color: #eef4fb; font-weight: 600; }
+  @media (max-width: 860px) { #grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <h1>Acacia look 🌍 concept board 001</h1>
+    <div class="sub">from "tall young poplar" to "savanna umbrella" — four directions, same data model · generative sketches, reseed to see variants</div>
+    <div class="bar">
+      <button id="reseed">🎲 reseed</button>
+      <span class="seed" id="seedLabel"></span>
+      <span class="seed">· write-up in <a href="README.md">README.md</a> · palette + strata inherited from mood-sketch 001</span>
+    </div>
+  </header>
+
+  <div id="grid">
+    <div class="card">
+      <canvas id="c1" width="920" height="660"></canvas>
+      <div class="cap">
+        <h2>1 · Rising Umbrella <span class="tag">silhouette — the core move</span></h2>
+        <p>Short bole, low fork, angular limbs, and <b>one flat pad per sector, parked just
+        under its earned stratum ceiling</b>. The flatten-at-ceiling rule already in
+        <b>grow.mjs</b> becomes the hero feature: a level-up = the canopy visibly lifts.
+        Asymmetric levels read as a natural multi-tier umbrella.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <canvas id="c2" width="920" height="660"></canvas>
+      <div class="cap">
+        <h2>2 · Tiered Pagoda <span class="tag">history layer — optional, on top of 1</span></h2>
+        <p>Every stratum a sector has <b>ever crossed</b> keeps a thinner pad at that band —
+        current level wears the fresh crown, older tiers dry to savanna gold below it.
+        Blossoms sit on the tier rims where they already spawn. Gorgeous at 1–2 tiers,
+        busy at 4×10 sectors → proposed as a toggle / replay-only effect.</p>
+      </div>
+    </div>
+
+    <div class="card wide">
+      <canvas id="c3" width="1880" height="600"></canvas>
+      <div class="cap">
+        <h2>3 · Savanna Night <span class="tag">atmosphere — biome reframe, keeps the night garden</span></h2>
+        <p>The four strata stop being rainforest fog layers and become <b>sky bands over an
+        open plain</b>: ground haze (Novice) → dusk teal (Experimenter) → a thin gold
+        afterglow (Practitioner) → stars only above the Expert line, so your tallest pad is
+        the one thing silhouetted against actual stars. Grove-walk inherits scattered
+        savanna neighbors readable at distance by pad heights alone.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <canvas id="c4" width="920" height="660"></canvas>
+      <div class="cap">
+        <h2>4 · Thorn &amp; Lace <span class="tag">detail + material pass, after 1 &amp; 3</span></h2>
+        <p>Close-up character: <b>zigzag elbow wood</b> (the sap-light pulse running along it
+        reads like a circuit trace), tiny non-glowing thorns at the kinks, foliage as
+        <b>thin lace layers</b> of bipinnate leaflets glowing from within — and fireflies
+        drifting in the shade <b>under</b> the umbrella, where savanna life gathers.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="reco">
+        <h2>Recommended direction</h2>
+        <p><b>1 + 3 together</b> are the look — the silhouette and the world it stands in;
+        each alone looks half-committed. <b>4</b> is the polish pass once the new skeleton
+        exists; <b>2</b> stays an experiment behind a toggle.</p>
+        <p style="margin-top:8px">Nothing in the data model moves: growth log, drivers,
+        taxonomy, milestone gating, privacy and the replay all stay untouched.
+        <code style="color:#cfe0f2">tree&nbsp;=&nbsp;grow(events,&nbsp;seed)</code> stays pure —
+        the tree just learns which species it is (algoVersion 2.0.0).</p>
+        <p style="margin-top:8px">Next step: fork mood-sketch into an <b>acacia mood sketch</b>
+        — same <code style="color:#cfe0f2">tree.json</code>, acacia growth parameters +
+        savanna sky, side by side with the current look.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ---------------------------------------------------------------------------
+// throwaway concept sketch — 2D canvas, zero deps, works from file://
+// palette + strata carried over from prototypes/mood-sketch (the feeling is the spec)
+// ---------------------------------------------------------------------------
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function strHash(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+}
+const mkRng = (...parts) => mulberry32(strHash(parts.join('|')));
+const gauss = (rng) => (rng() + rng() + rng()) - 1.5; // cheap approx normal in [-1.5, 1.5]
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+const STRATA = [
+  { label: 'Novice',       col: '#5aa66a' },
+  { label: 'Experimenter', col: '#4fd8c4' },
+  { label: 'Practitioner', col: '#ffcf6e' },
+  { label: 'Expert',       col: '#e8ecff' },
+];
+// sector-limb hues (docs/02 §4): CREATE amber · AUTOMATE spring-green · DISTRIBUTE teal · BUILD violet
+const LIMB_HUES = { create: '#ffb35c', automate: '#7dde6a', distribute: '#4fd8c4', build: '#a97dff' };
+const FRESH = '#9fe08a', EVERGREEN = '#3f7f57', DRYGOLD = '#d9a94f';
+const BARK = '#191512', BARK_EDGE = 'rgba(120,100,80,0.35)';
+
+let SEED = new URLSearchParams(location.search).get('seed') || 'acacia-001';
+
+// ---------- tiny draw helpers ----------
+function strokeTapered(ctx, pts, w0, w1, col) {
+  ctx.strokeStyle = col; ctx.lineCap = 'round';
+  for (let i = 0; i < pts.length - 1; i++) {
+    const t = i / (pts.length - 1);
+    ctx.lineWidth = Math.max(0.5, w0 + (w1 - w0) * t);
+    ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[i + 1][0], pts[i + 1][1]); ctx.stroke();
+  }
+}
+function glowDot(ctx, x, y, r, col, a) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3.2);
+  g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.globalAlpha = a * 0.55; ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r * 3.2, 0, 7); ctx.fill();
+  ctx.globalAlpha = a; ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+  ctx.globalAlpha = 1;
+}
+function dot(ctx, x, y, r, col, a) {
+  ctx.globalAlpha = a; ctx.fillStyle = col;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+}
+
+// ---------- scene scaffolding ----------
+function skyAndBands(ctx, W, H, groundY, unit, o = {}) {
+  const bandY = (k) => groundY - unit * k;
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#04060d'); bg.addColorStop(1, '#0a0f18');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  if (o.savanna) {
+    // stars only above the Expert line
+    const rng = mkRng(SEED, 'stars');
+    for (let i = 0; i < 260; i++) {
+      const x = rng() * W, y = rng() * bandY(3);
+      dot(ctx, x, y, 0.4 + rng() * 0.9, '#dfe8ff', 0.15 + rng() * 0.55);
+    }
+    // thin gold afterglow at the Practitioner band
+    let g = ctx.createLinearGradient(0, bandY(3), 0, bandY(2));
+    g.addColorStop(0, 'rgba(255,207,110,0)'); g.addColorStop(0.55, 'rgba(255,190,90,0.10)'); g.addColorStop(1, 'rgba(255,207,110,0.02)');
+    ctx.fillStyle = g; ctx.fillRect(0, bandY(3), W, unit);
+    // dusk teal
+    g = ctx.createLinearGradient(0, bandY(2), 0, bandY(1));
+    g.addColorStop(0, 'rgba(79,216,196,0.045)'); g.addColorStop(1, 'rgba(79,216,196,0.012)');
+    ctx.fillStyle = g; ctx.fillRect(0, bandY(2), W, unit);
+    // ground haze
+    g = ctx.createLinearGradient(0, bandY(1), 0, groundY);
+    g.addColorStop(0, 'rgba(90,166,106,0.02)'); g.addColorStop(1, 'rgba(90,166,106,0.14)');
+    ctx.fillStyle = g; ctx.fillRect(0, bandY(1), W, unit);
+  } else {
+    // forest-style faint band tints (the current dressing, kept for panels 1/2/4)
+    for (let k = 0; k < 4; k++) {
+      const g = ctx.createLinearGradient(0, bandY(k + 1), 0, bandY(k));
+      const c = STRATA[k].col;
+      g.addColorStop(0, hexA(c, 0.015)); g.addColorStop(1, hexA(c, 0.05));
+      ctx.fillStyle = g; ctx.fillRect(0, bandY(k + 1), W, unit);
+    }
+  }
+  // band boundary lines + labels
+  ctx.font = '11px "Segoe UI", system-ui, sans-serif'; ctx.textAlign = 'right';
+  for (let k = 1; k <= 4; k++) {
+    ctx.strokeStyle = hexA(STRATA[k - 1].col, 0.16); ctx.lineWidth = 1;
+    ctx.setLineDash([2, 7]); ctx.beginPath();
+    ctx.moveTo(0, bandY(k)); ctx.lineTo(W, bandY(k)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = hexA(STRATA[k - 1].col, 0.55);
+    ctx.fillText(STRATA[k - 1].label, W - 12, bandY(k) - 5);
+  }
+  // ground
+  ctx.fillStyle = '#070a08'; ctx.fillRect(0, groundY, W, H - groundY);
+  const gg = ctx.createLinearGradient(0, groundY, 0, groundY + 30);
+  gg.addColorStop(0, 'rgba(90,166,106,0.20)'); gg.addColorStop(1, 'rgba(90,166,106,0)');
+  ctx.fillStyle = gg; ctx.fillRect(0, groundY, W, 30);
+  ctx.textAlign = 'left';
+}
+function hexA(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+function compassHint(ctx, cx, groundY, rx) {
+  ctx.strokeStyle = 'rgba(140,170,210,0.14)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.ellipse(cx, groundY + 6, rx, rx * 0.16, 0, 0, 7); ctx.stroke();
+  ctx.strokeStyle = 'rgba(140,170,210,0.07)';
+  ctx.beginPath(); ctx.ellipse(cx, groundY + 6, rx * 0.62, rx * 0.1, 0, 0, 7); ctx.stroke();
+}
+
+// ---------- the 2D acacia ----------
+// One limb = one parametric "rib": steep rise off the fork, easing flat under its
+// earned ceiling (the grow.mjs flatten rule, drawn on purpose), with elbow kinks.
+function limbPath(rng, forkX, forkY, ceilY, xReach, unit) {
+  const steps = 9, pts = [];
+  const rise = forkY - ceilY;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const x = forkX + xReach * Math.pow(t, 1.18);
+    let y = forkY - rise * (1 - Math.pow(1 - t, 1.8));
+    if (i > 0 && i < steps) y += ((i % 2) ? 1 : -1) * (0.03 + rng() * 0.05) * unit * (1 - t * 0.8);
+    pts.push([x, Math.max(y, ceilY)]);
+  }
+  return pts;
+}
+function xAtY(pts, y) {
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+    if ((y0 - y) * (y1 - y) <= 0 && y0 !== y1) return x0 + ((y0 - y) / (y0 - y1)) * (x1 - x0);
+  }
+  return pts[pts.length - 1][0];
+}
+
+// limbs: [{ dx (-1..1 spread direction), level (1..4), hue, act (0..1) }]
+function drawAcacia(ctx, rng, o) {
+  const bandY = (k) => o.groundY - o.unit * k;
+  const S = o.scale || 1;
+  const boleH = o.unit * (0.52 + rng() * 0.15);
+  const lean = (rng() - 0.5) * o.unit * 0.08;
+  const forkX = o.cx + lean, forkY = o.groundY - boleH;
+
+  const jobs = [];
+  for (const limb of o.limbs) {
+    const ceilY = bandY(limb.level) + o.unit * 0.1;
+    const xReach = limb.dx * o.unit * (0.5 + limb.level * 0.36 + limb.act * 0.26);
+    const main = limbPath(rng, forkX, forkY, ceilY, xReach, o.unit);
+    // twigs from the outer half, rising to the pad plane
+    const twigs = [], tips = [main[main.length - 1]];
+    for (const tt of [0.45, 0.6, 0.74, 0.87]) {
+      if (rng() < 0.18) continue;
+      const [px, py] = main[Math.round(tt * (main.length - 1))];
+      const ex = px + limb.dx * o.unit * (0.15 + rng() * 0.5);
+      const ey = ceilY + o.unit * (0.03 + rng() * 0.1);
+      const mx = (px + ex) / 2 + (rng() - 0.5) * o.unit * 0.14;   // one elbow each
+      twigs.push([[px, py], [mx, (py + ey) / 2 + o.unit * 0.05], [ex, ey]]);
+      tips.push([ex, ey]);
+    }
+    jobs.push({ limb, main, twigs, tips, ceilY });
+  }
+
+  // wood — bole with root flare, then ribs and twigs
+  const flare = o.unit * 0.15 * S;
+  strokeTapered(ctx, [[o.cx - flare, o.groundY + 3], [o.cx, o.groundY - boleH * 0.45], [forkX, forkY]], o.unit * 0.13 * S, o.unit * 0.08 * S, BARK);
+  strokeTapered(ctx, [[o.cx + flare, o.groundY + 3], [o.cx + lean * 0.5, o.groundY - boleH * 0.5], [forkX, forkY]], o.unit * 0.09 * S, o.unit * 0.055 * S, BARK);
+  for (const job of jobs) {
+    const w0 = o.unit * 0.075 * (0.55 + job.limb.act * 0.5) * S;
+    strokeTapered(ctx, job.main, w0, Math.max(0.7, w0 * 0.12), BARK);
+    strokeTapered(ctx, job.main, w0 * 0.35, 0.5, BARK_EDGE);      // faint lit edge so wood reads on black
+    for (const tw of job.twigs) strokeTapered(ctx, tw, 1.8 * S, 0.6, BARK);
+  }
+  // faint emissive vein up the bole (sap-light at rest)
+  strokeTapered(ctx, [[o.cx, o.groundY], [forkX, forkY]], 1.6 * S, 0.8 * S, 'rgba(255,225,180,0.10)');
+
+  // pads — one lens per limb (or one per crossed band in tiered mode)
+  for (const job of jobs) {
+    const cx = job.tips.reduce((a, t) => a + t[0], 0) / job.tips.length;
+    const halfW = o.unit * (0.55 + job.limb.act * 0.35 + job.limb.level * 0.07);
+    if (o.tiered) {
+      for (let t = 1; t <= job.limb.level; t++) {
+        const y = bandY(t) + o.unit * 0.1;
+        const fresh = t === job.limb.level;
+        const px = fresh ? cx : xAtY(job.main, y);
+        drawPad(ctx, rng, px, y, halfW * (fresh ? 1 : 0.55 + 0.12 * t), o.unit * 0.3 * (fresh ? 1 : 0.72), job.limb.hue, fresh, S);
+      }
+    } else {
+      drawPad(ctx, rng, cx, job.ceilY, halfW, o.unit * 0.3, job.limb.hue, true, S);
+    }
+  }
+
+  // blossoms mark each boundary the limb crossed, riding the rib
+  for (const job of jobs) {
+    for (let lvl = 2; lvl <= job.limb.level; lvl++) {
+      const yB = bandY(lvl - 1);
+      glowDot(ctx, xAtY(job.main, yB) + gauss(rng) * 3, yB - 4 - rng() * 4, 2.6 * S, '#ffb3dd', 0.95);
+    }
+  }
+}
+
+function drawPad(ctx, rng, cx, padY, halfW, th, hue, fresh, S) {
+  // underglow — the foliage lantern effect
+  const ug = ctx.createRadialGradient(cx, padY + th * 0.4, 0, cx, padY + th * 0.4, halfW * 1.05);
+  ug.addColorStop(0, hexA(hue, fresh ? 0.16 : 0.06)); ug.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = ug;
+  ctx.beginPath(); ctx.ellipse(cx, padY + th * 0.45, halfW * 1.05, th * 1.6, 0, 0, 7); ctx.fill();
+  // coherent lens body (this is what makes it read as an umbrella, not confetti)
+  ctx.fillStyle = hexA(hue, fresh ? 0.2 : 0.1);
+  ctx.beginPath(); ctx.ellipse(cx, padY + th * 0.52, halfW, th * 0.58, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = hexA(hue, fresh ? 0.3 : 0.14);
+  ctx.beginPath(); ctx.ellipse(cx, padY + th * 0.36, halfW * 0.72, th * 0.36, 0, 0, 7); ctx.fill();
+  // leaflet texture: flat top, fuzzy underside, thinning toward the rim
+  const n = Math.round(halfW * 1.5);
+  for (let i = 0; i < n; i++) {
+    const gx = clamp(gauss(rng) * 0.62, -1, 1);
+    const lens = 1 - Math.abs(gx) * 0.6;
+    const x = cx + gx * halfW * 1.06;
+    let y = padY + Math.abs(gauss(rng)) * th * 0.6 * lens;
+    if (rng() < 0.1) y = padY - rng() * th * 0.14;
+    const pick = rng();
+    const col = !fresh
+      ? (pick < 0.6 ? DRYGOLD : pick < 0.85 ? hue : EVERGREEN)
+      : (pick < 0.5 ? hue : pick < 0.78 ? FRESH : EVERGREEN);
+    dot(ctx, x, y, (0.7 + rng() * 1.4) * S, col, (fresh ? 0.4 : 0.22) + rng() * 0.4);
+  }
+  if (fresh) {
+    for (let i = 0; i < 6; i++) {
+      glowDot(ctx, cx + gauss(rng) * halfW * 0.55, padY + rng() * th * 0.4, 1.3 * S, hue, 0.7);
+    }
+  }
+}
+
+function distantAcacia(ctx, rng, x, groundY, h, hue) {
+  const forkY = groundY - h * 0.4;
+  strokeTapered(ctx, [[x, groundY], [x + h * 0.05, forkY]], h * 0.06, h * 0.035, '#0c0a09');
+  for (const dx of [-1, -0.3, 0.5, 1]) {
+    const tipX = x + dx * h * 0.55 * (0.7 + rng() * 0.5), tipY = forkY - h * (0.35 + rng() * 0.2);
+    strokeTapered(ctx, [[x + h * 0.05, forkY], [tipX, tipY]], h * 0.025, 0.6, '#0c0a09');
+    const g = ctx.createRadialGradient(tipX, tipY, 0, tipX, tipY, h * 0.3);
+    g.addColorStop(0, hexA(hue, 0.5)); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(tipX, tipY, h * 0.3, h * 0.09, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = hexA(hue, 0.55);
+    ctx.beginPath(); ctx.ellipse(tipX, tipY, h * 0.22, h * 0.045, 0, 0, 7); ctx.fill();
+  }
+}
+
+// asymmetric reference journey used by panels 1–3 (levels differ per limb on purpose)
+const LIMBS = [
+  { dx: -1.0,  level: 3, hue: LIMB_HUES.build,      act: 0.85 },
+  { dx: -0.45, level: 2, hue: LIMB_HUES.distribute, act: 0.55 },
+  { dx:  0.42, level: 3, hue: LIMB_HUES.automate,   act: 0.6 },
+  { dx:  1.0,  level: 4, hue: LIMB_HUES.create,     act: 0.95 },
+];
+
+// ---------- panels ----------
+const fireflySets = [];   // {canvas, ctx, staticC, flies:[{x,y,r,hue,ph,sp,ax,ay}], sap?}
+function panelBase(id) {
+  const canvas = document.getElementById(id);
+  const W = canvas.width, H = canvas.height;
+  const staticC = document.createElement('canvas');
+  staticC.width = W; staticC.height = H;
+  return { canvas, ctx: canvas.getContext('2d'), staticC, sctx: staticC.getContext('2d'), W, H };
+}
+function addFlies(set, rng, n, cx, cy, rx, ry, hue) {
+  for (let i = 0; i < n; i++) {
+    set.flies.push({
+      x: cx + gauss(rng) * rx, y: cy + gauss(rng) * ry,
+      r: 1 + rng() * 1.3, hue, ph: rng() * 7, sp: 0.4 + rng() * 0.8,
+      ax: rx * 0.12, ay: ry * 0.18,
+    });
+  }
+}
+
+function buildPanel12(id, tiered) {
+  const p = panelBase(id);
+  const rng = mkRng(SEED, id);
+  const unit = (p.H * 0.78) / 4, groundY = p.H * 0.86;
+  skyAndBands(p.sctx, p.W, p.H, groundY, unit, {});
+  compassHint(p.sctx, p.W * 0.5, groundY, unit * 2.4);
+  drawAcacia(p.sctx, rng, { cx: p.W * 0.5, groundY, unit, limbs: LIMBS, tiered });
+  const set = { ...p, flies: [] };
+  addFlies(set, rng, 10, p.W * 0.5, groundY - unit * 2.6, unit * 2.2, unit * 0.9, '#ffe9b0');
+  fireflySets.push(set);
+}
+
+function buildPanel3() {
+  const p = panelBase('c3');
+  const rng = mkRng(SEED, 'c3');
+  const groundY = p.H * 0.8, unit = (groundY - p.H * 0.12) / 4;
+  skyAndBands(p.sctx, p.W, p.H, groundY, unit, { savanna: true });
+  // faint compass etched into the plain around the hero tree
+  compassHint(p.sctx, p.W * 0.34, groundY, unit * 2.1);
+  drawAcacia(p.sctx, rng, { cx: p.W * 0.34, groundY, unit, limbs: LIMBS, tiered: false });
+  // scattered grove neighbors, readable by pad heights alone
+  distantAcacia(p.sctx, rng, p.W * 0.66, groundY, unit * 1.7, LIMB_HUES.automate);
+  distantAcacia(p.sctx, rng, p.W * 0.78, groundY, unit * 2.5, LIMB_HUES.distribute);
+  distantAcacia(p.sctx, rng, p.W * 0.9,  groundY, unit * 1.3, LIMB_HUES.create);
+  const set = { ...p, flies: [] };
+  addFlies(set, rng, 14, p.W * 0.34, groundY - unit * 2.4, unit * 2.4, unit * 1.1, '#ffe9b0');
+  addFlies(set, rng, 4, p.W * 0.78, groundY - unit * 1.4, unit * 0.8, unit * 0.5, '#cfe6d8');
+  fireflySets.push(set);
+}
+
+function buildPanel4() {
+  const p = panelBase('c4');
+  const rng = mkRng(SEED, 'c4');
+  const W = p.W, H = p.H, ctx = p.sctx;
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#04060d'); bg.addColorStop(1, '#090d15');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  // the Practitioner ceiling, up close
+  const ceilY = H * 0.34;
+  ctx.strokeStyle = hexA(STRATA[2].col, 0.16); ctx.setLineDash([2, 7]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, ceilY); ctx.lineTo(W, ceilY); ctx.stroke(); ctx.setLineDash([]);
+  ctx.font = '11px "Segoe UI", system-ui, sans-serif'; ctx.fillStyle = hexA(STRATA[2].col, 0.5);
+  ctx.textAlign = 'right'; ctx.fillText('Practitioner', W - 12, ceilY - 6); ctx.textAlign = 'left';
+
+  // one bough in zigzag elbows, flattening under its ceiling
+  const pts = [];
+  let x = W * 0.04, y = H * 0.9, ang = -0.62;
+  for (let i = 0; i < 12; i++) {
+    const below = clamp((y - (ceilY + 26)) / (H * 0.3), 0, 1);
+    ang += (((i % 2) ? 1 : -1) * (0.34 + rng() * 0.22));
+    ang = ang * 0.55 + (-below * 0.62) * 0.45;              // ease toward horizontal near the ceiling
+    const L = W * 0.075 * (1 - i * 0.02);
+    pts.push([x, y]);
+    x += Math.cos(ang) * L; y += Math.sin(ang) * L;
+    if (y < ceilY + 22) y = ceilY + 22 + (ceilY + 22 - y) * 0.3;
+  }
+  pts.push([x, y]);
+  strokeTapered(ctx, pts, 12, 1.8, BARK);
+  strokeTapered(ctx, pts, 5, 0.9, 'rgba(74,60,48,0.9)');
+  strokeTapered(ctx, pts, 1.8, 0.4, 'rgba(140,116,90,0.5)');
+
+  // thorns at the elbows — texture, not threat (they don't glow)
+  for (let i = 2; i < pts.length - 1; i++) {
+    const [px, py] = pts[i];
+    for (const s of [-1, 1]) {
+      if (rng() < 0.4) continue;
+      const a = -Math.PI / 2 + s * (0.5 + rng() * 0.5);
+      ctx.strokeStyle = '#241d17'; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(px, py);
+      ctx.lineTo(px + Math.cos(a) * (7 + rng() * 6), py + Math.sin(a) * (7 + rng() * 6)); ctx.stroke();
+    }
+  }
+  // twigs rising to the lace layers
+  const laceX0 = W * 0.42, laceX1 = W * 0.94;
+  for (let i = 5; i < pts.length - 1; i += 2) {
+    const [px, py] = pts[i];
+    strokeTapered(ctx, [[px, py], [px + 20 + rng() * 30, ceilY + 30 + rng() * 20]], 2, 0.5, BARK);
+  }
+
+  // lace foliage: thin stacked layers of bipinnate leaflet combs
+  const layerYs = [ceilY + 14, ceilY + 36, ceilY + 58, ceilY + 82];
+  const laceUg = ctx.createRadialGradient((laceX0 + laceX1) / 2, ceilY + 48, 0, (laceX0 + laceX1) / 2, ceilY + 48, (laceX1 - laceX0) * 0.62);
+  laceUg.addColorStop(0, hexA(LIMB_HUES.create, 0.2)); laceUg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = laceUg;
+  ctx.beginPath(); ctx.ellipse((laceX0 + laceX1) / 2, ceilY + 50, (laceX1 - laceX0) * 0.6, 66, 0, 0, 7); ctx.fill();
+  layerYs.forEach((ly, li) => {
+    const inset = li * 14;                                          // layers narrow as they stack down
+    for (let px = laceX0 + inset; px < laceX1 - inset; px += 9 + rng() * 6) {
+      const py = ly + gauss(rng) * 4;
+      const len = 13 + rng() * 8, tilt = gauss(rng) * 0.12;
+      // rachis
+      ctx.strokeStyle = 'rgba(110,140,105,0.4)'; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + len, py + len * tilt); ctx.stroke();
+      // paired leaflets
+      const nL = 6 + (rng() * 3 | 0);
+      for (let k = 0; k <= nL; k++) {
+        const lx = px + (len * k) / nL, lyy = py + (len * tilt * k) / nL;
+        const pick = rng();
+        const col = pick < 0.45 ? FRESH : pick < 0.8 ? LIMB_HUES.create : EVERGREEN;
+        dot(ctx, lx, lyy - 2, 1.1, col, 0.45 + rng() * 0.45 - li * 0.06);
+        dot(ctx, lx, lyy + 2, 1.1, col, 0.45 + rng() * 0.45 - li * 0.06);
+      }
+    }
+  });
+  for (let i = 0; i < 9; i++) {
+    glowDot(ctx, laceX0 + rng() * (laceX1 - laceX0), ceilY + 14 + rng() * 60, 1.3, LIMB_HUES.create, 0.75);
+  }
+  // a blossom at the crossing the bough just made
+  glowDot(ctx, pts[8][0], ceilY + 8, 3.6, '#ffb3dd', 1);
+
+  ctx.fillStyle = 'rgba(143,163,186,0.5)'; ctx.font = '10.5px "Segoe UI", system-ui, sans-serif';
+  ctx.fillText('sap-light pulse ⟶ travels the elbows like a circuit trace', W * 0.05, H * 0.95);
+
+  const set = { ...p, flies: [], sap: { pts, t: 0 } };
+  // fireflies gather in the shade *under* the umbrella
+  addFlies(set, rng, 12, (laceX0 + laceX1) / 2, ceilY + 130, (laceX1 - laceX0) * 0.35, 55, '#ffe9b0');
+  fireflySets.push(set);
+}
+
+// ---------- animation: composite static scene + fireflies + sap pulse ----------
+let t0 = performance.now();
+function frame(now) {
+  const t = (now - t0) / 1000;
+  for (const s of fireflySets) {
+    s.ctx.clearRect(0, 0, s.W, s.H);
+    s.ctx.drawImage(s.staticC, 0, 0);
+    for (const f of s.flies) {
+      const x = f.x + Math.sin(t * f.sp + f.ph) * f.ax + Math.sin(t * 0.31 + f.ph * 2) * 4;
+      const y = f.y + Math.cos(t * f.sp * 0.8 + f.ph) * f.ay;
+      const a = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(t * (1.1 + f.sp) + f.ph * 3));
+      glowDot(s.ctx, x, y, f.r, f.hue, a);
+    }
+    if (s.sap) {
+      const pts = s.sap.pts, u = (((t * 0.13) % 1) + 1) % 1;
+      const seg = u * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(seg)), k = seg - i;
+      const a = pts[i], b = pts[Math.min(pts.length - 1, i + 1)];
+      const x = a[0] + (b[0] - a[0]) * k, y = a[1] + (b[1] - a[1]) * k;
+      // fading trail hugging the elbows
+      for (let j = 0; j < 7; j++) {
+        const uu = Math.max(0, seg - j * 0.55), ii = Math.floor(uu), kk = uu - ii;
+        const aa = pts[ii], bb = pts[Math.min(pts.length - 1, ii + 1)];
+        dot(s.ctx, aa[0] + (bb[0] - aa[0]) * kk, aa[1] + (bb[1] - aa[1]) * kk, 2.2 - j * 0.25, '#ffe9c4', 0.5 * (1 - j / 7));
+      }
+      glowDot(s.ctx, x, y, 2.4, '#fff3dd', 0.95);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function buildAll() {
+  fireflySets.length = 0;
+  document.getElementById('seedLabel').textContent = 'seed: ' + SEED;
+  buildPanel12('c1', false);
+  buildPanel12('c2', true);
+  buildPanel3();
+  buildPanel4();
+}
+buildAll();
+requestAnimationFrame(frame);
+
+document.getElementById('reseed').addEventListener('click', () => {
+  SEED = 'acacia-' + ((Math.random() * 1e6) | 0).toString(36);
+  const url = new URL(location.href); url.searchParams.set('seed', SEED);
+  history.replaceState(null, '', url);
+  buildAll();
+});
+</script>
+</body>
+</html>
