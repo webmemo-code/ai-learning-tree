@@ -13,7 +13,12 @@ as something alive — and something worth showing to other knowledge workers to
 > replay), grove coordination is decided (ADR-0006/0007), and **the
 > [first real grove is planted](https://github.com/webmemo-code/my-ai-learning-journey)** —
 > this repo's own tree stands at slot 0 of its commons, joined by the same
-> [planting ceremony](grove/template/README.md) every future member will use. The
+> [planting ceremony](grove/template/README.md) every future member will use.
+> **The tree's species is the savanna acacia** (generator algoVersion 2.0.0,
+> [ADR-0008](docs/decisions/0008-acacia-silhouette.md)): each sector's foliage pad
+> parks under its *earned* proficiency ceiling, so a level-up reads as the canopy
+> lifting — see the [acacia sketch](prototypes/acacia-sketch/) and the living TODO
+> in [docs/04 §4](docs/04-roadmap-and-process.md). The
 > origin brain dump lives in [issue #1](https://github.com/webmemo-code/ai-learning-tree/issues/1).
 
 Sibling project: [ai-periodic-cube](https://github.com/webmemo-code/ai-periodic-cube) —
