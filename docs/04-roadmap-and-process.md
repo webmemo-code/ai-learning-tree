@@ -73,7 +73,39 @@ opt-in registry of published trees. *The grove's coordination system — who dec
 which tree grows where — is specified in [05-grove.md](05-grove.md) (planting log +
 phyllotaxis placement, ADR-0006/0007).*
 
-## 4. Long-term risks & mitigations
+## 4. Now / next — the living TODO
+
+*Updated 2026-07-16, after the acacia arc landed (#19 concept board → #20 3D
+sketch → #21 generator 2.0.0 + ADR-0008 → #22 grove impostors). The generator,
+docs, both renderers and the grove walk all speak acacia; the real tree carries
+its first blossom (build.pro-code → Experimenter).*
+
+Next steps, roughly in value order:
+
+1. **Dawn mode** 🌅 — the daylight rig deferred in [02 §1](02-visual-language.md):
+   golden hour is the acacia's home lighting, and the savanna sunrise is the
+   poster shot. Renderer-only (a second lighting/sky preset in acacia-sketch).
+2. **Thorn & Lace** — concept 4 of [the board](../prototypes/acacia-look/README.md):
+   the close-up material pass on the new skeleton — zigzag elbow emphasis, tiny
+   non-glowing thorns, bipinnate lace leaf billboards. After dawn mode; it's
+   polish, not direction.
+3. **Refresh the shared clip** 🎥 — the phase-5 exit artifact predates the
+   species change; record a new 30-second acacia replay (the pad-lift moment is
+   now the climax) and use it wherever the old clip lives.
+4. **Decide the canonical viewer page** — mood-sketch still renders the acacia
+   in the old night-garden dressing; acacia-sketch is the reference. Either
+   promote acacia-sketch to the primary embed/share target or fold the savanna
+   dressing into mood-sketch — carrying both indefinitely invites drift.
+5. **Tiered Pagoda toggle** *(optional, concept 2)* — persistent pads at every
+   crossed stratum as an owner toggle or replay-only effect. Only worth it once
+   real trees have 2+ levels to show.
+6. **Next milestone when it's true** — `automate.workflows` is the busiest
+   sector (act 1.0); when its level-up is genuinely earned, one entry in
+   [data/milestones.yml](../data/milestones.yml) lifts the next pad.
+7. **Monthly snapshot ritual** (§2 Automation) — first tagged release with the
+   acacia beauty shot; the project's own growth rings start with the new species.
+
+## 5. Long-term risks & mitigations
 
 | Risk | Mitigation |
 | --- | --- |
