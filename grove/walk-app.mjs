@@ -121,7 +121,7 @@ export function specSynthetic(id) {
     }
     height = Math.max(height, ceil);
     for (let b = 2; b <= lvl; b++) {                              // a blossom at each crossed boundary
-      const bd = [3, 7, 12][b - 2];
+      const bd = PAD_CEILS[b - 2] + 0.35;                         // boundary = the ceiling below it + the 0.35 margin
       const rb = spread * (bd / ceil) * 0.8;
       blossoms.push({ pos: [Math.cos(az) * rb, bd + 0.2, Math.sin(az) * rb], hue: 0xffd9ec });
     }
@@ -314,7 +314,8 @@ export async function startGroveWalk({ placeGrove, config, events, title, subtit
         b.set(rb.t.pos[0] + rb.c.pos[0], rb.c.pos[1] - 0.25, rb.t.pos[1] + rb.c.pos[2]);
         d.subVectors(b, a);
         const len = Math.max(0.1, d.length());
-        q.setFromUnitVectors(up, d.normalize());
+        if (d.lengthSq() < 1e-8) d.set(0, 1, 0); else d.normalize(); // zero-length rib -> point it up, never NaN
+        q.setFromUnitVectors(up, d);
         const r = Math.min(0.28, 0.09 + rb.c.r * 0.05);
         s.set(r, len, r);
         m.compose(a, q, s);
@@ -368,7 +369,7 @@ export async function startGroveWalk({ placeGrove, config, events, title, subtit
             vec2 uv = vUv - 0.5;
             if (uv.y > 0.0) uv.y *= 1.45;   // crisper top edge — the pad plane; fuzzier underside
             float d = length(uv);
-            float a = smoothstep(0.5, 0.16, d);
+            float a = 1.0 - smoothstep(0.16, 0.5, d); // explicit inversion — reversed smoothstep edges are UB per spec
             if (a < 0.02) discard;
             float tw = 0.82 + 0.22 * sin(uTime * 1.1 + vTw * 3.0);
             gl_FragColor = vec4(vColor * tw, a * 0.66);
@@ -416,7 +417,7 @@ export async function startGroveWalk({ placeGrove, config, events, title, subtit
           varying vec3 vColor;
           void main() {
             float d = length(gl_PointCoord - 0.5);
-            float a = smoothstep(0.5, 0.08, d);
+            float a = 1.0 - smoothstep(0.08, 0.5, d); // explicit inversion — reversed smoothstep edges are UB per spec
             if (a < 0.02) discard;
             gl_FragColor = vec4(vColor, a * 0.9);
           }`,
