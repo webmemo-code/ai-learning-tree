@@ -20,3 +20,9 @@
 #   level: 2                 # stratum ceiling this raises the sector to
 #   evidence: "https://example.com/proof"  # URL only — prose goes in `note`
 #   note: "Short, factual description of what happened."
+
+- ts: 2026-07-16
+  sector: build.pro-code
+  level: 2
+  evidence: "https://github.com/webmemo-code/ai-learning-tree"
+  note: "Designed and shipped the AI Learning Tree pipeline — nightly harvester, deterministic generator, interactive 3D renderer — built through sustained AI pair-programming."

@@ -158,6 +158,7 @@ Suggested path, mirroring how the current look was found:
    place to argue).
 2. Fork mood-sketch into an **acacia mood sketch** — same data, same renderer,
    acacia growth parameters + savanna sky, side by side with the current look.
+   **Done: [../acacia-sketch/](../acacia-sketch/).**
 3. Once the 3D feeling is approved, port into `generator/grow.mjs` as
    algoVersion 2.0.0 and update docs/01 §1 + docs/02 §1 (biome wording) in the
    same PR.
