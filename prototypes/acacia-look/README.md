@@ -161,7 +161,8 @@ Suggested path, mirroring how the current look was found:
    **Done: [../acacia-sketch/](../acacia-sketch/).**
 3. Once the 3D feeling is approved, port into `generator/grow.mjs` as
    algoVersion 2.0.0 and update docs/01 §1 + docs/02 §1 (biome wording) in the
-   same PR.
+   same PR. **Done:
+   [ADR-0008](../../docs/decisions/0008-acacia-silhouette.md).**
 
 **What doesn't move:** the growth log, drivers, taxonomy, milestone gating,
 privacy modes, replay mechanics, the entire data model. `tree = grow(events,

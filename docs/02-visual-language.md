@@ -5,18 +5,28 @@
 botanical. Concrete file references below point into that repo — an inventory pass
 (2026-07-13) confirmed these modules are extracted and liftable.*
 
-## 1. Mood: the bioluminescent night garden
+## 1. Mood: the bioluminescent savanna night
 
 A dark scene is bloom's natural habitat — the Periodic Cube already lives there, and
-the tree should too: **a quiet night garden where light = life**. Wood is near-black
-bark with faint emissive veins; everything that represents *activity* glows. Growth
-is literally luminous. (A "dawn mode" daylight variant can come post-phase-5; it's a
-different lighting rig, not a different concept.)
+the tree should too: **a quiet night where light = life**. Wood is near-black bark
+with faint emissive veins; everything that represents *activity* glows. Growth is
+literally luminous. Since the acacia decision
+([ADR-0008](decisions/0008-acacia-silhouette.md), generator algoVersion 2.0.0) the
+scene is a **savanna night**: one umbrella-crowned acacia on an open plain under a
+huge sky, not a tree inside a forest. (A "dawn mode" daylight variant can come
+post-phase-5 — golden hour is the acacia's home lighting; it's a different rig, not
+a different concept.)
 
-The four strata read as **atmosphere, not gridlines**: fog density thins with height,
-light temperature shifts from cool moss-green at the forest floor through teal
-(understory) and warm gold (canopy) to clear starlight in the emergent layer. You
-*feel* a branch crossing a stratum before you could name it.
+The four strata read as **atmosphere, not gridlines** — sky bands over the plain
+rather than forest fog layers: green ground haze hugging the grass (forest floor /
+Novice), cool dusk teal (understory / Experimenter), a thin gold afterglow stripe
+(canopy / Practitioner), and clear starlight above — **stars render only above the
+emergent line**, so your tallest pad is the one thing silhouetted against actual
+stars. Display naming may go savanna (Ground haze / Dusk / Afterglow / Starfield),
+but the data-model stratum names are unchanged. You *feel* a rib crossing a stratum
+before you could name it — and because pads park under their earned ceiling, the
+level-up moment is the canopy visibly lifting. Reference renderer:
+[prototypes/acacia-sketch/](../prototypes/acacia-sketch/).
 
 ## 2. Inherited from the Periodic Cube (proven, liftable)
 
