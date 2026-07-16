@@ -10,15 +10,20 @@
 // This module owns geometry + metadata ONLY. It never touches pixels; the
 // renderer never touches the raw log. Clean seam (docs/03 §4).
 //
-// Ported from prototypes/mood-sketch/index.html's approved curved-limb look
-// (trunk + gravity/tropism limbs + secondary branching + canopy clusters +
-// stratum-crossing blossoms + root flare). The per-sector drivers
-// (level/act/recent/roots) that used to be hand-tuned constants are now DERIVED
-// from the growth log — see deriveDrivers().
+// algoVersion 2.0.0 — THE ACACIA (ADR-0008, prototypes/acacia-look + acacia-sketch).
+// The tree's species changed: a short stout bole forks low into one angular,
+// elbowed rib per sector; each rib rises steeply and flattens hard under its
+// EARNED stratum ceiling, ending in a flat foliage pad. The 1.x ceiling rule
+// ("flatten & spread beneath instead of piercing") is now the silhouette's
+// defining feature: a level-up = the pad visibly lifts to the next band.
+// Below ground nothing changed — roots keep the 1.x curved-limb habit (and the
+// unclassified shoots keep theirs), each on its own PRNG stream.
+// The per-sector drivers (level/act/recent/roots) are DERIVED from the growth
+// log — see deriveDrivers().
 
 import { getTaxonomy } from './taxonomy.mjs';
 
-export const ALGO_VERSION = '1.1.0';
+export const ALGO_VERSION = '2.0.0';
 
 // Neutral warm bark-gray for silhouette-mode roots (no sector attribution). Owner
 // mode paints roots with their sector hue instead; hidden mode emits no roots.
@@ -208,43 +213,46 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     }
   }
 
-  // ---- the trunk: one dominant leader, grows in during the first TRUNK_SPAN ----
-  const TRUNK_H = 8.4, TRUNK_STEPS = 15, TRUNK_BASE_R = 0.54, TRUNK_TOP_R = 0.135;
+  // ---- the bole: short and stout, forking low (was an 8.4-tall single leader) ----
+  const BOLE_H = 2.0, BOLE_STEPS = 7, TRUNK_BASE_R = 0.6, TRUNK_TOP_R = 0.32;
   const trunkRng = mkRng(seed, '__trunk');
   const R = (rng, lo, hi) => lo + rng() * (hi - lo);
-  const trunkNodes = [];
+  const boleNodes = [];
   {
-    const leanAz = R(trunkRng, 0, Math.PI * 2), lean = R(trunkRng, 0.05, 0.09);
-    const waver = R(trunkRng, 0.03, 0.06);
-    let p = v(0, -0.35, 0), dir = v(0, 1, 0);
-    for (let i = 0; i < TRUNK_STEPS; i++) {
-      const t = i / (TRUNK_STEPS - 1);
-      const r = TRUNK_TOP_R + (TRUNK_BASE_R - TRUNK_TOP_R) * Math.pow(1 - t, 1.5);
-      const dist = 0.32 * t;
-      const born = TRUNK_SPAN * t;
-      trunkNodes.push({ pos: clone(p), dir: normalize(dir), r, dist, born, frac: t });
-      const bend = lean * t + waver * Math.sin(t * Math.PI * 1.7 + 0.6);
-      const target = normalize(v(Math.cos(leanAz) * bend, 1, Math.sin(leanAz) * bend));
-      dir = normalize(lerp3(dir, target, 0.4));
-      const len = (TRUNK_H / TRUNK_STEPS) * (0.9 + 0.2 * (1 - t));
-      pushSeg(segments, p, dir, len, r, born, dist, 0x8a7a68, -1);
-      p = addScaled(p, dir, len);
+    const leanAz = R(trunkRng, 0, Math.PI * 2), lean = R(trunkRng, 0.04, 0.09);
+    let p = v(0, -0.35, 0);
+    for (let i = 0; i <= BOLE_STEPS; i++) {
+      const t = i / BOLE_STEPS;
+      const r = TRUNK_TOP_R + (TRUNK_BASE_R - TRUNK_TOP_R) * Math.pow(1 - t, 1.4);
+      boleNodes.push({ pos: clone(p), r, dist: 0.26 * t, born: TRUNK_SPAN * t });
+      if (i < BOLE_STEPS) {
+        const bend = lean * t + 0.03 * Math.sin(t * 5.1);
+        const q = v(
+          p[0] + Math.cos(leanAz) * bend * (BOLE_H / BOLE_STEPS) * 6,
+          p[1] + BOLE_H / BOLE_STEPS,
+          p[2] + Math.sin(leanAz) * bend * (BOLE_H / BOLE_STEPS) * 6
+        );
+        const dvec = [q[0] - p[0], q[1] - p[1], q[2] - p[2]];
+        pushSeg(segments, p, dvec, len3(dvec), r, TRUNK_SPAN * t, 0.26 * t, 0x8a7a68, -1);
+        p = q;
+      }
     }
   }
-  function trunkAt(frac) {
+  function boleAt(frac) {
     const f = Math.min(0.999, Math.max(0, frac));
-    const x = f * (trunkNodes.length - 1);
+    const x = f * (boleNodes.length - 1);
     const i = Math.floor(x), k = x - i;
-    const a = trunkNodes[i], b = trunkNodes[Math.min(trunkNodes.length - 1, i + 1)];
+    const a = boleNodes[i], b = boleNodes[Math.min(boleNodes.length - 1, i + 1)];
     return {
-      pos: lerp3(a.pos, b.pos, k), dir: normalize(lerp3(a.dir, b.dir, k)),
+      pos: lerp3(a.pos, b.pos, k),
       r: a.r + (b.r - a.r) * k, dist: a.dist + (b.dist - a.dist) * k,
     };
   }
 
-  // ---- a limb: eased curve, gravity sag + phototropic tip-curl, secondary forks ----
-  // `rng` is the sector's stream; `tipClusters` collects branch-tip cluster stubs.
-  function growBranch(rng, p0, dir0, r0, opts, tipClusters) {
+  // ---- the 1.x curved limb, kept verbatim for what DIDN'T change species: ----
+  // roots (below ground) and the unclassified gray shoots at the bole's feet.
+  // Eased curve, gravity sag + phototropic tip-curl, secondary forks.
+  function growCurved(rng, p0, dir0, r0, opts, tipClusters) {
     const {
       steps, stepLen, az, azKeep, ceil, hue, born0, bornSpan,
       depth, dist0, dist1, secIdx, isMain, ctx, gravity, tropism, taper, targetArr,
@@ -295,7 +303,7 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
         const up = R(rng, 0.2, 0.55);
         const fan = normalize(v(Math.cos(spreadAz) * (1 - up), up + 0.2, Math.sin(spreadAz) * (1 - up)));
         const cDir = normalize(lerp3(dir, fan, 0.6));
-        growBranch(rng, p, cDir, childR, {
+        growCurved(rng, p, cDir, childR, {
           ...opts,
           steps: Math.max(3, Math.round((steps - i) * 0.7)), stepLen: stepLen * 0.72,
           az: spreadAz, azKeep: azKeep * 0.55, born0: born, bornSpan: bornSpan * (1 - t) * 0.9,
@@ -310,68 +318,119 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     return p;
   }
 
-  // ---- 9 sector limbs fork off the trunk at staggered heights ----
-  const TOP_DEPTH = 2;
+  // ---- the acacia ribs: one angular limb per sector, forking low off the bole, ----
+  // ---- flattening hard under its EARNED stratum ceiling into a flat pad ----
+  const RIB_STEPS = 11;
   for (const s of SECTORS) {
     const d = drivers[s.id];
     const sb = bySector[s.id];
     const secIdx = secIndex.get(s.id);
     const rng = mkRng(seed, s.id);
-    const az = deg(s.az);
-    const lf = (d.level - 1) / 3;
-    const attachFrac = Math.min(0.86, Math.max(0.14, 0.16 + lf * 0.55 + R(rng, -0.05, 0.12)));
-    const node = trunkAt(attachFrac);
-    const branchAngle = deg(62 - d.level * 6 + R(rng, -6, 8));
-    const horiz = v(Math.cos(az), 0, Math.sin(az));
-    const dir0 = normalize(add(scale(horiz, Math.sin(branchAngle)), v(0, Math.cos(branchAngle), 0)));
-    const start = add(addScaled(node.pos, horiz, node.r * 0.8), v(0, R(rng, -0.05, 0.05), 0));
-    const r0 = Math.min(node.r * 0.72, 0.1 + d.act * 0.14);
-    const reach = (3.2 + d.act * 3.2 + (d.level - 1) * 1.1) * (0.5 + 0.5 * (d.level / 4));
-    const steps = Math.round(6 + d.act * 6 + d.level * 1.2);
+    const az0 = deg(s.az);
+    const ceil = ceilingFor(d.level);
 
-    // ts-derived born window for this sector's limb
+    // ts-derived born window for this sector's rib
     const born0 = tNorm(sb.firstTs);
     const bornEnd = Math.max(born0 + 0.02, tNorm(sb.lastTs));
+    const bornAt = (t) => born0 + (bornEnd - born0) * t;
 
-    const ctx = { crossings: [] };
-    const tipClusters = [];
-    growBranch(rng, start, dir0, r0, {
-      steps, stepLen: reach / steps, az, azKeep: 0.35, ceil: ceilingFor(d.level), hue: s.hue,
-      born0, bornSpan: bornEnd - born0, depth: TOP_DEPTH, dist0: node.dist, dist1: 1.0,
-      secIdx, isMain: true, ctx, gravity: 0.13, tropism: 0.17, taper: 0.9, targetArr: segments,
-    }, tipClusters);
+    const node = boleAt(0.55 + R(rng, 0, 0.4)); // tight low fork band — no leader above it
+    const reach = 1.9 + d.act * 2.4 + (d.level - 1) * 1.05;
+    const r0 = Math.min(node.r * 0.75, 0.08 + d.act * 0.1);
+    const distAt = (t) => node.dist + (1 - node.dist) * t;
 
-    // ---- assign this sector's public non-milestone events to the tip clusters ----
-    const pub = sb.public.slice().sort((a, b) => a.tsMs - b.tsMs);
-    let clusters = tipClusters;
-    if (pub.length === 0) {
-      clusters = []; // no public work -> no canopy for this sector
-    } else if (clusters.length > pub.length) {
-      clusters = clusters.slice(0, pub.length); // guarantee every emitted cluster carries >=1 real event
+    const crossings = [];   // exact stratum-boundary hits along the main rib (blossom anchors)
+    const tips = [];        // pad anchor points: { pos, born, depth }
+
+    const emit = (a, b, r, born, dist) => {
+      const dvec = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+      const len = len3(dvec);
+      if (len < 1e-5) return;
+      pushSeg(segments, a, dvec, len, r, born, dist, s.hue, secIdx);
+    };
+
+    // secondary fans in the outer half — they define the pad's footprint
+    const growFan = (from, azp, rhop, tp, rem, tier) => {
+      const side = rng() < 0.5 ? 1 : -1;
+      let azf = azp + side * R(rng, 0.16, 0.45);
+      const ext = reach * (1 - tp) * R(rng, 0.45, 0.8) + 0.5;
+      const M = 4;
+      let q = from, tq = tp;
+      for (let j = 1; j <= M; j++) {
+        const u = j / M;
+        const rr = rhop + ext * u;
+        let yy = from[1] + (ceil - 0.06 - from[1]) * (1 - Math.pow(1 - u, 1.7));
+        yy = Math.min(yy, ceil - 0.03) + ((j % 2 ? 1 : -1) * R(rng, 0.02, 0.06)) * (1 - u); // elbows
+        azf += R(rng, -0.06, 0.06);
+        const pp = v(node.pos[0] * 0.4 + Math.cos(azf) * rr, yy, node.pos[2] * 0.4 + Math.sin(azf) * rr);
+        const tt = tp + (1 - tp) * u;
+        emit(q, pp, r0 * 0.5 * (1 - 0.6 * u), bornAt(tt), distAt(tt));
+        q = pp; tq = tt;
+        if (rem > 0 && j === 2 && rng() < 0.55) growFan(pp, azf, rr, tt, rem - 1, tier + 1);
+      }
+      tips.push({ pos: clone(q), born: bornAt(tq), depth: tier });
+    };
+
+    // the main rib: steep rise off the fork, easing flat under the ceiling, elbowed
+    let az = az0 + R(rng, -0.06, 0.06);
+    let prev = null;
+    const yA = node.pos[1], yB = ceil - 0.02;
+    for (let i = 0; i <= RIB_STEPS; i++) {
+      const t = i / RIB_STEPS;
+      const rho = node.r * 0.85 + reach * Math.pow(t, 1.22);
+      let y = yA + (yB - yA) * (1 - Math.pow(1 - t, 1.9));
+      if (i > 0 && i < RIB_STEPS) y += ((i % 2 ? 1 : -1) * R(rng, 0.05, 0.12)) * (1 - t * 0.75); // elbows
+      y = Math.min(y, ceil); // never pierce the earned ceiling (ADR-0004 made visible)
+      az += R(rng, -0.05, 0.05);
+      const p = v(node.pos[0] * 0.4 + Math.cos(az) * rho, y, node.pos[2] * 0.4 + Math.sin(az) * rho);
+      if (prev) {
+        emit(prev, p, r0 * (1 - 0.78 * ((i - 1) / RIB_STEPS)), bornAt(t), distAt(t));
+        for (const b of STRATUM_BOUNDARIES) {
+          if ((prev[1] - b) * (p[1] - b) <= 0 && prev[1] !== p[1] && Math.abs(prev[1] - b) < 2.0) {
+            const k = (b - prev[1]) / (p[1] - prev[1]);
+            crossings.push({ y: b, pos: [prev[0] + (p[0] - prev[0]) * k, b, prev[2] + (p[2] - prev[2]) * k], born: bornAt(t) });
+          }
+        }
+      }
+      if (i >= 5 && i < RIB_STEPS && rng() < 0.6) growFan(p, az, rho, t, 1, 1);
+      if (i === RIB_STEPS) tips.push({ pos: clone(p), born: bornEnd, depth: 0 });
+      prev = p;
     }
-    // round-robin events across clusters (chronological) so each cluster is real
-    const buckets = clusters.map(() => []);
-    pub.forEach((e, i) => { if (clusters.length) buckets[i % clusters.length].push(e); });
 
-    clusters.forEach((tc, ci) => {
+    // ---- assign this sector's public non-milestone events to the pad anchors ----
+    const pub = sb.public.slice().sort((a, b) => a.tsMs - b.tsMs);
+    let anchors = tips;
+    if (pub.length === 0) {
+      anchors = []; // no public work -> no canopy for this sector
+    } else if (anchors.length > pub.length) {
+      anchors = anchors.slice(0, pub.length); // guarantee every emitted cluster carries >=1 real event
+    }
+    // round-robin events across pads (chronological) so each pad is real
+    const buckets = anchors.map(() => []);
+    pub.forEach((e, i) => { if (anchors.length) buckets[i % anchors.length].push(e); });
+
+    anchors.forEach((tc, ci) => {
       const evList = buckets[ci];
       if (!evList.length) return;
       evList.forEach(recordMeta);
-      const cr = 0.4 + d.act * 0.4 + (2 - tc.depth) * 0.12;
+      // the pad: a flat lens on the ceiling plane, anchored at this tip
+      const padY = ceil - 0.16 + R(rng, -0.06, 0.06);
+      const center = [tc.pos[0] + R(rng, -0.35, 0.35), padY, tc.pos[2] + R(rng, -0.35, 0.35)];
+      const cr = 0.55 + d.act * 0.35 + (tc.depth === 0 ? 0.15 : 0);
       const latest = Math.max(...evList.map((e) => e.tsMs));
-      const born = Math.max(tc.born0 + tc.bornSpan, tNorm(latest));
+      const born = Math.max(tc.born, tNorm(latest));
       const count = Math.max(4, Math.round((3 + d.act * 7) * (tc.depth === 0 ? 1.0 : 1.4)));
       leafClusters.push({
-        center: clone(tc.center), radius: cr, born, sector: secIdx,
+        center, radius: cr, born, sector: secIdx,
         density: tc.depth === 0 ? 1.0 : 1.4, count, eventIds: evList.map((e) => e.id),
       });
-      // fireflies: this cluster's events within 7 days of the now-anchor
+      // fireflies: this pad's events within 7 days of the now-anchor gather in
+      // the shade UNDER the umbrella — the savanna's gathering place
       const SEVEN = 7 * 86400000;
       for (const e of evList) {
         if (lastTs - e.tsMs <= SEVEN) {
-          const rr = cr * 1.25;
           fireflies.push({
-            pos: [tc.center[0] + R(rng, -rr, rr), tc.center[1] + R(rng, -rr * 0.7, rr), tc.center[2] + R(rng, -rr, rr)],
+            pos: [center[0] + R(rng, -1, 1) * cr * 1.1, padY - R(rng, 0.35, 1.4), center[2] + R(rng, -1, 1) * cr * 1.1],
             hue: s.hue, sector: secIdx, eventId: e.id,
           });
         }
@@ -379,17 +438,18 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     });
 
     // ---- blossoms mark each stratum boundary this sector crossed (real milestones) ----
+    // They ride the rib at the exact crossing — the rim the canopy lifted from.
     const milestones = sb.milestones.slice().sort((a, b) => (a.attrs?.level || 0) - (b.attrs?.level || 0));
     for (let lvl = 2; lvl <= d.level; lvl++) {
       const boundary = STRATA[lvl - 1].y0;
-      const near = ctx.crossings.filter((c) => Math.abs(c.y - boundary) < 0.01);
+      const near = crossings.filter((c) => Math.abs(c.y - boundary) < 0.01);
       const c = near.length ? near[(rng() * near.length) | 0] : null;
       // the milestone event that granted this level (attrs.level === lvl), else the nearest
       let ms = milestones.find((m) => (m.attrs?.level || 0) === lvl) || milestones[lvl - 2] || milestones[milestones.length - 1] || null;
       if (c && ms) {
         recordMeta(ms);
         blossoms.push({
-          pos: [c.pos[0] + R(rng, -0.15, 0.15), c.pos[1] + R(rng, 0, 0.25), c.pos[2] + R(rng, -0.15, 0.15)],
+          pos: [c.pos[0] + R(rng, -0.15, 0.15), c.pos[1] + R(rng, 0.08, 0.3), c.pos[2] + R(rng, -0.15, 0.15)],
           born: Math.min(0.95, Math.max(c.born + 0.03, tNorm(ms.tsMs))),
           hue: s.hue, sector: secIdx, stratum: STRATA[lvl - 1].name, levelLabel: STRATA[lvl - 1].level, level: lvl,
           eventId: ms.id, evidence: ms.attrs?.evidence || null, note: ms.attrs?.note || null,
@@ -403,35 +463,38 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     //   silhouette → geometry only, one neutral bark-gray hue, no sector attribution
     //   owner      → geometry + per-sector hue/index (like above-ground segments)
     // The root GEOMETRY (start/dir/len/r/born/dist) is byte-identical between owner and
-    // silhouette — the growBranch RNG draws below are unchanged; only `hue`/`secIdx`
-    // (stored, never fed back into the PRNG) differ. That is what keeps this an ADDITIVE
-    // change (algoVersion minor bump, not major): same log+seed ⇒ same shape.
+    // silhouette — only `hue`/`secIdx` (stored, never fed back into the PRNG) differ.
+    // Roots kept the 1.x curved habit through the 2.0.0 species change; they now draw
+    // from their own stream (seed, sector, 'roots') so the above-ground rewrite can
+    // never reshuffle them again.
     if (rootsMode !== 'hidden') {
+      const rootRng = mkRng(seed, s.id, 'roots');
       const rootHue = rootsMode === 'owner' ? s.hue : ROOT_SILHOUETTE_HUE;
       const rootSec = rootsMode === 'owner' ? secIdx : -1;
       const nRoots = 1 + Math.round(d.roots * 2);
       for (let k = 0; k < nRoots; k++) {
-        const ra = az + R(rng, -0.4, 0.4);
+        const ra = az0 + R(rootRng, -0.4, 0.4);
         const rd = normalize(v(Math.cos(ra) * 0.85, -0.9, Math.sin(ra) * 0.85));
-        const rStart = v(Math.cos(az) * TRUNK_BASE_R * 0.6, -0.2, Math.sin(az) * TRUNK_BASE_R * 0.6);
-        growBranch(rng, rStart, rd, 0.06 + d.roots * 0.06, {
+        const rStart = v(Math.cos(az0) * TRUNK_BASE_R * 0.6, -0.2, Math.sin(az0) * TRUNK_BASE_R * 0.6);
+        growCurved(rootRng, rStart, rd, 0.06 + d.roots * 0.06, {
           steps: 4 + Math.round(d.roots * 4), stepLen: 0.5, az: ra, azKeep: 0.4, ceil: -0.05,
-          hue: rootHue, born0: 0.03 + R(rng, 0, 0.09), bornSpan: 0.3, depth: 1, dist0: 0.12, dist1: 0.02,
+          hue: rootHue, born0: 0.03 + R(rootRng, 0, 0.09), bornSpan: 0.3, depth: 1, dist0: 0.12, dist1: 0.02,
           secIdx: rootSec, isMain: false, ctx: null, gravity: 0.06, tropism: -0.04, taper: 0.86, targetArr: roots,
         }, null);
       }
     }
   }
 
-  // ---- unclassified: faint gray shoots at the trunk base (docs/03 §3 rule 4) ----
+  // ---- unclassified: faint gray shoots at the bole's feet (docs/03 §3 rule 4) ----
+  // start radius 1.2× the (now fatter) base so the shoots sprout OUTSIDE the wood
   if (unclassified.length) {
     const rng = mkRng(seed, '__unclassified');
     const n = Math.min(unclassified.length, 5);
     for (let k = 0; k < n; k++) {
       const a = (k / Math.max(1, n)) * Math.PI * 2 + R(rng, -0.2, 0.2);
-      const start = v(Math.cos(a) * TRUNK_BASE_R * 0.7, -0.1, Math.sin(a) * TRUNK_BASE_R * 0.7);
+      const start = v(Math.cos(a) * TRUNK_BASE_R * 1.2, -0.1, Math.sin(a) * TRUNK_BASE_R * 1.2);
       const dir = normalize(v(Math.cos(a) * 0.5, 1, Math.sin(a) * 0.5));
-      growBranch(rng, start, dir, 0.05, {
+      growCurved(rng, start, dir, 0.05, {
         steps: 4, stepLen: 0.32, az: a, azKeep: 0.4, ceil: 1.2, hue: 0x5b6472,
         born0: tNorm(unclassified[k].tsMs), bornSpan: 0.04, depth: 0, dist0: 0.1, dist1: 0.4,
         secIdx: -1, isMain: false, ctx: null, gravity: 0.05, tropism: 0.1, taper: 0.85, targetArr: segments,

@@ -14,10 +14,14 @@ Phase 3 ("First rings") split this directory in two:
   don't exist until that pipeline has run at least once. `milestones.yml`
   *is* hand-authored here (see below) — it's the one real input a human
   writes directly.
-- **`data/mock/`** — the phase-2 ("Sapling") hand-written fixture, **frozen**.
-  `data/mock/growth-log.jsonl`, `data/mock/milestones.yml`,
-  `data/mock/tree.json`, and `data/mock/tree.config.yml` are a byte-identical
-  snapshot of the original mock data, kept forever as:
+- **`data/mock/`** — the phase-2 ("Sapling") hand-written fixture. The
+  *inputs* — `data/mock/growth-log.jsonl`, `data/mock/milestones.yml`,
+  `data/mock/tree.config.yml` — are **frozen forever**, a byte-identical
+  snapshot of the original mock data. `data/mock/tree.json` is the
+  generator's output over those frozen inputs and is regenerated **only** on
+  a deliberate algoVersion major bump (done once: 2.0.0, the acacia —
+  [ADR-0008](../docs/decisions/0008-acacia-silhouette.md)); between majors it
+  is as frozen as the inputs. Kept as:
   - the generator's regression fixture (`generator/test-determinism.mjs`
     regrows `data/mock/growth-log.jsonl` with `data/mock/tree.config.yml` and
     byte-compares the result against `data/mock/tree.json` — this must never

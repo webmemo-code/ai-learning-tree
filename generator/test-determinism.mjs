@@ -5,11 +5,12 @@
 //
 // 1. FIXTURE (always runs, never skips): grow() over the frozen mock fixture
 //    (data/mock/growth-log.jsonl + data/mock/tree.config.yml) must reproduce
-//    data/mock/tree.json byte-identically, forever. This fixture is a pure
-//    historical snapshot (data/mock/README-ish note lives in data/README.md) —
-//    it never changes, so this check has zero excuse to ever fail. It is what
-//    proves the generator itself is deterministic even before any real
-//    harvested data exists.
+//    data/mock/tree.json byte-identically. The fixture INPUTS are a frozen
+//    historical snapshot (see data/README.md); data/mock/tree.json is the
+//    golden output, regenerated only on a deliberate algoVersion MAJOR bump
+//    (ADR-0008 did this once, for 2.0.0). Between majors this check has zero
+//    excuse to ever fail. It is what proves the generator itself is
+//    deterministic even before any real harvested data exists.
 //
 // 2. LIVE (skips gracefully if absent): grow() run TWICE (fresh, no shared
 //    module state) on the real data/growth-log.jsonl must be byte-identical

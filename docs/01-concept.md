@@ -23,6 +23,16 @@ zones (fog density, light temperature), not hard grid lines. A branch's height i
 claim about proficiency in that field — which is why height must be *earned*, not
 merely accumulated (see §5, integrity rule).
 
+**The tree itself is a savanna acacia** (since generator algoVersion 2.0.0,
+[ADR-0008](decisions/0008-acacia-silhouette.md)): a short bole forks low into one
+rib per sector, and each rib flattens into an umbrella pad parked just under its
+earned stratum's ceiling — the integrity rule rendered as silhouette, so a level-up
+reads as *the canopy lifting*. The stratum names above stay the data-model
+identifiers; renderers may dress the bands as savanna atmosphere instead of forest
+layers (ground haze → dusk → gold afterglow → starfield — see
+[02-visual-language.md §1](02-visual-language.md)). The forest-stratification
+mapping in the table is unchanged and still load-bearing.
+
 ### Radial = fields of practice (the sector compass)
 
 The fields from issue #1, arranged as azimuth sectors around the trunk and grouped
