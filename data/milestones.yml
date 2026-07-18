@@ -32,3 +32,9 @@
   level: 2
   evidence: "https://travelmemo.com"
   note: "Sustained SEO tooling work since early 2025 — entity mapping and Google Knowledge Graph retrieval pipelines — applied to travelmemo.com and reisememo.ch."
+
+- ts: 2026-07-18
+  sector: automate.workflows
+  level: 2
+  evidence: "https://github.com/webmemo-code/flickr-to-instagram-automation"
+  note: "Sustained automation work since 2025 — the public Flickr-to-Instagram content pipeline plus photo-metadata and note-workflow tooling gluing the blogs' content ops together."
