@@ -75,10 +75,13 @@ phyllotaxis placement, ADR-0006/0007).*
 
 ## 4. Now / next — the living TODO
 
-*Updated 2026-07-16, after the acacia arc landed (#19 concept board → #20 3D
-sketch → #21 generator 2.0.0 + ADR-0008 → #22 grove impostors). The generator,
-docs, both renderers and the grove walk all speak acacia; the real tree carries
-its first blossom (build.pro-code → Experimenter).*
+*Updated 2026-07-18, after the growth-mechanics arc landed (#24 generator 3.0.0
++ ADR-0009 activity-filled bands → #25/#27 + part of #26 the seo, workflows and
+copy blossoms → #26/#28/#29 classification cleanup). Height now rises daily
+with work inside each earned band, private GitHub work grows canopy as
+aggregate geometry, the real tree carries FOUR blossoms (pro-code, seo,
+workflows, copy — all Experimenter), and the unclassified bucket is empty for
+the first time.*
 
 Next steps, roughly in value order:
 
@@ -97,12 +100,16 @@ Next steps, roughly in value order:
    promote acacia-sketch to the primary embed/share target or fold the savanna
    dressing into mood-sketch — carrying both indefinitely invites drift.
 5. **Tiered Pagoda toggle** *(optional, concept 2)* — persistent pads at every
-   crossed stratum as an owner toggle or replay-only effect. Only worth it once
-   real trees have 2+ levels to show.
-6. **Next milestone when it's true** — `automate.workflows` is the busiest
-   sector (act 1.0); when its level-up is genuinely earned, one entry in
-   [data/milestones.yml](../data/milestones.yml) lifts the next pad.
-7. **Monthly snapshot ritual** (§2 Automation) — first tagged release with the
+   crossed stratum as an owner toggle or replay-only effect. Four sectors now
+   sit at level 2, so crossed-stratum pads finally have something to show.
+6. **Watch the band-fill pacing** — ADR-0009's `BAND_FILL_WEIGHT = 60` is a
+   first calibration; after a few weeks of daily-lift observation, judge
+   whether a band fills too fast/slow. Retuning it is an algoVersion MAJOR
+   bump, so batch it with the next geometry change if one comes.
+7. **First Practitioner milestone when it's true** — `build.pro-code` leads at
+   ~fill 54% of the Understory; when a level-3 claim is genuinely earned, one
+   entry in [data/milestones.yml](../data/milestones.yml) opens the Canopy.
+8. **Monthly snapshot ritual** (§2 Automation) — first tagged release with the
    acacia beauty shot; the project's own growth rings start with the new species.
 
 ## 5. Long-term risks & mitigations
