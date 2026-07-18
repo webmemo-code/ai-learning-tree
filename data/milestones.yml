@@ -38,3 +38,9 @@
   level: 2
   evidence: "https://github.com/webmemo-code/flickr-to-instagram-automation"
   note: "Sustained automation work since 2025 — the public Flickr-to-Instagram content pipeline plus photo-metadata and note-workflow tooling gluing the blogs' content ops together."
+
+- ts: 2026-07-18
+  sector: create.copy
+  level: 2
+  evidence: "https://reisememo.ch"
+  note: "Sustained AI-assisted writing and publishing work — markdown-to-WordPress and translation pipelines feeding reisememo.ch, travelmemo.com and LinkedIn articles."
