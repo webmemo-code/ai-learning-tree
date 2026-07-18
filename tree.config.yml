@@ -52,6 +52,7 @@ repos:
   wp-rm-tm-translation:                create.copy
   schaerers-info:                      create.copy
   schaerers.info:                      create.copy
+  costa-rica:                          create.copy
 
   # CREATE / images — photo & image asset pipelines
   photo-gallery:                       create.images
