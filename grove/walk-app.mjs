@@ -8,9 +8,9 @@
 //
 // Impostor LOD: every member renders as an ACACIA impostor (ADR-0008) — flat
 // glowing pad lenses on a short bole with a splayed rib fan — derived from its
-// published tree.json when fetchable (leaf-cluster pads sit at their earned
-// stratum ceilings since generator algoVersion 2.0.0; sector hues + recency,
-// blossoms, real height), synthesized from a seeded spec otherwise. A member
+// published tree.json when fetchable (leaf-cluster pads carry their activity-
+// filled heights since generator algoVersion 3.0.0 / ADR-0009; sector hues +
+// recency, blossoms, real height), synthesized from a seeded spec otherwise. A member
 // is readable at distance by its pad heights alone. All pads draw as ONE
 // instanced billboard mesh; all boles and all ribs as one instanced mesh each.
 
@@ -75,8 +75,9 @@ export const HUES = [0xffb54d, 0xff6f91, 0xff4d6d, 0x7bd88f, 0x4fd8c4, 0x3fa7ff,
 export const PAD_CEILS = [2.65, 6.65, 11.65, 16.15];
 
 // impostor from a member's REAL tree.json: pads + sector hues (docs/05 G5).
-// Since generator algoVersion 2.0.0 the leaf clusters ARE flat pads parked at
-// their earned stratum ceilings — the impostor reads those heights verbatim.
+// Since generator algoVersion 2.0.0 the leaf clusters ARE flat pads; since
+// 3.0.0 (ADR-0009) their height is activity-filled within the earned band —
+// the impostor reads those heights verbatim either way.
 export function specFromTreeJson(T) {
   const S = T.sectors;
   const clusters = T.leafClusters.map(c => ({

@@ -19,8 +19,10 @@ Phase 3 ("First rings") split this directory in two:
   `data/mock/tree.config.yml` — are **frozen forever**, a byte-identical
   snapshot of the original mock data. `data/mock/tree.json` is the
   generator's output over those frozen inputs and is regenerated **only** on
-  a deliberate algoVersion major bump (done once: 2.0.0, the acacia —
-  [ADR-0008](../docs/decisions/0008-acacia-silhouette.md)); between majors it
+  a deliberate algoVersion major bump (done twice: 2.0.0, the acacia —
+  [ADR-0008](../docs/decisions/0008-acacia-silhouette.md); 3.0.0, activity
+  fills the band — [ADR-0009](../docs/decisions/0009-activity-fills-the-band.md));
+  between majors it
   is as frozen as the inputs. Kept as:
   - the generator's regression fixture (`generator/test-determinism.mjs`
     regrows `data/mock/growth-log.jsonl` with `data/mock/tree.config.yml` and
