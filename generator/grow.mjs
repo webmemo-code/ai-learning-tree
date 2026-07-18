@@ -123,17 +123,26 @@ function deriveDrivers(events, sectors, { privateCanopy = false } = {}) {
   const msLastTs = {};    // ts of the sector's latest milestone — the band-unlock moment
   for (const s of sectors) { workWeight[s.id] = 0; recentCount[s.id] = 0; totalCount[s.id] = 0; privWeight[s.id] = 0; msLevel[s.id] = 0; msCount[s.id] = 0; msLastTs[s.id] = -Infinity; }
 
+  // recent/total tally ONLY events that shape the public canopy — public events
+  // plus (opt-in) private GitHub work. Vault notes must not tick an above-ground
+  // freshness signal (docs/03 §6 rule 2: knowledge influences roots only).
+  const tally = (sec, tsMs) => {
+    totalCount[sec]++;
+    if (now - tsMs <= RECENT_WINDOW) recentCount[sec]++;
+  };
   for (const e of events) {
     if (!known.has(e.sector)) { unclassified.push(e); continue; }
     const b = bySector[e.sector];
-    totalCount[e.sector]++;
-    if (now - e.tsMs <= RECENT_WINDOW) recentCount[e.sector]++;
     if (e.private) {
       b.private.push(e);
       privWeight[e.sector] += e.weight;
-      if (privateCanopy && isPrivateWork(e)) workWeight[e.sector] += e.weight;
+      if (privateCanopy && isPrivateWork(e)) {
+        workWeight[e.sector] += e.weight;
+        tally(e.sector, e.tsMs);
+      }
       continue;
     }
+    tally(e.sector, e.tsMs);
     // public events
     if (e.kind === 'milestone') {
       b.milestones.push(e);
@@ -214,7 +223,7 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     const m = config.privacy && config.privacy.roots;
     return (m === 'owner' || m === 'silhouette' || m === 'hidden') ? m : 'silhouette';
   })();
-  // harvest.private-repos is a double opt-in (docs/03 §6 rule 4, config comment):
+  // harvest.private-repos is a double opt-in (docs/03 §6 rules 2 + 4, ADR-0009):
   // harvesting private repos at all AND letting that private commit history grow
   // public canopy — as aggregate geometry only, never as ids/refs. Vault notes
   // stay roots-only regardless (isPrivateWork checks source === 'github').

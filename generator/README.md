@@ -104,7 +104,7 @@ Computed in `deriveDrivers()` from the raw log:
 | `level` | `1 + count(milestone events)` for the sector; authoritative `attrs.level` wins if higher; capped at 4. Gates height (which stratum the bough may reach). |
 | `act` | Log-damped share of lifetime **work** weight — public events, plus private GitHub commits under the `harvest.private-repos` opt-in (ADR-0009): `log2(1+Σweight)`, normalized so the busiest sector = 1.0. Drives limb reach/thickness/leaf mass. |
 | `fill` | How far up its **current** band the sector has climbed (ADR-0009): `log2(1+w)/log2(1+60)` over work weight accrued **since the milestone that unlocked the band** (all-time at level 1). Levels 1–3 clamp at 1.0 just under the band top; the top band never clamps — Expert trees keep growing. Drives the height ceiling; not emitted into `tree.json` (it's baked into geometry). |
-| `recent` | Share of the sector's own events landing in the **last 30 days** before the now-anchor, normalized max→1.0. Drives foliage freshness + fireflies. |
+| `recent` | Share of the sector's own canopy-shaping events (public, plus opt-in private GitHub work — vault notes never tick this, docs/03 §6 rule 2) landing in the **last 30 days** before the now-anchor, normalized max→1.0. Drives foliage freshness + fireflies. |
 | `roots` | Share of **private**-event weight, normalized max→1.0. Drives root-flare size (docs/03 §6 rule 2; private ids/refs never surface — opt-in private *GitHub work* may additionally lift canopy as aggregate geometry, ADR-0009). Root *visibility/attribution* is a separate `privacy.roots` concern (see above). |
 
 Unclassified events (sector not in the taxonomy, docs/03 §3 rule 4) become faint
