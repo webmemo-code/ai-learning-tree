@@ -37,6 +37,7 @@ repos:
   claude-code-global-config:           build.pro-code
   ai-skills-assessment-wordpress:      build.pro-code
   claude-flow:                         build.pro-code
+  cosine:                              build.pro-code
 
   # DISTRIBUTE / seo — search + knowledge-graph tooling
   entity-map:                          distribute.seo
@@ -53,6 +54,7 @@ repos:
   schaerers-info:                      create.copy
   schaerers.info:                      create.copy
   costa-rica:                          create.copy
+  imre:                                create.copy
 
   # CREATE / images — photo & image asset pipelines
   photo-gallery:                       create.images
