@@ -64,13 +64,18 @@ guardrail: *same log + seed + algoVersion ⇒ byte-identical `tree.json`.*
 `algoVersion` is recorded in every `tree.json`. **Any change that alters geometry
 from the same log is a major bump**, recorded in the ADR log. Old snapshots must
 replay identically forever — a tree that retroactively changes shape betrays trust.
-Current: **`1.1.0`**. `1.0.0` was the approved curved-limb look ported from the mood
+Current: **`3.0.0`**. `1.0.0` was the approved curved-limb look ported from the mood
 sketch (trunk + gravity/tropism limbs + secondary branching + canopy clusters +
 stratum-crossing blossoms + root flare). **`1.1.0`** is the phase-4 roots-privacy
 work (ADR-0005): a **minor** bump because it is strictly **additive** — root segment
 *geometry* is byte-identical to `1.0.0` from the same log+seed; the change is
 attribution (root segments carry a sector hue/index in `owner` mode) plus a new
-`rootDetail` aggregate block. No above-ground geometry moves. Taxonomy versions
+`rootDetail` aggregate block. No above-ground geometry moves. **`2.0.0`** is the
+acacia species change (ADR-0008): low-forking angular ribs, flat pads under the
+earned ceiling. **`3.0.0`** is activity-filled height (ADR-0009): the ceiling
+rises within the earned band with log-damped work accrued since the level-up,
+the top band never clamps, and opt-in private GitHub work grows canopy as
+aggregate geometry. Taxonomy versions
 (`default-v1`) are additive-only; renames/merges need a new taxonomy id + migration note.
 
 ## Root-system privacy (`config.privacy.roots`, docs/03 §6, ADR-0005)
@@ -97,9 +102,10 @@ Computed in `deriveDrivers()` from the raw log:
 | Driver | Derivation |
 | --- | --- |
 | `level` | `1 + count(milestone events)` for the sector; authoritative `attrs.level` wins if higher; capped at 4. Gates height (which stratum the bough may reach). |
-| `act` | Log-damped share of lifetime **public** weight: `log2(1+Σweight)`, normalized so the busiest sector = 1.0. Drives limb reach/thickness/leaf mass. |
-| `recent` | Share of the sector's own events landing in the **last 30 days** before the now-anchor, normalized max→1.0. Drives foliage freshness + fireflies. |
-| `roots` | Share of **private**-event weight, normalized max→1.0. Drives root-flare size (docs/03 §6: private → roots only). Root *visibility/attribution* is a separate `privacy.roots` concern (see above). |
+| `act` | Log-damped share of lifetime **work** weight — public events, plus private GitHub commits under the `harvest.private-repos` opt-in (ADR-0009): `log2(1+Σweight)`, normalized so the busiest sector = 1.0. Drives limb reach/thickness/leaf mass. |
+| `fill` | How far up its **current** band the sector has climbed (ADR-0009): `log2(1+w)/log2(1+60)` over work weight accrued **since the milestone that unlocked the band** (all-time at level 1). Levels 1–3 clamp at 1.0 just under the band top; the top band never clamps — Expert trees keep growing. Drives the height ceiling; not emitted into `tree.json` (it's baked into geometry). |
+| `recent` | Share of the sector's own canopy-shaping events (public, plus opt-in private GitHub work — vault notes never tick this, docs/03 §6 rule 2) landing in the **last 30 days** before the now-anchor, normalized max→1.0. Drives foliage freshness + fireflies. |
+| `roots` | Share of **private**-event weight, normalized max→1.0. Drives root-flare size (docs/03 §6 rule 2; private ids/refs never surface — opt-in private *GitHub work* may additionally lift canopy as aggregate geometry, ADR-0009). Root *visibility/attribution* is a separate `privacy.roots` concern (see above). |
 
 Unclassified events (sector not in the taxonomy, docs/03 §3 rule 4) become faint
 gray shoots at the trunk base — visible nagging to classify them, never dropped.

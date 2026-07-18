@@ -872,7 +872,7 @@ function showLeaf(i) {
   const metas = cl.eventIds.map(id => TREE.eventMeta[id]).filter(Boolean)
     .sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts));
   elTitle.textContent = `🍃 ${s.id}`;
-  const rows = metas.slice(0, 4).map(m => {
+  const rows = metas.length ? metas.slice(0, 4).map(m => {
     const icon = KIND_ICON[m.kind] || '•';
     const rel = relDate(Math.floor((NOW - Date.parse(m.ts)) / DAY));
     const link = commitLink(m);
@@ -880,11 +880,11 @@ function showLeaf(i) {
     const idHtml = link ? `<a href="${link}" target="_blank" rel="noopener">${label}</a>` : label;
     const proj = m.project ? ` · ${esc(m.project)}` : '';
     return `<div class="meta">${icon} ${idHtml}${proj} · <b>${rel}</b></div>`;
-  }).join('');
+  }).join('') : `<div class="meta">\u{1F512} private work \u2014 grown from commits whose details stay off the public tree</div>`;
   const more = metas.length > 4 ? `<div class="meta">+${metas.length - 4} more in this cluster</div>` : '';
   elBody.innerHTML = rows + more +
     `<div class="tags"><span class="tag">${esc(s.limb.toLowerCase())}</span>` +
-    `<span class="tag">${metas.length} event${metas.length > 1 ? 's' : ''}</span></div>`;
+    `<span class="tag">${metas.length ? `${metas.length} event${metas.length > 1 ? 's' : ''}` : 'private'}</span></div>`;
   elDetail.classList.add('on');
 }
 function showBlossom(mesh) {

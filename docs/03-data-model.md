@@ -106,9 +106,13 @@ stratum allows. Branches literally *colonize the space your work opened up*.
   (da Vinci's rule), so the trunk physically accumulates the whole history.
 - **Damping:** attractor count per project ~ `log₂(1 + commits)` — prevents
   monster branches; keeps asymmetry honest but bounded.
-- **Stratum ceilings:** a sector's attractors are capped at the top of its current
-  stratum band until a milestone raises the cap. Level-up = new sky opens =
-  visible growth spurt upward (this *is* the blossom moment).
+- **Stratum ceilings:** a sector's height ceiling lives inside its current
+  stratum band and *rises with log-damped activity* accrued since the band was
+  unlocked — daily entries lift the pad day by day until it brushes the band
+  top; only a milestone opens the next band. Level-up = new sky opens = the pad
+  climbs on from the new band's floor (this *is* the blossom moment). The top
+  band (Expert/Emergent) never clamps: past that threshold the tree keeps
+  growing ([ADR-0009](decisions/0009-activity-fills-the-band.md)).
 - **Determinism:** PRNG seeded from `(owner-seed, sector, event-id)`. `algoVersion`
   is recorded in every generated `tree.json`; changing the generator bumps the
   version so old renders remain reproducible (the algorithm itself is versioned
@@ -128,8 +132,13 @@ of the architecture rather than being a feature bolted on.
 ## 6. Privacy stance (hard rules)
 
 1. Note **content never leaves the vault** — the harvester emits path-hash + tags + ts only.
-2. `private: true` events influence **roots only**; roots render for the owner,
-   and for visitors only as an anonymized silhouette (or not at all — config).
+2. `private: true` events never emit ids/refs into `tree.json`. Vault notes
+   (knowledge) influence **roots only**; roots render for the owner, and for
+   visitors only as an anonymized silhouette (or not at all — config). Private
+   **GitHub commits** (work) additionally lift limb height and canopy as
+   *aggregate geometry* when `harvest.private-repos` is opted in — pads grown
+   from private work carry no event references
+   ([ADR-0009](decisions/0009-activity-fills-the-band.md)).
 3. Public tree pages embed only `tree.json` (geometry + public event refs), never the log's private lines.
 4. For other users, default harvest scope = **public GitHub data only**; private-repo
    and vault scopes are explicit opt-ins with their own config keys.

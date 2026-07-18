@@ -20,10 +20,22 @@
 // unclassified shoots keep theirs), each on its own PRNG stream.
 // The per-sector drivers (level/act/recent/roots) are DERIVED from the growth
 // log — see deriveDrivers().
+//
+// algoVersion 3.0.0 — ACTIVITY FILLS THE BAND (ADR-0009). The earned stratum
+// still gates height (ADR-0004: only milestones cross a boundary), but the pad
+// no longer parks at the band top the moment the band is unlocked. Instead the
+// ceiling starts at the band floor and RISES with log-damped work weight
+// accrued since the level-up — a week of daily entries lifts the sector's
+// twigs a little higher each day. Levels 1–3 clamp just under the band top
+// (brushing it is the "author the milestone" nudge); the top band (Expert /
+// Emergent) never clamps — past that threshold the tree simply keeps growing.
+// With the harvest.private-repos opt-in, private GitHub commits count as
+// canopy-lifting WORK (aggregate geometry only — ids/refs never leave the
+// log); private vault notes remain roots-only knowledge (ADR-0002).
 
 import { getTaxonomy } from './taxonomy.mjs';
 
-export const ALGO_VERSION = '2.0.0';
+export const ALGO_VERSION = '3.0.0';
 
 // Neutral warm bark-gray for silhouette-mode roots (no sector attribution). Owner
 // mode paints roots with their sector hue instead; hidden mode emits no roots.
@@ -80,10 +92,20 @@ function normMax(map) {
   return out;
 }
 
-// Returns { drivers: {sectorId: {level, act, recent, roots}}, unclassified:[...],
+// Private GitHub commits are WORK (unlike vault notes, which are knowledge and
+// stay roots-only per ADR-0002) — with the harvest.private-repos opt-in their
+// weight lifts the canopy as aggregate geometry; ids/refs never leave the log.
+const isPrivateWork = (e) => !!e.private && e.source === 'github';
+
+// work weight that fills one stratum band, log-damped (ADR-0009). ~60 weight is
+// a few weeks of daily entries: early days move the pad visibly, a backlog
+// can't teleport it, and past the Expert threshold the same curve keeps rising.
+const BAND_FILL_WEIGHT = 60;
+
+// Returns { drivers: {sectorId: {level, act, recent, roots, fill}}, unclassified:[...],
 //           bySector:{id:{public:[], private:[], milestones:[], firstTs, lastTs}},
 //           firstTs, lastTs }
-function deriveDrivers(events, sectors) {
+function deriveDrivers(events, sectors, { privateCanopy = false } = {}) {
   const known = new Set(sectors.map((s) => s.id));
   const now = Math.max(...events.map((e) => e.tsMs));
   const RECENT_WINDOW = 30 * 86400000; // last 30 days before the now-anchor
@@ -92,37 +114,67 @@ function deriveDrivers(events, sectors) {
   for (const s of sectors) bySector[s.id] = { public: [], private: [], milestones: [], shipped: [] };
   const unclassified = [];
 
-  const pubWeight = {};   // sum of public event weight
+  const workWeight = {};  // weight that grows wood: public + (opt-in) private GitHub work
   const recentCount = {}; // count of events within the recency window
   const totalCount = {};
   const privWeight = {};  // sum of private (roots) weight
   const msLevel = {};     // max attrs.level among milestones (+ milestone count)
   const msCount = {};
-  for (const s of sectors) { pubWeight[s.id] = 0; recentCount[s.id] = 0; totalCount[s.id] = 0; privWeight[s.id] = 0; msLevel[s.id] = 0; msCount[s.id] = 0; }
+  const msLastTs = {};    // ts of the sector's latest milestone — the band-unlock moment
+  for (const s of sectors) { workWeight[s.id] = 0; recentCount[s.id] = 0; totalCount[s.id] = 0; privWeight[s.id] = 0; msLevel[s.id] = 0; msCount[s.id] = 0; msLastTs[s.id] = -Infinity; }
 
+  // recent/total tally ONLY events that shape the public canopy — public events
+  // plus (opt-in) private GitHub work. Vault notes must not tick an above-ground
+  // freshness signal (docs/03 §6 rule 2: knowledge influences roots only).
+  const tally = (sec, tsMs) => {
+    totalCount[sec]++;
+    if (now - tsMs <= RECENT_WINDOW) recentCount[sec]++;
+  };
   for (const e of events) {
     if (!known.has(e.sector)) { unclassified.push(e); continue; }
     const b = bySector[e.sector];
-    totalCount[e.sector]++;
-    if (now - e.tsMs <= RECENT_WINDOW) recentCount[e.sector]++;
-    if (e.private) { b.private.push(e); privWeight[e.sector] += e.weight; continue; }
+    if (e.private) {
+      b.private.push(e);
+      privWeight[e.sector] += e.weight;
+      if (privateCanopy && isPrivateWork(e)) {
+        workWeight[e.sector] += e.weight;
+        tally(e.sector, e.tsMs);
+      }
+      continue;
+    }
+    tally(e.sector, e.tsMs);
     // public events
     if (e.kind === 'milestone') {
       b.milestones.push(e);
       msCount[e.sector]++;
+      msLastTs[e.sector] = Math.max(msLastTs[e.sector], e.tsMs);
       const lvl = e.attrs && Number.isFinite(e.attrs.level) ? e.attrs.level : 0;
       msLevel[e.sector] = Math.max(msLevel[e.sector], lvl);
     } else {
       b.public.push(e);
-      pubWeight[e.sector] += e.weight;
+      workWeight[e.sector] += e.weight;
       if (e.kind === 'shipped') b.shipped.push(e);
     }
   }
 
-  // act: log-damped public-weight share, normalized so the busiest sector = 1.0
+  // act: log-damped work-weight share, normalized so the busiest sector = 1.0
   const actRaw = {};
-  for (const s of sectors) actRaw[s.id] = Math.log2(1 + pubWeight[s.id]);
+  for (const s of sectors) actRaw[s.id] = Math.log2(1 + workWeight[s.id]);
   const act = normMax(actRaw);
+
+  // fill: how far up its CURRENT band a sector has climbed (ADR-0004 rule 1
+  // made real — ADR-0009). Only work accrued AFTER the milestone that unlocked
+  // the band counts (all-time for level-1 sectors), so each level starts at its
+  // band floor and daily entries lift the pad day by day. May exceed 1.0 — the
+  // per-level clamp lives in grow()'s ceilingFor (the top band never clamps).
+  const fillWeight = {};
+  for (const s of sectors) fillWeight[s.id] = 0;
+  for (const e of events) {
+    if (!known.has(e.sector) || e.kind === 'milestone') continue;
+    if (e.private && !(privateCanopy && isPrivateWork(e))) continue;
+    if (e.tsMs > msLastTs[e.sector]) fillWeight[e.sector] += e.weight;
+  }
+  const fillDenom = Math.log2(1 + BAND_FILL_WEIGHT);
 
   // recent: share of a sector's OWN events landing in the last 30d, normalized max->1
   const recentRaw = {};
@@ -141,12 +193,15 @@ function deriveDrivers(events, sectors) {
       act: act[s.id],
       recent: recent[s.id],
       roots: roots[s.id],
+      fill: Math.log2(1 + fillWeight[s.id]) / fillDenom,
     };
   }
 
-  // per-sector event time bounds (for ts-derived born)
+  // per-sector event time bounds (for ts-derived born); opt-in private work
+  // sweeps the rib's growth front just like public work does
   for (const s of sectors) {
-    const all = [...bySector[s.id].public, ...bySector[s.id].milestones, ...bySector[s.id].shipped];
+    const b = bySector[s.id];
+    const all = [...b.public, ...b.milestones, ...(privateCanopy ? b.private.filter(isPrivateWork) : [])];
     const ts = all.map((e) => e.tsMs);
     bySector[s.id].firstTs = ts.length ? Math.min(...ts) : now;
     bySector[s.id].lastTs = ts.length ? Math.max(...ts) : now;
@@ -168,6 +223,11 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     const m = config.privacy && config.privacy.roots;
     return (m === 'owner' || m === 'silhouette' || m === 'hidden') ? m : 'silhouette';
   })();
+  // harvest.private-repos is a double opt-in (docs/03 §6 rules 2 + 4, ADR-0009):
+  // harvesting private repos at all AND letting that private commit history grow
+  // public canopy — as aggregate geometry only, never as ids/refs. Vault notes
+  // stay roots-only regardless (isPrivateWork checks source === 'github').
+  const privateCanopy = !!(config.harvest && config.harvest['private-repos']);
   const taxonomy = getTaxonomy(config.taxonomy || 'default-v1');
   const SECTORS = taxonomy.sectors;
   const STRATA = taxonomy.strata;
@@ -180,7 +240,7 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
 
   if (evs.length === 0) throw new Error('grow(): empty event log');
 
-  const { drivers, unclassified, bySector, firstTs, lastTs } = deriveDrivers(evs, SECTORS);
+  const { drivers, unclassified, bySector, firstTs, lastTs } = deriveDrivers(evs, SECTORS, { privateCanopy });
 
   // ts -> born in [0,1]. Trunk occupies the first TRUNK_SPAN; branches/leaves/
   // blossoms sweep across the rest by the timestamp of the work that grew them
@@ -190,7 +250,19 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
   const tNorm = (ms) => TRUNK_SPAN + (1 - TRUNK_SPAN) * clamp01((ms - firstTs) / span);
 
   const STRATUM_BOUNDARIES = STRATA.slice(1).map((st) => st.y0);
-  const ceilingFor = (lvl) => STRATA[Math.max(0, Math.min(3, lvl - 1))].y1 - 0.35;
+  // The earned band gates height (ADR-0004); ACTIVITY fills it (ADR-0009). The
+  // ceiling starts at the band floor and rises with the sector's log-damped
+  // fill driver, so a week of daily entries lifts the pad a little higher each
+  // day. Levels 1–3 clamp just under the band top — brushing it is the "author
+  // the milestone" nudge. The TOP band (Expert/Emergent) never clamps: past
+  // that threshold the tree simply keeps growing above the stratum.
+  const ceilingFor = (lvl, fill) => {
+    const st = STRATA[Math.max(0, Math.min(STRATA.length - 1, lvl - 1))];
+    const span = st.y1 - 0.35 - st.y0;
+    const f = lvl >= STRATA.length ? fill : Math.min(1, fill);
+    // a fresh level-up still lifts the pad visibly INTO the new band (min 0.25)
+    return st.y0 + Math.max(lvl > 1 ? 0.25 : 0, span * f);
+  };
 
   // ---- output accumulators ----
   const segments = [];     // { start, dir, len, r, born, dist, hue, sector }
@@ -327,7 +399,6 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     const secIdx = secIndex.get(s.id);
     const rng = mkRng(seed, s.id);
     const az0 = deg(s.az);
-    const ceil = ceilingFor(d.level);
 
     // ts-derived born window for this sector's rib
     const born0 = tNorm(sb.firstTs);
@@ -335,6 +406,8 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     const bornAt = (t) => born0 + (bornEnd - born0) * t;
 
     const node = boleAt(0.55 + R(rng, 0, 0.4)); // tight low fork band — no leader above it
+    // activity-filled ceiling — but never below the sapling's own fork
+    const ceil = Math.max(ceilingFor(d.level, d.fill), node.pos[1] + 0.55);
     const reach = 1.9 + d.act * 2.4 + (d.level - 1) * 1.05;
     const r0 = Math.min(node.r * 0.75, 0.08 + d.act * 0.1);
     const distAt = (t) => node.dist + (1 - node.dist) * t;
@@ -406,9 +479,14 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
 
     // ---- assign this sector's public non-milestone events to the pad anchors ----
     const pub = sb.public.slice().sort((a, b) => a.tsMs - b.tsMs);
+    // opt-in private work still grows a canopy — pads as pure geometry with NO
+    // event refs (eventIds stays empty; the details never leave the log)
+    const privWork = privateCanopy ? sb.private.filter(isPrivateWork) : [];
+    const privLastTs = privWork.length ? Math.max(...privWork.map((e) => e.tsMs)) : -Infinity;
     let anchors = tips;
     if (pub.length === 0) {
-      anchors = []; // no public work -> no canopy for this sector
+      // no public work: private work (opt-in) lifts a few bare-ref pads; else no canopy
+      anchors = privWork.length ? tips.slice(0, Math.min(tips.length, 1 + Math.round(d.act * 2))) : [];
     } else if (anchors.length > pub.length) {
       anchors = anchors.slice(0, pub.length); // guarantee every emitted cluster carries >=1 real event
     }
@@ -418,13 +496,13 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
 
     anchors.forEach((tc, ci) => {
       const evList = buckets[ci];
-      if (!evList.length) return;
+      if (!evList.length && !privWork.length) return;
       evList.forEach(recordMeta);
       // the pad: a flat lens on the ceiling plane, anchored at this tip
       const padY = ceil - 0.16 + R(rng, -0.06, 0.06);
       const center = [tc.pos[0] + R(rng, -0.35, 0.35), padY, tc.pos[2] + R(rng, -0.35, 0.35)];
       const cr = 0.55 + d.act * 0.35 + (tc.depth === 0 ? 0.15 : 0);
-      const latest = Math.max(...evList.map((e) => e.tsMs));
+      const latest = evList.length ? Math.max(...evList.map((e) => e.tsMs)) : privLastTs;
       const born = Math.max(tc.born, tNorm(latest));
       const count = Math.max(4, Math.round((3 + d.act * 7) * (tc.depth === 0 ? 1.0 : 1.4)));
       leafClusters.push({

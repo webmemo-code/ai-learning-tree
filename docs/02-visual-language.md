@@ -24,8 +24,10 @@ Novice), cool dusk teal (understory / Experimenter), a thin gold afterglow strip
 emergent line**, so your tallest pad is the one thing silhouetted against actual
 stars. Display naming may go savanna (Ground haze / Dusk / Afterglow / Starfield),
 but the data-model stratum names are unchanged. You *feel* a rib crossing a stratum
-before you could name it — and because pads park under their earned ceiling, the
-level-up moment is the canopy visibly lifting. Reference renderer:
+before you could name it — and because pads climb their earned band with the
+work itself (daily entries lift them a little each day, the band top holds until
+a milestone opens the next — [ADR-0009](decisions/0009-activity-fills-the-band.md)),
+the level-up moment is the canopy visibly lifting. Reference renderer:
 [prototypes/acacia-sketch/](../prototypes/acacia-sketch/).
 
 ## 2. Inherited from the Periodic Cube (proven, liftable)

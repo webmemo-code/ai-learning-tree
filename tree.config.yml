@@ -97,9 +97,10 @@ topic-map:
 # ----------------------------------------------------------------------------------------
 harvest:
   include-forks: false      # forked repos are noise, not your own work — excluded by default
-  private-repos: true       # opt-in only; flip to true once HARVEST_TOKEN has private-repo
-                            # scope and you've decided private commit history should grow
-                            # public canopy (see docs/03-data-model.md §6 rule 4)
+  private-repos: true       # DOUBLE opt-in (docs/03 §6 rule 2, ADR-0009) — harvest private
+                            # repos AND let their commit weight lift limb height + canopy
+                            # as aggregate geometry only; ids/refs of private commits never
+                            # reach tree.json. Vault notes stay roots-only regardless.
 
 # ----------------------------------------------------------------------------------------
 # 4. Obsidian vault harvesting (notes -> roots; content never leaves the vault)
