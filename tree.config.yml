@@ -55,6 +55,7 @@ repos:
   schaerers.info:                      create.copy
   costa-rica:                          create.copy
   imre:                                create.copy
+  webmemo-code:                        create.copy
 
   # CREATE / images — photo & image asset pipelines
   photo-gallery:                       create.images
