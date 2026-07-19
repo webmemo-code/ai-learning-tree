@@ -24,6 +24,12 @@ as something alive — and something worth showing to other knowledge workers to
 > in [docs/04 §4](docs/04-roadmap-and-process.md). The
 > origin brain dump lives in [issue #1](https://github.com/webmemo-code/ai-learning-tree/issues/1).
 
+![Walter's tree on 2026-07-19 — the acacia with four Experimenter limbs and their blossoms](docs/documentation/ai-learning-tree_20260719.png)
+*The live tree ([acacia-sketch](prototypes/acacia-sketch/), clean-embed view) on
+the morning after the growth-mechanics arc: four sectors bloomed to Experimenter —
+the blue pro-code rib reaches highest (~5.5, lifted overnight by this project's
+own commits), fireflies gather under the pads for the last seven days of work.*
+
 Sibling project: [ai-periodic-cube](https://github.com/webmemo-code/ai-periodic-cube) —
 the Periodic Cube of AI, whose visual language (bloom, camera choreography, sound,
 filters, level of detail) this project inherits and takes botanical.
