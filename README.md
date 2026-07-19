@@ -25,8 +25,8 @@ as something alive — and something worth showing to other knowledge workers to
 > origin brain dump lives in [issue #1](https://github.com/webmemo-code/ai-learning-tree/issues/1).
 
 ![Walter's tree on 2026-07-19 — the acacia with four Experimenter limbs and their blossoms](docs/documentation/ai-learning-tree_20260719.png)
-*The live tree ([acacia-sketch](prototypes/acacia-sketch/), clean-embed view) the
-morning after the growth-mechanics arc: four sectors bloomed to Experimenter —
+*The live tree ([acacia-sketch](prototypes/acacia-sketch/), clean-embed view) on
+the morning after the growth-mechanics arc: four sectors bloomed to Experimenter —
 the blue pro-code rib reaches highest (~5.5, lifted overnight by this project's
 own commits), fireflies gather under the pads for the last seven days of work.*
 
