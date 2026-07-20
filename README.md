@@ -33,8 +33,9 @@ the last seven days of work.*
 **🌳 [Open the interactive tree](https://webmemo-code.github.io/ai-learning-tree/prototypes/acacia-sketch/)** —
 orbit it, click leaves and blossoms for their commits and milestone evidence,
 hover the compass and strata, or hit *🎬 Replay journey* for the 30-second
-regrowth ([source](prototypes/acacia-sketch/)). Redeployed on every push, so it
-always shows the latest nightly harvest.
+regrowth ([source](prototypes/acacia-sketch/)). The site redeploys on every
+push **and** is chained behind the nightly harvest workflow, so it always
+shows the latest harvested tree.
 
 Sibling project: [ai-periodic-cube](https://github.com/webmemo-code/ai-periodic-cube) —
 the Periodic Cube of AI, whose visual language (bloom, camera choreography, sound,
