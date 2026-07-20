@@ -1,5 +1,5 @@
 {
-  "algoVersion": "3.0.0",
+  "algoVersion": "3.1.0",
   "blossoms": [
     {
       "born": 0.2476,
@@ -222,6 +222,2038 @@
       -6.5282
     ]
   },
+  "contribution": [
+    {
+      "born": 0.12,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2024-09-02",
+      "weight": 1.24
+    },
+    {
+      "born": 0.1367,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2024-09-16",
+      "weight": 1.26
+    },
+    {
+      "born": 0.1367,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2024-09-16",
+      "weight": 1.24
+    },
+    {
+      "born": 0.1457,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2024-09-23",
+      "weight": 1.4
+    },
+    {
+      "born": 0.1457,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2024-09-23",
+      "weight": 2.36
+    },
+    {
+      "born": 0.1457,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2024-09-23",
+      "weight": 1.14
+    },
+    {
+      "born": 0.1639,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2024-10-07",
+      "weight": 1.17
+    },
+    {
+      "born": 0.1639,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2024-10-07",
+      "weight": 1.4
+    },
+    {
+      "born": 0.1639,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2024-10-07",
+      "weight": 1.41
+    },
+    {
+      "born": 0.173,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2024-10-14",
+      "weight": 1.43
+    },
+    {
+      "born": 0.182,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2024-10-21",
+      "weight": 1.55
+    },
+    {
+      "born": 0.182,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2024-10-21",
+      "weight": 1.56
+    },
+    {
+      "born": 0.1911,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2024-10-28",
+      "weight": 0.84
+    },
+    {
+      "born": 0.1911,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2024-10-28",
+      "weight": 1.31
+    },
+    {
+      "born": 0.1911,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2024-10-28",
+      "weight": 1.46
+    },
+    {
+      "born": 0.1911,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2024-10-28",
+      "weight": 1
+    },
+    {
+      "born": 0.2002,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2024-11-04",
+      "weight": 1.12
+    },
+    {
+      "born": 0.2002,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2024-11-04",
+      "weight": 1.67
+    },
+    {
+      "born": 0.2002,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2024-11-04",
+      "weight": 1.26
+    },
+    {
+      "born": 0.2093,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2024-11-11",
+      "weight": 1.35
+    },
+    {
+      "born": 0.2093,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2024-11-11",
+      "weight": 1.25
+    },
+    {
+      "born": 0.2093,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2024-11-11",
+      "weight": 1.46
+    },
+    {
+      "born": 0.2274,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2024-11-25",
+      "weight": 1.27
+    },
+    {
+      "born": 0.2274,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2024-11-25",
+      "weight": 1.65
+    },
+    {
+      "born": 0.2365,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2024-12-02",
+      "weight": 2.49
+    },
+    {
+      "born": 0.2365,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2024-12-02",
+      "weight": 2.02
+    },
+    {
+      "born": 0.2728,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2024-12-30",
+      "weight": 1.02
+    },
+    {
+      "born": 0.2819,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-01-06",
+      "weight": 0.88
+    },
+    {
+      "born": 0.291,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2025-01-13",
+      "weight": 1.33
+    },
+    {
+      "born": 0.291,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-01-13",
+      "weight": 1.48
+    },
+    {
+      "born": 0.3001,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2025-01-20",
+      "weight": 1.02
+    },
+    {
+      "born": 0.3001,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-01-20",
+      "weight": 1.46
+    },
+    {
+      "born": 0.3001,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-01-20",
+      "weight": 1.34
+    },
+    {
+      "born": 0.3001,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2025-01-20",
+      "weight": 1.55
+    },
+    {
+      "born": 0.3091,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2025-01-27",
+      "weight": 0.67
+    },
+    {
+      "born": 0.3091,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-01-27",
+      "weight": 2.57
+    },
+    {
+      "born": 0.3182,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2025-02-03",
+      "weight": 1.02
+    },
+    {
+      "born": 0.3273,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2025-02-10",
+      "weight": 1.46
+    },
+    {
+      "born": 0.3273,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-02-10",
+      "weight": 2.99
+    },
+    {
+      "born": 0.3273,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2025-02-10",
+      "weight": 1.28
+    },
+    {
+      "born": 0.3364,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2025-02-17",
+      "weight": 1.22
+    },
+    {
+      "born": 0.3364,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2025-02-17",
+      "weight": 1.25
+    },
+    {
+      "born": 0.3364,
+      "count": 3,
+      "level": 4,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-02-17",
+      "weight": 5.61
+    },
+    {
+      "born": 0.3545,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2025-03-03",
+      "weight": 1.08
+    },
+    {
+      "born": 0.3545,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2025-03-03",
+      "weight": 1.21
+    },
+    {
+      "born": 0.3545,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-03-03",
+      "weight": 1.37
+    },
+    {
+      "born": 0.3636,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2025-03-10",
+      "weight": 2.01
+    },
+    {
+      "born": 0.3636,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-03-10",
+      "weight": 1.75
+    },
+    {
+      "born": 0.3727,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2025-03-17",
+      "weight": 1.22
+    },
+    {
+      "born": 0.3727,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-03-17",
+      "weight": 1.41
+    },
+    {
+      "born": 0.3727,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-03-17",
+      "weight": 1.7
+    },
+    {
+      "born": 0.3818,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-03-24",
+      "weight": 2.32
+    },
+    {
+      "born": 0.3908,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2025-03-31",
+      "weight": 1.22
+    },
+    {
+      "born": 0.3908,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-03-31",
+      "weight": 1.24
+    },
+    {
+      "born": 0.3908,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2025-03-31",
+      "weight": 1.24
+    },
+    {
+      "born": 0.3999,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2025-04-07",
+      "weight": 0.99
+    },
+    {
+      "born": 0.3999,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2025-04-07",
+      "weight": 1.57
+    },
+    {
+      "born": 0.3999,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-04-07",
+      "weight": 1.1
+    },
+    {
+      "born": 0.409,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2025-04-14",
+      "weight": 1.47
+    },
+    {
+      "born": 0.409,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-04-14",
+      "weight": 1.38
+    },
+    {
+      "born": 0.4181,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 2,
+      "weekTs": "2025-04-21",
+      "weight": 0.72
+    },
+    {
+      "born": 0.4181,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2025-04-21",
+      "weight": 1.18
+    },
+    {
+      "born": 0.4271,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2025-04-28",
+      "weight": 0.78
+    },
+    {
+      "born": 0.4271,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-04-28",
+      "weight": 0.93
+    },
+    {
+      "born": 0.4362,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2025-05-05",
+      "weight": 2.24
+    },
+    {
+      "born": 0.4362,
+      "count": 2,
+      "level": 4,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-05-05",
+      "weight": 3.48
+    },
+    {
+      "born": 0.4453,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2025-05-12",
+      "weight": 1.98
+    },
+    {
+      "born": 0.4453,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2025-05-12",
+      "weight": 1.58
+    },
+    {
+      "born": 0.4453,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-05-12",
+      "weight": 2.5
+    },
+    {
+      "born": 0.4544,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2025-05-19",
+      "weight": 1.15
+    },
+    {
+      "born": 0.4544,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-05-19",
+      "weight": 1.29
+    },
+    {
+      "born": 0.4544,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2025-05-19",
+      "weight": 1.55
+    },
+    {
+      "born": 0.4635,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2025-05-26",
+      "weight": 1.32
+    },
+    {
+      "born": 0.4635,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-05-26",
+      "weight": 0.96
+    },
+    {
+      "born": 0.4725,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2025-06-02",
+      "weight": 1.27
+    },
+    {
+      "born": 0.4725,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-06-02",
+      "weight": 1.07
+    },
+    {
+      "born": 0.4725,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2025-06-02",
+      "weight": 1.25
+    },
+    {
+      "born": 0.4816,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2025-06-09",
+      "weight": 2.33
+    },
+    {
+      "born": 0.4816,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-06-09",
+      "weight": 1.52
+    },
+    {
+      "born": 0.4907,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-06-16",
+      "weight": 1.88
+    },
+    {
+      "born": 0.4998,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-06-23",
+      "weight": 1.67
+    },
+    {
+      "born": 0.5088,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-06-30",
+      "weight": 2.25
+    },
+    {
+      "born": 0.5088,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2025-06-30",
+      "weight": 1.54
+    },
+    {
+      "born": 0.5179,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-07-07",
+      "weight": 1.21
+    },
+    {
+      "born": 0.527,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-07-14",
+      "weight": 1.06
+    },
+    {
+      "born": 0.527,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-07-14",
+      "weight": 2.43
+    },
+    {
+      "born": 0.5361,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2025-07-21",
+      "weight": 1.37
+    },
+    {
+      "born": 0.5361,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-07-21",
+      "weight": 0.92
+    },
+    {
+      "born": 0.5361,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2025-07-21",
+      "weight": 1.31
+    },
+    {
+      "born": 0.5452,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2025-07-28",
+      "weight": 1.59
+    },
+    {
+      "born": 0.5542,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-08-04",
+      "weight": 0.99
+    },
+    {
+      "born": 0.5542,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2025-08-04",
+      "weight": 1.2
+    },
+    {
+      "born": 0.5633,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2025-08-11",
+      "weight": 1.39
+    },
+    {
+      "born": 0.5633,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2025-08-11",
+      "weight": 1.51
+    },
+    {
+      "born": 0.5815,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2025-08-25",
+      "weight": 0.97
+    },
+    {
+      "born": 0.5905,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2025-09-01",
+      "weight": 1.69
+    },
+    {
+      "born": 0.5905,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-09-01",
+      "weight": 1.23
+    },
+    {
+      "born": 0.5996,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-09-08",
+      "weight": 1.51
+    },
+    {
+      "born": 0.6087,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 2,
+      "weekTs": "2025-09-15",
+      "weight": 1.03
+    },
+    {
+      "born": 0.6087,
+      "count": 2,
+      "level": 4,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-09-15",
+      "weight": 3.95
+    },
+    {
+      "born": 0.6178,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2025-09-22",
+      "weight": 1.63
+    },
+    {
+      "born": 0.6178,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-09-22",
+      "weight": 2.5
+    },
+    {
+      "born": 0.6269,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-09-29",
+      "weight": 1.1
+    },
+    {
+      "born": 0.6359,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2025-10-06",
+      "weight": 2.29
+    },
+    {
+      "born": 0.645,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2025-10-13",
+      "weight": 1.1
+    },
+    {
+      "born": 0.645,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2025-10-13",
+      "weight": 1.37
+    },
+    {
+      "born": 0.645,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-10-13",
+      "weight": 2.64
+    },
+    {
+      "born": 0.645,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2025-10-13",
+      "weight": 1.61
+    },
+    {
+      "born": 0.645,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-10-13",
+      "weight": 0.92
+    },
+    {
+      "born": 0.6541,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2025-10-20",
+      "weight": 1.16
+    },
+    {
+      "born": 0.6541,
+      "count": 2,
+      "level": 4,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-10-20",
+      "weight": 3.39
+    },
+    {
+      "born": 0.6632,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-10-27",
+      "weight": 1.88
+    },
+    {
+      "born": 0.6723,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2025-11-03",
+      "weight": 1.71
+    },
+    {
+      "born": 0.6723,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2025-11-03",
+      "weight": 2.11
+    },
+    {
+      "born": 0.6723,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-11-03",
+      "weight": 1.23
+    },
+    {
+      "born": 0.6723,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-11-03",
+      "weight": 0.95
+    },
+    {
+      "born": 0.6723,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-11-03",
+      "weight": 1.18
+    },
+    {
+      "born": 0.6813,
+      "count": 3,
+      "level": 4,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-11-10",
+      "weight": 4.41
+    },
+    {
+      "born": 0.6904,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-11-17",
+      "weight": 1.93
+    },
+    {
+      "born": 0.6904,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2025-11-17",
+      "weight": 1.05
+    },
+    {
+      "born": 0.6995,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2025-11-24",
+      "weight": 1.92
+    },
+    {
+      "born": 0.6995,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2025-11-24",
+      "weight": 1.89
+    },
+    {
+      "born": 0.6995,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-11-24",
+      "weight": 1.5
+    },
+    {
+      "born": 0.7086,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2025-12-01",
+      "weight": 2.23
+    },
+    {
+      "born": 0.7086,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-12-01",
+      "weight": 1.36
+    },
+    {
+      "born": 0.7176,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-12-08",
+      "weight": 1.25
+    },
+    {
+      "born": 0.7267,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2025-12-15",
+      "weight": 0.96
+    },
+    {
+      "born": 0.7267,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2025-12-15",
+      "weight": 1.15
+    },
+    {
+      "born": 0.7267,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-12-15",
+      "weight": 1.14
+    },
+    {
+      "born": 0.7358,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2025-12-22",
+      "weight": 1.39
+    },
+    {
+      "born": 0.7449,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2025-12-29",
+      "weight": 1.76
+    },
+    {
+      "born": 0.7449,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2025-12-29",
+      "weight": 0.83
+    },
+    {
+      "born": 0.754,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2026-01-05",
+      "weight": 1.33
+    },
+    {
+      "born": 0.754,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2026-01-05",
+      "weight": 3
+    },
+    {
+      "born": 0.754,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-01-05",
+      "weight": 1.77
+    },
+    {
+      "born": 0.763,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2026-01-12",
+      "weight": 2.38
+    },
+    {
+      "born": 0.7721,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2026-01-19",
+      "weight": 0.72
+    },
+    {
+      "born": 0.7721,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2026-01-19",
+      "weight": 1.9
+    },
+    {
+      "born": 0.7812,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2026-01-26",
+      "weight": 1.18
+    },
+    {
+      "born": 0.7812,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2026-01-26",
+      "weight": 1.28
+    },
+    {
+      "born": 0.7812,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-01-26",
+      "weight": 0.97
+    },
+    {
+      "born": 0.7812,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2026-01-26",
+      "weight": 1.49
+    },
+    {
+      "born": 0.7903,
+      "count": 2,
+      "level": 4,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2026-02-02",
+      "weight": 3.7
+    },
+    {
+      "born": 0.7903,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-02-02",
+      "weight": 1.36
+    },
+    {
+      "born": 0.7903,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2026-02-02",
+      "weight": 1.19
+    },
+    {
+      "born": 0.7903,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-02-02",
+      "weight": 1.51
+    },
+    {
+      "born": 0.7993,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2026-02-09",
+      "weight": 1.25
+    },
+    {
+      "born": 0.8084,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2026-02-16",
+      "weight": 2.09
+    },
+    {
+      "born": 0.8266,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2026-03-02",
+      "weight": 1.2
+    },
+    {
+      "born": 0.8266,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-03-02",
+      "weight": 1.23
+    },
+    {
+      "born": 0.8266,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-03-02",
+      "weight": 1.77
+    },
+    {
+      "born": 0.8357,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-03-09",
+      "weight": 1.4
+    },
+    {
+      "born": 0.8538,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2026-03-23",
+      "weight": 1.98
+    },
+    {
+      "born": 0.8538,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2026-03-23",
+      "weight": 1.87
+    },
+    {
+      "born": 0.8538,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-03-23",
+      "weight": 3
+    },
+    {
+      "born": 0.8629,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2026-03-30",
+      "weight": 1.21
+    },
+    {
+      "born": 0.8629,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-03-30",
+      "weight": 1.1
+    },
+    {
+      "born": 0.881,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2026-04-13",
+      "weight": 1.7
+    },
+    {
+      "born": 0.881,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-04-13",
+      "weight": 1.45
+    },
+    {
+      "born": 0.881,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2026-04-13",
+      "weight": 1.73
+    },
+    {
+      "born": 0.881,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2026-04-13",
+      "weight": 0.88
+    },
+    {
+      "born": 0.8901,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2026-04-20",
+      "weight": 1.5
+    },
+    {
+      "born": 0.8901,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-04-20",
+      "weight": 0.98
+    },
+    {
+      "born": 0.8992,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-04-27",
+      "weight": 2.11
+    },
+    {
+      "born": 0.9083,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2026-05-04",
+      "weight": 1.23
+    },
+    {
+      "born": 0.9083,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-05-04",
+      "weight": 1.41
+    },
+    {
+      "born": 0.9174,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2026-05-11",
+      "weight": 3
+    },
+    {
+      "born": 0.9174,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2026-05-11",
+      "weight": 1.11
+    },
+    {
+      "born": 0.9264,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-05-18",
+      "weight": 1.98
+    },
+    {
+      "born": 0.9264,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-05-18",
+      "weight": 3.04
+    },
+    {
+      "born": 0.9355,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2026-05-25",
+      "weight": 1.94
+    },
+    {
+      "born": 0.9355,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-05-25",
+      "weight": 1.41
+    },
+    {
+      "born": 0.9355,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2026-05-25",
+      "weight": 1.76
+    },
+    {
+      "born": 0.9355,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-05-25",
+      "weight": 2.48
+    },
+    {
+      "born": 0.9446,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2026-06-01",
+      "weight": 1.1
+    },
+    {
+      "born": 0.9446,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-06-01",
+      "weight": 3.01
+    },
+    {
+      "born": 0.9537,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-06-08",
+      "weight": 2.76
+    },
+    {
+      "born": 0.9537,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2026-06-08",
+      "weight": 1.4
+    },
+    {
+      "born": 0.9627,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2026-06-15",
+      "weight": 1.18
+    },
+    {
+      "born": 0.9627,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2026-06-15",
+      "weight": 1.09
+    },
+    {
+      "born": 0.9627,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-06-15",
+      "weight": 1.09
+    },
+    {
+      "born": 0.9627,
+      "count": 3,
+      "level": 4,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2026-06-15",
+      "weight": 4.75
+    },
+    {
+      "born": 0.9627,
+      "count": 3,
+      "level": 4,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-06-15",
+      "weight": 4.44
+    },
+    {
+      "born": 0.9718,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2026-06-22",
+      "weight": 1.1
+    },
+    {
+      "born": 0.9718,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-06-22",
+      "weight": 1.08
+    },
+    {
+      "born": 0.9718,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2026-06-22",
+      "weight": 1.49
+    },
+    {
+      "born": 0.9718,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2026-06-22",
+      "weight": 1.45
+    },
+    {
+      "born": 0.9718,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-06-22",
+      "weight": 1.34
+    },
+    {
+      "born": 0.9809,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2026-06-29",
+      "weight": 1.1
+    },
+    {
+      "born": 0.9809,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2026-06-29",
+      "weight": 0.87
+    },
+    {
+      "born": 0.9809,
+      "count": 2,
+      "level": 4,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 2,
+      "weekTs": "2026-06-29",
+      "weight": 3.3
+    },
+    {
+      "born": 0.9809,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2026-06-29",
+      "weight": 2.1
+    },
+    {
+      "born": 0.9809,
+      "count": 2,
+      "level": 4,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 4,
+      "weekTs": "2026-06-29",
+      "weight": 3.35
+    },
+    {
+      "born": 0.9809,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2026-06-29",
+      "weight": 3.11
+    },
+    {
+      "born": 0.9809,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 6,
+      "weekTs": "2026-06-29",
+      "weight": 2.58
+    },
+    {
+      "born": 0.9809,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 7,
+      "weekTs": "2026-06-29",
+      "weight": 1.27
+    },
+    {
+      "born": 0.99,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 0,
+      "weekTs": "2026-07-06",
+      "weight": 1.49
+    },
+    {
+      "born": 0.99,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 1,
+      "weekTs": "2026-07-06",
+      "weight": 1.31
+    },
+    {
+      "born": 0.99,
+      "count": 3,
+      "level": 4,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 2,
+      "weekTs": "2026-07-06",
+      "weight": 5.14
+    },
+    {
+      "born": 0.99,
+      "count": 1,
+      "level": 2,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 3,
+      "weekTs": "2026-07-06",
+      "weight": 1.17
+    },
+    {
+      "born": 0.99,
+      "count": 1,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 5,
+      "weekTs": "2026-07-06",
+      "weight": 1.66
+    },
+    {
+      "born": 0.99,
+      "count": 3,
+      "level": 4,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-07-06",
+      "weight": 5.06
+    },
+    {
+      "born": 0.9991,
+      "count": 2,
+      "level": 3,
+      "privCount": 0,
+      "privWeight": 0,
+      "sector": 8,
+      "weekTs": "2026-07-13",
+      "weight": 2.74
+    }
+  ],
   "eventMeta": {
     "blog:a-prompt-library-for-on-brand-ai-imagery": {
       "id": "blog:a-prompt-library-for-on-brand-ai-imagery",

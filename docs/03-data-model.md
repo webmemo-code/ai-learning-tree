@@ -120,6 +120,15 @@ stratum allows. Branches literally *colonize the space your work opened up*.
 - **Output:** `tree.json` — a pure geometry/metadata graph (nodes: segments, leaves,
   blossoms; each tagged with source event ids) consumed by the renderer. The
   renderer never touches raw sources; the generator never touches pixels. Clean seam.
+- **Contribution meadow:** `tree.json` also carries a `contribution` array — one
+  entry per non-empty **absolute-UTC-week × sector** bucket (a GitHub-style density
+  field unrolled onto the ground ring): `{ sector, weekTs (that week's UTC Monday,
+  YYYY-MM-DD), count, weight, privCount, privWeight, level (1..4, log-damped to the
+  field max), born (the same ts→born normalization the canopy uses) }`. Weeks are
+  anchored at the first epoch Monday (1970-01-05) so a bucket never shifts as new
+  events append. Milestones bucket like any classified event (weight 1, no special
+  case); unclassified events are skipped (they keep their gray-shoots signal).
+  Gated by `privacy.contributions` (see §6).
 
 ## 5. Replay (time-lapse) for free
 
@@ -140,5 +149,9 @@ of the architecture rather than being a feature bolted on.
    from private work carry no event references
    ([ADR-0009](decisions/0009-activity-fills-the-band.md)).
 3. Public tree pages embed only `tree.json` (geometry + public event refs), never the log's private lines.
+   The `contribution` meadow obeys this too: private work may enter a bucket only as a weekly
+   per-sector **aggregate** (count + weight), never as ids/names — gated by the `privacy.contributions`
+   knob (`public-only` default excludes private events entirely; `combined` folds them in and reports
+   their `privCount`/`privWeight` share; `hidden` omits the array), a separate axis from `privacy.roots`.
 4. For other users, default harvest scope = **public GitHub data only**; private-repo
    and vault scopes are explicit opt-ins with their own config keys.

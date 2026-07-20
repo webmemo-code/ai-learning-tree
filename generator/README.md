@@ -22,6 +22,7 @@ panels). Clean seam.
 | `build.mjs` | Node CLI: read log + config, run `grow()`, write `data/tree.json`. |
 | `serialize.mjs` | Stable JSON stringify (sorted keys) + a tiny no-deps YAML parser. |
 | `test-determinism.mjs` | The one test that must never break (docs/04 §CI). |
+| `test-contribution.mjs` | The contribution-meadow data contract: week bucketing, the `privacy.contributions` knob, aggregate privacy, sort/level bounds (ADR-0010). |
 
 ## Rebuild
 
@@ -144,6 +145,14 @@ gray shoots at the trunk base — visible nagging to classify them, never droppe
     "eventId": "ms:...", "evidence": "https://…", "note": "…"
   } ],
   "fireflies": [ { "pos": [x,y,z], "hue": n, "sector": 8, "eventId": "gh:…" } ], // last-7d event refs
+  "contribution": [ {                                            // weekly per-sector activity buckets (meadow)
+    "sector": 8,          // sector index (matches segments[].sector)
+    "weekTs": "2026-07-13", // that week's UTC Monday, YYYY-MM-DD (absolute weeks; buckets never shift)
+    "count": 9, "weight": 12.4,   // events + summed weight in the bucket
+    "privCount": 6, "privWeight": 8.1, // private share (0 in public-only mode) — AGGREGATES ONLY (docs/03 §6.3)
+    "level": 3,           // 1..4 log-damped intensity, GitHub-style (0 never emitted)
+    "born": 0.83          // same ts→born normalization the canopy uses (meadow ripple aligns with sprout)
+  } ],                                                           // omitted entirely when privacy.contributions: hidden
   "eventMeta": {                                                 // public event metadata for detail panels
     "gh:owner/repo:sha": { "id": "…", "kind": "commit", "sector": "…", "project": "…", "ts": "…", "url"?: "…" }
   },

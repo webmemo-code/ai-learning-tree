@@ -32,10 +32,19 @@
 // With the harvest.private-repos opt-in, private GitHub commits count as
 // canopy-lifting WORK (aggregate geometry only — ids/refs never leave the
 // log); private vault notes remain roots-only knowledge (ADR-0002).
+//
+// algoVersion 3.1.0 — CONTRIBUTION MEADOW (ADR-0010). Additive MINOR bump: a new
+// top-level `contribution` array of weekly per-sector activity buckets (a
+// GitHub-style density field unrolled onto the ground ring). No existing geometry
+// moves — every segment/leaf/blossom/firefly is byte-identical to 3.0.0 from the
+// same log+seed; the meadow is a strictly additive layer keyed off the same
+// ts->born normalization the canopy uses. The new privacy.contributions knob
+// (public-only | combined | hidden) gates whether private work joins the buckets
+// as an AGGREGATE share (never ids/names, docs/03 §6 rule 3).
 
 import { getTaxonomy } from './taxonomy.mjs';
 
-export const ALGO_VERSION = '3.0.0';
+export const ALGO_VERSION = '3.1.0';
 
 // Neutral warm bark-gray for silhouette-mode roots (no sector attribution). Owner
 // mode paints roots with their sector hue instead; hidden mode emits no roots.
@@ -228,6 +237,18 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
   // public canopy — as aggregate geometry only, never as ids/refs. Vault notes
   // stay roots-only regardless (isPrivateWork checks source === 'github').
   const privateCanopy = !!(config.harvest && config.harvest['private-repos']);
+  // Contribution-meadow disclosure mode (docs/03 §6 rule 3). Default `public-only`
+  // — safe by default: the weekly ground buckets are computed from PUBLIC events
+  // alone, so nothing about private work leaks even in aggregate. `combined`
+  // (Walter's explicit choice) folds private events into the same buckets and
+  // reports their share as privCount/privWeight — still AGGREGATES ONLY, never
+  // ids/names. `hidden` omits the array entirely. Unlike privateCanopy this is a
+  // separate axis: private work can lift the canopy (geometry) yet stay out of the
+  // meadow (aggregates), or vice-versa — the two knobs don't imply each other.
+  const contribMode = (() => {
+    const m = config.privacy && config.privacy.contributions;
+    return (m === 'public-only' || m === 'combined' || m === 'hidden') ? m : 'public-only';
+  })();
   const taxonomy = getTaxonomy(config.taxonomy || 'default-v1');
   const SECTORS = taxonomy.sectors;
   const STRATA = taxonomy.strata;
@@ -652,6 +673,62 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     recent: round4(drivers[s.id].recent), roots: round4(drivers[s.id].roots),
   }));
 
+  // ---- contribution meadow: weekly per-sector activity buckets (ADR-0010) ----
+  // A GitHub-style density field, unrolled onto the ground ring. Every event with
+  // a KNOWN sector (commits AND milestones — milestones are rare, weight 1, no
+  // special case) lands in one absolute-UTC-week bucket; unclassified events keep
+  // their gray-shoots signal and are skipped here. Absolute weeks anchored at the
+  // first ISO Monday of the epoch (1970-01-05) mean a bucket's weekTs never shifts
+  // as new events append — old ground stays put while the rim grows outward.
+  // PRIVACY (docs/03 §6 rule 3): public-only computes buckets from public events
+  // alone; combined folds private events in and reports privCount/privWeight as
+  // their AGGREGATE share (never ids/names); hidden omits the array entirely.
+  const MONDAY_EPOCH_MS = 345600000;   // 1970-01-05T00:00:00Z — the first ISO Monday
+  const WEEK_MS = 604800000;           // 7 * 86400000
+  let contribution;
+  if (contribMode !== 'hidden') {
+    const includePriv = contribMode === 'combined';
+    // key "sec|week" -> accumulator; born deferred until after we know the field max
+    const buckets = new Map();
+    for (const e of evs) {
+      const sec = secIndex.get(e.sector);
+      if (sec === undefined) continue;      // unclassified: skip (gray shoots own that signal)
+      if (e.private && !includePriv) continue;
+      const week = Math.floor((e.tsMs - MONDAY_EPOCH_MS) / WEEK_MS);
+      const key = sec + '|' + week;
+      let b = buckets.get(key);
+      if (!b) { b = { sector: sec, week, count: 0, weight: 0, privCount: 0, privWeight: 0 }; buckets.set(key, b); }
+      b.count++;
+      b.weight += e.weight;
+      if (e.private) { b.privCount++; b.privWeight += e.weight; }
+    }
+    // level quantization — log-damped, normalized to the field max (same damping
+    // family as the act driver). In public-only mode `weight` is public-only; in
+    // combined it's the total. level ∈ 1..4, GitHub-style; 0 is never emitted.
+    const maxWeight = Math.max(0, ...[...buckets.values()].map((b) => b.weight));
+    const levelDenom = Math.log2(1 + maxWeight) || 1;
+    const round2 = (n) => Math.round(n * 100) / 100;
+    contribution = [...buckets.values()].map((b) => {
+      const mondayMs = MONDAY_EPOCH_MS + b.week * WEEK_MS;
+      const x = Math.log2(1 + b.weight) / levelDenom;
+      return {
+        sector: b.sector,
+        // weekTs = the bucket's Monday as a plain UTC date (YYYY-MM-DD)
+        weekTs: new Date(mondayMs).toISOString().slice(0, 10),
+        count: b.count,
+        weight: round2(b.weight),
+        privCount: b.privCount,
+        privWeight: round2(b.privWeight),
+        level: Math.max(1, Math.ceil(x * 4)),
+        // born: the SAME global ts→born normalization the segments/leafClusters use,
+        // called with the week's Monday — so the meadow ripple aligns with canopy sprout.
+        born: round4(tNorm(mondayMs)),
+      };
+    });
+    // byte-determinism: weekTs asc, then sector asc (stableStringify keeps array order)
+    contribution.sort((a, b) => (a.weekTs < b.weekTs ? -1 : a.weekTs > b.weekTs ? 1 : a.sector - b.sector));
+  }
+
   return {
     algoVersion,
     seed,
@@ -668,6 +745,7 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     leafClusters: outClusters,
     blossoms: outBlossoms,
     fireflies: outFireflies,
+    ...(contribution !== undefined ? { contribution } : {}),
     eventMeta,
     ...(rootDetail !== undefined ? { rootDetail } : {}),
     bounds: { min: min.map(round4), max: max.map(round4) },

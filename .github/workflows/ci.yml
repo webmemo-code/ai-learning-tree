@@ -43,4 +43,5 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      - run: node generator/test-contribution.mjs
       - run: node generator/test-determinism.mjs
