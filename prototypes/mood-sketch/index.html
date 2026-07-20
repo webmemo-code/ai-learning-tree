@@ -296,6 +296,10 @@ const U = {
   uBandY0: { value: -1e6 }, uBandY1: { value: -1e6 }, // stratum-hover band, sentinel = inactive
   uBandGain: { value: 0 },                            // eased 0→~0.6 while a stratum row is hovered
   uRootsMode: { value: 0 },                           // roots reveal: 0 idle → 1 below-ground, eased ~0.8s
+  // canopy↔ground flash (B2): hovering a leaf cluster boosts the meadow blades of the SAME sector
+  // born within a week of the cluster. uFlashSector = -1 idle; uFlashGain eases 0→~0.8 (glow ×1.8 max).
+  uFlashSector: { value: -1 }, uFlashBorn: { value: 0 }, uFlashGain: { value: 0 },
+  uFlashWidth: { value: 0.02 },                        // one week as a born-fraction; set once the span is known
 };
 
 // ---------- branch skeleton: instanced tapered cylinders, straight from tree.segments ----------
@@ -593,6 +597,10 @@ if (TREE.fireflies.length) {
 // aBorn sprout (here it SCALES HEIGHT so the grass grows upward as the replay front passes), the
 // uSectorDim[${NSEC}] constant-index dim-not-hide loop, and the (1.0 - 0.88·uRootsMode) crown fade.
 let meadowCount = 0;
+let meadowMesh = null;            // the InstancedMesh — hover flash + idle checks read it back (B2)
+let meadowMotes = [];            // { x, z, bucket } per blade — the manual ground pick projects onto these
+let weekBornWidth = 0.02;        // one week as a born-fraction — the canopy↔ground flash match window
+const R_IN = 2.2, R_OUT = 13.5;  // ground-scrubber maps hit-radius across this same band (B2, P3)
 if (CONTRIB.length) {
   const maxCount = Math.max(1, ...CONTRIB.map(b => b.count)); // height normaliser (log-damped below)
   const rIn = 2.2, rOut = 13.5, ringSpan = rOut - rIn;
@@ -600,6 +608,7 @@ if (CONTRIB.length) {
   const oneWeek = 7 * DAY;
   const totalSpan = Math.max(oneWeek, NOW - T0);
   const ringWidth = ringSpan * (oneWeek / totalSpan);
+  weekBornWidth = oneWeek / totalSpan;      // born spans [0,1] over the log → one week is this wide (flash window)
   const pale = new THREE.Color(0x9fb4c8);   // moonlit blue — private share fades the sector hue toward this
   const hue = new THREE.Color();
   // gather one instance per mote (level motes per bucket), each seeded per the spec so the
@@ -625,7 +634,7 @@ if (CONTRIB.length) {
       const bright = 0.4 + 0.6 * (level / 4);      // brightness scales with the week's intensity level
       motes.push({
         x: Math.cos(az) * r, z: Math.sin(az) * r,
-        h, born: b.born, sector: b.sector,
+        h, born: b.born, sector: b.sector, bucket: b,   // bucket ref: the hover panel reads its aggregates
         r: hue.r * bright, g: hue.g * bright, b: hue.b * bright,
       });
     }
@@ -662,6 +671,7 @@ if (CONTRIB.length) {
       attribute float aY; attribute vec3 aOffset, aColor; attribute float aBorn, aHeight, aSector;
       uniform float uGrow, uTime, uRootsMode; uniform int uFilterSector;
       uniform float uSectorDim[${NSEC}], uSharedDim;
+      uniform int uFlashSector; uniform float uFlashBorn, uFlashGain, uFlashWidth; // canopy↔ground flash (B2)
       varying vec3 vColor; varying float vY, vGrad;
       void main() {
         // aBorn sprout: the blade grows UPWARD as the growth front reaches its week (0..1 height scale)
@@ -680,7 +690,12 @@ if (CONTRIB.length) {
         p.y *= aHeight * sprout;                         // HEIGHT is the count encoding, sprouted by born
         p.x += sway;
         vec3 world = aOffset + p;
-        vColor = aColor * dim * rootDim;
+        // canopy↔ground flash: a hovered leaf cluster boosts same-sector blades born within a week of it.
+        // Constant-index match (safe on every driver, mirrors the dim loop); ×1.8 max, eased via uFlashGain.
+        float flash = 0.0;
+        if (uFlashSector >= 0 && int(aSector + 0.5) == uFlashSector && abs(aBorn - uFlashBorn) < uFlashWidth)
+          flash = uFlashGain;
+        vColor = aColor * dim * rootDim * (1.0 + 0.8 * flash);
         vY = aY; vGrad = sprout;
         gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
       }`,
@@ -696,6 +711,9 @@ if (CONTRIB.length) {
   const meadow = new THREE.Mesh(geo, mat);
   meadow.frustumCulled = false;
   scene.add(meadow);
+  meadowMesh = meadow;                       // kept for the hover flash / idle-visibility checks (B2)
+  meadowMotes = motes;                       // { x, z, bucket, ... } — the manual ground pick reads these
+  U.uFlashWidth.value = weekBornWidth;       // match window now that the span is known
 }
 
 // ---------- strata bands — atmosphere you can read, not gridlines ----------
@@ -712,6 +730,21 @@ for (let i = 1; i < STRATA.length; i++) {
   scene.add(ring);
   strataRings.push({ mesh: ring, y: s.y0 });
 }
+
+// ---------- time-cursor ring (B2) — the growth front, read on the ground disc ----------
+// A thin soft-cyan hoop (unit radius, scaled per-frame to lerp(2.2,13.5,uGrow)) borrowing the
+// strataRings recipe: additive, no depth write, so it glows over the meadow without occluding it.
+// It fades IN while the timeline is scrubbed or the replay plays, and eases OUT (~1s) when idle;
+// during replay a gentle brightness pulse makes the expanding hoop read as the growth front.
+const timeRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.985, 1.015, 96),
+  new THREE.MeshBasicMaterial({ color: 0x4fd8c4, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })
+);
+timeRing.rotation.x = -Math.PI / 2;
+timeRing.position.y = 0.03;                 // just above the blade bases (y≈0.02), under the canopy
+timeRing.renderOrder = 3;
+scene.add(timeRing);
+
 // stratum labels as small billboarded sprites at the rim
 function labelSprite(text, color) {
   const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128;
@@ -938,6 +971,32 @@ function azToSector(az) {                          // az radians → nearest sec
   }
   return best;
 }
+// ---- ground plane math (B2) — shared by the meadow hover pick and the ground scrubber ----
+// The current raycaster.ray, intersected with y=0. Returns the world XZ hit or null (ray parallel /
+// pointing away from the disc). Cheaper and more forgiving than raycasting a merged instanced mesh.
+const _gp = new THREE.Vector3();
+function rayToGround() {
+  const o = raycaster.ray.origin, d = raycaster.ray.direction;
+  if (Math.abs(d.y) < 1e-6) return null;
+  const t = -o.y / d.y;
+  if (t <= 0) return null;                          // plane is behind the camera
+  return _gp.set(o.x + d.x * t, 0, o.z + d.z * t);
+}
+// Nearest meadow blade to the ground hit, within ~0.35 world units → its bucket (or null). The blades
+// are a merged instanced geometry (no per-instance raycast), so we pick against the stored mote offsets.
+function pickMeadow(x, y) {
+  if (!meadowMotes.length) return null;
+  pointerNDC(x, y, _ndc);
+  raycaster.setFromCamera(_ndc, camera);
+  const hit = rayToGround();
+  if (!hit) return null;
+  let best = null, bestD = 0.35 * 0.35;
+  for (const mo of meadowMotes) {
+    const dx = mo.x - hit.x, dz = mo.z - hit.z, d = dx * dx + dz * dz;
+    if (d < bestD) { bestD = d; best = mo; }
+  }
+  return best ? best.bucket : null;
+}
 function doPick(x, y) {
   pointerNDC(x, y, _ndc);
   raycaster.setFromCamera(_ndc, camera);
@@ -945,18 +1004,18 @@ function doPick(x, y) {
   if (rootsMode) {
     if (rootClusters.length) {                    // owner mode: nearest sector root cluster
       const ri = nearestRootCluster(x, y, 24);
-      if (ri >= 0) { showRoot(rootClusters[ri].sector); return 'root'; }
+      if (ri >= 0) { showRoot(rootClusters[ri].sector); clickPanelOpen = true; hoverPanelOpen = false; return 'root'; }
       closePanel(); return null;
     }
     showRootPrivate();                            // silhouette mode: no attribution to show
-    return 'root';
+    clickPanelOpen = true; hoverPanelOpen = false; return 'root';
   }
   // 1) blossoms — raycast the little spheres directly (does NOT touch the filter)
   const bHit = raycaster.intersectObjects(blossomMeshes, false);
-  if (bHit.length) { showBlossom(bHit[0].object); return 'blossom'; }
+  if (bHit.length) { showBlossom(bHit[0].object); clickPanelOpen = true; hoverPanelOpen = false; return 'blossom'; }
   // 2) leaves — nearest projected cluster within ~24px (also filter-neutral)
   const li = nearestLeafCluster(x, y, 24);
-  if (li >= 0) { showLeaf(li); return 'leaf'; }
+  if (li >= 0) { showLeaf(li); clickPanelOpen = true; hoverPanelOpen = false; return 'leaf'; }
   // 3) ground compass wedge → toggle sector filter
   if (groundMesh) {
     const gHit = raycaster.intersectObject(groundMesh, false);
@@ -978,7 +1037,10 @@ const elDetail = document.getElementById('detail');
 const elTitle = document.getElementById('detailTitle');
 const elBody = document.getElementById('detailBody');
 document.getElementById('detailClose').addEventListener('click', closePanel);
-function closePanel() { elDetail.classList.remove('on'); }
+// panel provenance (B2): a CLICK panel (leaf/blossom/roots) suppresses the meadow HOVER panel so the
+// two don't fight — hover only shows when nothing was clicked open.
+let clickPanelOpen = false, hoverPanelOpen = false;
+function closePanel() { elDetail.classList.remove('on'); clickPanelOpen = false; hoverPanelOpen = false; }
 function panelVisible() { return elDetail.classList.contains('on'); }
 const KIND_ICON = { commit: '🔧', note: '📝', milestone: '🌸', shipped: '🚀' };
 function relDate(days) { // relative to the log's now-anchor
@@ -1031,6 +1093,26 @@ function showBlossom(mesh) {
   elDetail.classList.add('on');
   chime(b.sector); // the level-up chime, replayed on demand (docs/02 §4.2)
 }
+// ---- meadow week panel (B2: AGGREGATES ONLY — never an event id; docs/03 §6 rule 3) ----
+// Hovering a blade reads its weekly bucket back out: which sector, how many contributions that week,
+// the public/private split, and the summed weight. No ids ever leave the aggregate — same disclosure
+// contract the roots panel and the strip honour.
+function weekLabel(weekTs) {                        // "2026-07-13" → "Jul 13, 2026" (bucket Monday)
+  const d = new Date(weekTs + 'T00:00:00Z');
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+}
+function showMeadow(bucket) {
+  const s = SECTORS[bucket.sector];
+  if (!s) return;
+  const pub = bucket.count - bucket.privCount;      // public share = total minus the private count
+  elTitle.textContent = `🌾 Week of ${weekLabel(bucket.weekTs)}`;
+  elBody.innerHTML =
+    `<div class="meta"><span class="dot" style="color:#${new THREE.Color(s.hue).getHexString()};background:#${new THREE.Color(s.hue).getHexString()}"></span><b>${esc(s.label)}</b></div>` +
+    `<div class="meta"><b>${bucket.count}</b> contribution${bucket.count !== 1 ? 's' : ''} · ${pub} public · ${bucket.privCount} private</div>` +
+    `<div class="meta">weight <b>${bucket.weight}</b></div>` +
+    `<div class="meta" style="margin-top:6px;color:#7f93aa">weekly aggregate — no ids leave the tree</div>`;
+  elDetail.classList.add('on');
+}
 
 // ---- roots detail (OWNER mode: aggregates only; NEVER per-note data — docs/03 §6.3) ----
 function showRoot(sectorIndex) {
@@ -1058,26 +1140,95 @@ function showRootPrivate() {                      // silhouette mode: nothing at
 }
 
 // ---- pointer: drag-vs-click discriminator (click only if <5px AND <200ms) ----
+// The SAME 5px/200ms rule now also decides ground gestures: a plain click toggles the wedge filter
+// (unchanged), a drag scrubs time. Both start from the same pointerdown; the move handler commits to
+// a scrub once the pointer leaves the click window AND the press began on the ground disc.
 const dom = renderer.domElement;
 let downX = 0, downY = 0, downT = 0;
 let downPrimary = false; // only the primary button picks — right/middle stay pure camera input
-dom.addEventListener('pointerdown', e => { downPrimary = e.button === 0; downX = e.clientX; downY = e.clientY; downT = performance.now(); cancelTour(); if (reel) endReel(true); });
+let downOnGround = false; // the primary press started over the ground disc → eligible to become a scrub
+let groundScrub = false;  // committed to a ground scrub → OrbitControls parked, growHold driven (B2, P3)
+// map a ground-plane hit radius to the growth front: rIn→0, rOut→1 (the SAME band the meadow radii use)
+function groundRadiusToGrow(hit) { return Math.min(1, Math.max(0, (Math.hypot(hit.x, hit.z) - R_IN) / (R_OUT - R_IN))); }
+dom.addEventListener('pointerdown', e => {
+  downPrimary = e.button === 0; downX = e.clientX; downY = e.clientY; downT = performance.now();
+  cancelTour(); if (reel) endReel(true);
+  downOnGround = false; groundScrub = false;
+  if (downPrimary && groundMesh && !rootsMode) {     // roots reveal owns ground drags for its own camera
+    pointerNDC(e.clientX, e.clientY, _ndc);
+    raycaster.setFromCamera(_ndc, camera);
+    // only the empty disc scrubs — a press that lands on a blossom/leaf keeps its click meaning
+    if (!raycaster.intersectObjects(blossomMeshes, false).length && nearestLeafCluster(e.clientX, e.clientY, 24) < 0) {
+      const hit = rayToGround();
+      if (hit && Math.hypot(hit.x, hit.z) <= R_OUT) downOnGround = true;
+    }
+  }
+});
+function endGroundScrub() { if (groundScrub) { groundScrub = false; controls.enabled = true; } downOnGround = false; }
 dom.addEventListener('pointerup', e => {
+  if (groundScrub) { endGroundScrub(); return; }       // scrub ends; front stays put (like the timeline)
   if (e.button !== 0 || !downPrimary) return;
   const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
   if (moved <= 5 && performance.now() - downT <= 200) doPick(e.clientX, e.clientY); // a click, not an orbit drag
 });
-// hover affordance — pointer cursor over a pickable, throttled
+dom.addEventListener('pointercancel', endGroundScrub); // never leave OrbitControls parked if the gesture aborts
+// ---- canopy↔ground flash (B2): hovering a leaf cluster boosts its sector's blades of the same week ----
+function setMeadowFlash(clusterIdx) {
+  if (clusterIdx < 0) { U.uFlashSector.value = -1; return; }
+  const cl = leafClusters[clusterIdx];
+  U.uFlashSector.value = cl.sector; U.uFlashBorn.value = cl.born;
+}
+// hover affordance — pointer cursor + week panel + canopy flash, throttled. Once a scrub commits this
+// still runs (cheap) but the panel/flash are suppressed so a drag doesn't flash the detail panel.
 let hoverT = 0;
 dom.addEventListener('pointermove', e => {
+  // ground scrub: while committed, drive the shared growHold from the ray's ground radius each move
+  if (groundScrub) {
+    pointerNDC(e.clientX, e.clientY, _ndc);
+    raycaster.setFromCamera(_ndc, camera);
+    const hit = rayToGround();
+    if (hit) growHold = groundRadiusToGrow(hit);
+    return;
+  }
+  // commit to a ground scrub once the press leaves the click window (5px), started on the disc,
+  // and it wasn't a quick tap — park OrbitControls so the drag scrubs instead of orbiting
+  if (downPrimary && downOnGround && !groundScrub && Math.hypot(e.clientX - downX, e.clientY - downY) > 5) {
+    groundScrub = true; controls.enabled = false; scrubbing = false;
+    pointerNDC(e.clientX, e.clientY, _ndc);
+    raycaster.setFromCamera(_ndc, camera);
+    const hit = rayToGround();
+    if (hit) growHold = groundRadiusToGrow(hit);
+    return;
+  }
   const now = performance.now();
   if (now - hoverT < 60) return; hoverT = now;
   pointerNDC(e.clientX, e.clientY, _ndc);
   raycaster.setFromCamera(_ndc, camera);
-  const over = rootsMode
-    ? (rootClusters.length > 0 && nearestRootCluster(e.clientX, e.clientY, 24) >= 0)
-    : (raycaster.intersectObjects(blossomMeshes, false).length > 0 || nearestLeafCluster(e.clientX, e.clientY, 24) >= 0);
-  dom.style.cursor = over ? 'pointer' : '';
+  if (rootsMode) {
+    dom.style.cursor = (rootClusters.length > 0 && nearestRootCluster(e.clientX, e.clientY, 24) >= 0) ? 'pointer' : '';
+    setMeadowFlash(-1);
+    return;
+  }
+  const overBlossom = raycaster.intersectObjects(blossomMeshes, false).length > 0;
+  const li = nearestLeafCluster(e.clientX, e.clientY, 24);
+  setMeadowFlash(overBlossom ? -1 : li);            // hovering a leaf cluster lights its week on the ground
+  // meadow week panel: only when nothing higher-priority is under the pointer and no CLICK panel is open
+  // (don't fight leaf/blossom/roots panels the user opened) — hovering off hides the hover panel again
+  const bucket = (!overBlossom && li < 0) ? pickMeadow(e.clientX, e.clientY) : null;
+  if (bucket && !clickPanelOpen) { showMeadow(bucket); hoverPanelOpen = true; }
+  else if (hoverPanelOpen && !clickPanelOpen) { closePanel(); hoverPanelOpen = false; }
+  dom.style.cursor = (overBlossom || li >= 0 || bucket) ? 'pointer' : '';
+});
+
+// ---- double-click the ground → jump to today (B2, P3) — mirrors the timeline's dblclick ----
+dom.addEventListener('dblclick', e => {
+  if (rootsMode) return;
+  pointerNDC(e.clientX, e.clientY, _ndc);
+  raycaster.setFromCamera(_ndc, camera);
+  const hit = rayToGround();
+  if (!hit || Math.hypot(hit.x, hit.z) > R_OUT) return;   // only the ground disc, not empty sky
+  if (reel) endReel(true);
+  growHold = -1; growStart = performance.now() - 1e7;      // release the hold, snap the sweep to today (uGrow→1)
 });
 
 // ---- keyboard: Escape — precedence: leave the reel first (you're mid-show), then the
@@ -1497,6 +1648,22 @@ function tick() {
   }
   U.uBandGain.value += ((hoveredStratum >= 0 ? 0.6 : 0) - U.uBandGain.value) * k;
 
+  // ---- canopy↔ground flash ease (~0.15s): glow rises while a leaf cluster is hovered, else settles ----
+  const kf = 1 - Math.exp(-dt / 0.05);
+  U.uFlashGain.value += ((U.uFlashSector.value >= 0 ? 0.8 : 0) - U.uFlashGain.value) * kf;
+
+  // ---- time-cursor ring (B2): the growth front on the ground. Visible while scrubbing (timeline OR
+  // ground) or replaying; eases out ~1s idle. During replay a gentle pulse reads as the growth front. ----
+  {
+    const active = scrubbing || groundScrub || !!reel;
+    const g = U.uGrow.value;
+    timeRing.scale.setScalar(R_IN + (R_OUT - R_IN) * g);          // radius = lerp(2.2, 13.5, uGrow)
+    const pulse = reel ? (0.75 + 0.25 * Math.sin(U.uTime.value * 4.0)) : 1; // replay front glow
+    const tgt = active ? 0.55 * pulse : 0;
+    const kring = 1 - Math.exp(-dt / 0.32);                       // ~1s ease-out when it goes idle
+    timeRing.material.opacity += (tgt - timeRing.material.opacity) * kring;
+  }
+
   // ---- roots reveal ease (~0.8s): crown → silhouette, roots glow, ground clears, strata fade ----
   const kr = 1 - Math.exp(-dt / 0.28);
   U.uRootsMode.value += ((rootsMode ? 1 : 0) - U.uRootsMode.value) * kr;
@@ -1586,10 +1753,15 @@ window.__dbg = {
     else growHold = Math.min(1, Math.max(0, g));
   },
   journeyUrl,
+  // ---- B2 meadow-interaction hooks ----
+  pickMeadow: (x, y) => pickMeadow(x, y),           // CSS px → the hovered bucket (aggregates) or null
+  showMeadow: (bucket) => { if (bucket) { showMeadow(bucket); hoverPanelOpen = true; } }, // open the week panel by hand
+  setMeadowFlash: (clusterIdx) => setMeadowFlash(clusterIdx == null ? -1 : clusterIdx),  // canopy↔ground flash
   state: () => ({
     filter: filterIndex < 0 ? null : SECTORS[filterIndex].label, panelVisible: panelVisible(),
     tourActive: !!tour, rootsMode, reel: !!reel, grow: +U.uGrow.value.toFixed(4),
     sound: soundOn, audioLive: !!audio, recording: !!recorder, dpr: renderer.getPixelRatio(),
+    groundScrub, flashSector: U.uFlashSector.value, ringOpacity: +timeRing.material.opacity.toFixed(3),
     date: fmtDate(U.uGrow.value <= 0 ? T0 : growToMs(U.uGrow.value)),
   }),
 };

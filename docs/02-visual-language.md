@@ -92,6 +92,15 @@ These don't exist in the cube and define the tree's own personality:
   gradient sphere (reuse cube's parallax background-sphere pattern, new texture).
 - One consolidated token file from day one (the cube learned this the hard way —
   its 3D hex constants and CSS variables drifted apart).
+- **Contribution meadow** (phase 6): the weekly growth log unrolled as luminous grass
+  blades on the ground disc. **Height = the week's contribution count** (log-damped);
+  **radius = when** (recent weeks ring the rim, so the meadow reads like tree rings);
+  **azimuth sits in the sector's wedge** and **colour is the sector hue**, paled toward
+  a **moonlit blue** in proportion to the private share of that week's weight (aggregate
+  disclosure only — never ids, per docs/03 §6). The **timeline strip is the same ring
+  unrolled**: each column is a week, its brightness the summed intensity, its hue the
+  weight-weighted sector blend, desaturated by the same private share. A soft-cyan
+  **time-cursor ring** on the ground marks the growth front while you scrub or replay.
 
 ## 5. Interaction model (phase 2 scope)
 
