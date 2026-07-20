@@ -1,0 +1,56 @@
+# Deploy the repo as a static GitHub Pages site so the interactive viewers are
+# LIVE links, not code listings:
+#
+#   https://webmemo-code.github.io/ai-learning-tree/prototypes/acacia-sketch/
+#
+# No build step — the sketches are plain HTML/JS and fetch ../../data/tree.json
+# relative to themselves, so serving the repo root verbatim is all that's
+# needed. The root index.html redirects to the acacia viewer.
+#
+# Triggers: on push AND chained behind the nightly harvest via workflow_run —
+# the harvest pushes with the default GITHUB_TOKEN, whose pushes deliberately
+# do NOT fire other workflows' on:push (anti-recursion), so without the chain
+# the live tree would lag a day behind data/tree.json.
+#
+# First run: actions/configure-pages tries to enable Pages itself
+# (enablement: true). If the repo forbids that for the workflow token, enable
+# it once by hand — Settings → Pages → Source: GitHub Actions — and re-run.
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: ["Nightly growth harvest"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    # for the workflow_run chain, only deploy after a SUCCESSFUL harvest
+    # (a harvest with no new data still redeploys — harmless, idempotent)
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
