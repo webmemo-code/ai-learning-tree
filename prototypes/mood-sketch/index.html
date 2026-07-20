@@ -910,11 +910,13 @@ function tourToSector(idx) {
   // it. The opposite-side flip therefore needs a larger base or the wedge fills the
   // frame and the bough above it is cut off entirely.
   const dist = 20 + s.act * 4 + s.level * 0.6;                       // frame limb + label from across
-  // Camera height is ABSOLUTE, not centroid-relative: centroid.y varies per sector
-  // (empty sectors fall back to y=6, active ones follow their clusters), which made
-  // the tour land at a different elevation per sector. One fixed height = consistent
-  // framing; only the look-at target (the centroid) varies.
-  const camPos = centroid.clone().addScaledVector(dir, dist).setY(14);
+  // Camera height is the SAME for every sector (not centroid-relative — centroid.y
+  // varies per sector) and DYNAMIC with the tree's grown height: looking across the
+  // trunk, the sightline to the sector's ground label must clear the crown, and the
+  // crown rises as the tree earns height. bounds.max[1] is the tallest grown point;
+  // 12 + 3.5× keeps the label visible past today's pads and scales with growth.
+  const treeTop = TREE.bounds ? TREE.bounds.max[1] : 6;
+  const camPos = centroid.clone().addScaledVector(dir, dist).setY(12 + 3.5 * treeTop);
   startTour(camPos, centroid.clone(), 1.6, false);
 }
 
