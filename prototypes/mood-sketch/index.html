@@ -215,6 +215,24 @@ const secIndex = new Map(SECTORS.map((s, i) => [s.label, i])); // public identit
 const NOW = Date.parse(TREE.generatedFrom.latestTs); // the log's now-anchor (relative dates key off this)
 const DAY = 86400000;
 
+// ---------- contribution buckets (phase 6 · meadow) — GUARDED so older tree.json renders as today ----------
+// One weekly per-sector aggregate each: { sector, weekTs, count, weight, privCount, privWeight, level, born }.
+// Sourced from generator/grow.mjs (Task A). Absent key ⇒ empty array ⇒ the meadow simply never builds
+// (same defensive pattern as hasRoots). Public-only fixtures carry privWeight==0 → no moonlit desaturation.
+const CONTRIB = TREE.contribution || [];
+// per-sector nearest-neighbour angular gap (degrees), computed ONCE: sector azimuths are UNEVENLY spaced
+// (video 95° ↔ 3d 115° is only 20° apart), so a fixed scatter jitter would bleed a blade into the wrong
+// wedge. Jitter is later clamped to 0.35× this gap, keeping a clear channel between neighbouring sectors.
+const SEC_GAP = SECTORS.map((s, i) => {
+  let best = 180;
+  for (let j = 0; j < NSEC; j++) {
+    if (j === i) continue;
+    let d = Math.abs(((SECTORS[j].az - s.az + 540) % 360) - 180); // wrapped angular distance, 0..180
+    if (d < best) best = d;
+  }
+  return best || 180; // lone sector (NSEC===1) → full swing
+});
+
 // ---------- time axis (phase 5): uGrow ↔ real dates ----------
 // Mirrors generator/grow.mjs tNorm(): the trunk occupies the first TRUNK_SPAN of the
 // sweep, then born maps linearly across [earliestTs, latestTs]. Inverting that gives
@@ -565,6 +583,119 @@ if (TREE.fireflies.length) {
   const fireflies = new THREE.Points(g, m2);
   fireflies.frustumCulled = false;
   scene.add(fireflies);
+}
+
+// ---------- contribution meadow 🌾 — the growth log unrolled as blades on the ground ----------
+// Every non-empty weekly bucket scatters `level` (1..4) luminous grass blades on the ground disc.
+// Height encodes the week's contribution count; radius encodes WHEN (rim = recent); azimuth sits in
+// the bucket's sector wedge; colour is the sector hue, paled toward moonlit blue by the private share.
+// Rendering copies the firefly/leaf recipe: crossed additive quads with a base→tip alpha gradient,
+// aBorn sprout (here it SCALES HEIGHT so the grass grows upward as the replay front passes), the
+// uSectorDim[${NSEC}] constant-index dim-not-hide loop, and the (1.0 - 0.88·uRootsMode) crown fade.
+let meadowCount = 0;
+if (CONTRIB.length) {
+  const maxCount = Math.max(1, ...CONTRIB.map(b => b.count)); // height normaliser (log-damped below)
+  const rIn = 2.2, rOut = 13.5, ringSpan = rOut - rIn;
+  // one week as a fraction of the whole span → the radial jitter band (±0.5 ring) and keeps weeks legible
+  const oneWeek = 7 * DAY;
+  const totalSpan = Math.max(oneWeek, NOW - T0);
+  const ringWidth = ringSpan * (oneWeek / totalSpan);
+  const pale = new THREE.Color(0x9fb4c8);   // moonlit blue — private share fades the sector hue toward this
+  const hue = new THREE.Color();
+  // gather one instance per mote (level motes per bucket), each seeded per the spec so the
+  // scatter is byte-stable across reloads (renderer-local PRNG rule, line ~165).
+  const motes = [];
+  for (const b of CONTRIB) {
+    const s = SECTORS[b.sector];
+    if (!s) continue;                                     // defensive: bucket sector out of range
+    const gap = SEC_GAP[b.sector];
+    const privShare = b.weight > 0 ? Math.min(1, b.privWeight / b.weight) : 0;
+    // height from count (log-damped, normalised to the field max), matching the level-quant damping family
+    const hBase = 0.12 + 0.55 * Math.log2(1 + b.count) / Math.log2(1 + maxCount);
+    const level = Math.max(1, Math.min(4, b.level));
+    for (let i = 0; i < level; i++) {
+      const rand = mulberry32(strHash('meadow|' + b.sector + '|' + b.weekTs + '|' + i));
+      // azimuth: sector centre ± 0.35×nearest-neighbour-gap → a clear channel between uneven wedges
+      const az = deg(s.az + (rand() * 2 - 1) * 0.35 * gap);
+      // radius: recent at rim (born→1 is the rim), ± half a ring's worth of jitter
+      const r = Math.min(rOut, Math.max(rIn, rIn + ringSpan * b.born + (rand() * 2 - 1) * 0.5 * ringWidth));
+      // height ±20% per-mote variance, capped at 0.9 (blades stay under the understory canopy)
+      const h = Math.min(0.9, hBase * (0.8 + 0.4 * rand()));
+      hue.set(s.hue).lerp(pale, 0.45 * privShare); // moonlit desaturation for the private share
+      const bright = 0.4 + 0.6 * (level / 4);      // brightness scales with the week's intensity level
+      motes.push({
+        x: Math.cos(az) * r, z: Math.sin(az) * r,
+        h, born: b.born, sector: b.sector,
+        r: hue.r * bright, g: hue.g * bright, b: hue.b * bright,
+      });
+    }
+  }
+  const n = motes.length; meadowCount = n;
+  // crossed-quad template: two upright quads at 90°, ~0.06 wide, unit-tall (height scales per-instance).
+  // position.y ∈ [0,1] doubles as the base→tip gradient parameter (uv.y), fed to the fragment alpha.
+  const HW = 0.03; // half-width → ~0.06 blade
+  const tpos = new Float32Array([
+    // quad A (facing +x/-x), two triangles
+    -HW, 0, 0,  HW, 0, 0,  HW, 1, 0,   -HW, 0, 0,  HW, 1, 0,  -HW, 1, 0,
+    // quad B (rotated 90°, facing +z/-z)
+    0, 0, -HW,  0, 0, HW,  0, 1, HW,    0, 0, -HW,  0, 1, HW,  0, 1, -HW,
+  ]);
+  const tuvY = new Float32Array([0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1]); // base(0)→tip(1) per vertex
+  const geo = new THREE.InstancedBufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(tpos, 3));
+  geo.setAttribute('aY', new THREE.BufferAttribute(tuvY, 1));
+  const off = new Float32Array(n * 3), col = new Float32Array(n * 3);
+  const born = new Float32Array(n), height = new Float32Array(n), sect = new Float32Array(n);
+  motes.forEach((mo, i) => {
+    off.set([mo.x, 0.02, mo.z], i * 3);   // sit on the ground disc (y≈0.02, atop CircleGeometry at -0.02)
+    col.set([mo.r, mo.g, mo.b], i * 3);
+    born[i] = mo.born; height[i] = mo.h; sect[i] = mo.sector;
+  });
+  geo.setAttribute('aOffset', new THREE.InstancedBufferAttribute(off, 3));
+  geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(col, 3));
+  geo.setAttribute('aBorn', new THREE.InstancedBufferAttribute(born, 1));
+  geo.setAttribute('aHeight', new THREE.InstancedBufferAttribute(height, 1));
+  geo.setAttribute('aSector', new THREE.InstancedBufferAttribute(sect, 1));
+  const mat = new THREE.ShaderMaterial({
+    uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: /* glsl */`
+      attribute float aY; attribute vec3 aOffset, aColor; attribute float aBorn, aHeight, aSector;
+      uniform float uGrow, uTime, uRootsMode; uniform int uFilterSector;
+      uniform float uSectorDim[${NSEC}], uSharedDim;
+      varying vec3 vColor; varying float vY, vGrad;
+      void main() {
+        // aBorn sprout: the blade grows UPWARD as the growth front reaches its week (0..1 height scale)
+        float sprout = clamp((uGrow - aBorn) / 0.05, 0.0, 1.0);
+        // sector dim-not-hide (constant-index loop → safe on every driver, mirrors the branch shader)
+        float dim = 1.0;
+        if (uFilterSector >= 0) {
+          if (aSector < -0.5) dim = uSharedDim;
+          else { for (int k = 0; k < ${NSEC}; k++) if (k == int(aSector + 0.5)) dim = uSectorDim[k]; }
+        }
+        float rootDim = 1.0 - 0.88 * uRootsMode;        // meadow fades with the crown in the roots reveal
+        // a whisper of wind sway that grows with height (base pinned to the ground)
+        float sway = sin(uTime * 1.1 + aOffset.x * 2.3 + aOffset.z) * 0.02 * aY;
+        vec3 p = position;
+        p.x *= max(0.35, sprout);                        // young blades are a touch thinner too
+        p.y *= aHeight * sprout;                         // HEIGHT is the count encoding, sprouted by born
+        p.x += sway;
+        vec3 world = aOffset + p;
+        vColor = aColor * dim * rootDim;
+        vY = aY; vGrad = sprout;
+        gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
+      }`,
+    fragmentShader: /* glsl */`
+      varying vec3 vColor; varying float vY, vGrad;
+      void main() {
+        // vertical alpha gradient: bright at the base, transparent at the tip (firefly-style falloff)
+        float a = (1.0 - vY) * (1.0 - vY) * 0.85 * vGrad;
+        if (a < 0.01) discard;
+        gl_FragColor = vec4(vColor, a);
+      }`,
+  });
+  const meadow = new THREE.Mesh(geo, mat);
+  meadow.frustumCulled = false;
+  scene.add(meadow);
 }
 
 // ---------- strata bands — atmosphere you can read, not gridlines ----------
@@ -1227,6 +1358,50 @@ function toast(msg) {
 // ---------- timeline — scrub the growth front through the tree's history ----------
 const tlDate = document.getElementById('tlDate'), tlFill = document.getElementById('tlFill'),
       tlHandle = document.getElementById('tlHandle'), tlTrack = document.getElementById('tlTrack');
+
+// ---------- timeline density strip — the meadow ring, unrolled under the scrubber ----------
+// Paints the SAME contribution buckets into #tlTrack's background: x = week over [T0, NOW]
+// (the time-axis span), column brightness = summed level across sectors (normalised), hue = the
+// weight-weighted blend of that week's sector hues, desaturated by the week's aggregate private
+// share. Guarded on CONTRIB.length so an older tree.json leaves the plain track untouched.
+if (CONTRIB.length) {
+  const W = 400, H = 8;
+  const cols = new Map(); // weekTs → { lvl, r, g, b, wsum, priv } accumulated across sectors
+  for (const b of CONTRIB) {
+    const s = SECTORS[b.sector];
+    if (!s) continue;
+    let c = cols.get(b.weekTs);
+    if (!c) { c = { ts: Date.parse(b.weekTs), lvl: 0, r: 0, g: 0, b: 0, wsum: 0, priv: 0 }; cols.set(b.weekTs, c); }
+    c.lvl += b.level;
+    const col = new THREE.Color(s.hue);
+    c.r += col.r * b.weight; c.g += col.g * b.weight; c.b += col.b * b.weight; // weight-weighted hue blend
+    c.wsum += b.weight; c.priv += b.privWeight;
+  }
+  const list = [...cols.values()];
+  const maxLvl = Math.max(1, ...list.map(c => c.lvl)); // brightness normaliser
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#0a1016'; ctx.fillRect(0, 0, W, H); // dim base so empty weeks read as near-black
+  const span = Math.max(1, NOW - T0);
+  const pale = new THREE.Color(0x9fb4c8), hue = new THREE.Color();
+  for (const c of list) {
+    const x = Math.round(((c.ts - T0) / span) * (W - 1));
+    const bright = 0.25 + 0.75 * (c.lvl / maxLvl);            // summed level → column brightness
+    const privShare = c.wsum > 0 ? Math.min(1, c.priv / c.wsum) : 0;
+    if (c.wsum > 0) hue.setRGB(c.r / c.wsum, c.g / c.wsum, c.b / c.wsum); else hue.set(0x9fb4c8);
+    hue.lerp(pale, 0.45 * privShare).multiplyScalar(bright); // moonlit desaturation for private share
+    const rgb = [Math.round(hue.r * 255), Math.round(hue.g * 255), Math.round(hue.b * 255)];
+    ctx.fillStyle = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+    ctx.fillRect(Math.max(0, x - 1), 0, 3, H);               // ~3px column, soft overlap between weeks
+  }
+  tlTrack.style.backgroundImage = `url(${cv.toDataURL('image/png')})`;
+  tlTrack.style.backgroundSize = '100% 100%';
+  tlTrack.style.backgroundRepeat = 'no-repeat';
+  // let the strip read THROUGH the fill: swap the green→gold gradient for a translucent white wash
+  tlFill.style.background = 'rgba(255,255,255,0.25)';
+  tlFill.style.boxShadow = 'none';
+}
+
 let scrubbing = false;
 function scrubTo(clientX) {
   const rect = tlTrack.getBoundingClientRect();
@@ -1392,8 +1567,11 @@ if (PARAMS.get('reel') === '1') {
   if (PARAMS.get('roots') === '1' && hasRoots) setRootsMode(true);
 }
 
+// instanced-primitive tally — a quick FPS-budget read (segments/leaves/meadow are the heavy meshes)
+console.info(`AI Learning Tree · ${TREE.segments.length} segments · ${leafCount} leaves · ${meadowCount} meadow blades · ${blossomMeshes.length} blossoms · ${TREE.fireflies.length} fireflies`);
+
 window.__dbg = {
-  U, camera, controls, tree: TREE, segs: TREE.segments.length, leaves: leafCount, clusters: leafClusters.length, blossoms: blossomMeshes.length,
+  U, camera, controls, tree: TREE, segs: TREE.segments.length, leaves: leafCount, meadow: meadowCount, clusters: leafClusters.length, blossoms: blossomMeshes.length,
   // ---- phase-2 hooks for the Playwright verifier (in addition to real pointer events) ----
   setFilter: id => applyFilter(id == null ? -1 : (secIndex.has(id) ? secIndex.get(id) : -1)), // id string or null
   setRoots: on => setRootsMode(on),                                                            // roots reveal toggle
