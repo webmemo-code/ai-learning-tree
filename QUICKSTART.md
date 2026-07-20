@@ -72,6 +72,7 @@ Refresh the browser afterwards. To verify nothing broke:
 
 ```
 node generator/test-determinism.mjs
+node generator/test-contribution.mjs
 node harvester/test-harvest.mjs
 node harvester/test-vault.mjs
 ```
