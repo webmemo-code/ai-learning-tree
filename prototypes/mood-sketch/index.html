@@ -600,7 +600,7 @@ let meadowCount = 0;
 let meadowMesh = null;            // the InstancedMesh — hover flash + idle checks read it back (B2)
 let meadowMotes = [];            // { x, z, bucket } per blade — the manual ground pick projects onto these
 let weekBornWidth = 0.02;        // one week as a born-fraction — the canopy↔ground flash match window
-const R_IN = 2.2, R_OUT = 13.5;  // ground-scrubber maps hit-radius across this same band (B2, P3)
+const R_IN = 2.2, R_OUT = 13.5;  // the time-cursor ring lerps its radius across this band as uGrow sweeps (B2)
 if (CONTRIB.length) {
   const maxCount = Math.max(1, ...CONTRIB.map(b => b.count)); // height normaliser (log-damped below)
   const rIn = 2.2, rOut = 13.5, ringSpan = rOut - rIn;
@@ -971,7 +971,7 @@ function azToSector(az) {                          // az radians → nearest sec
   }
   return best;
 }
-// ---- ground plane math (B2) — shared by the meadow hover pick and the ground scrubber ----
+// ---- ground plane math (B2) — used by the meadow hover pick ----
 // The current raycaster.ray, intersected with y=0. Returns the world XZ hit or null (ray parallel /
 // pointing away from the disc). Cheaper and more forgiving than raycasting a merged instanced mesh.
 const _gp = new THREE.Vector3();
@@ -1144,82 +1144,29 @@ function showRootPrivate() {                      // silhouette mode: nothing at
 }
 
 // ---- pointer: drag-vs-click discriminator (click only if <5px AND <200ms) ----
-// The SAME 5px/200ms rule now also decides ground gestures: a plain click toggles the wedge filter
-// (unchanged), a drag scrubs time. Both start from the same pointerdown; the move handler commits to
-// a scrub once the pointer leaves the click window AND the press began on the ground disc.
+// A plain click on the ground toggles the wedge filter (Sector Walk); a drag orbits the camera
+// (OrbitControls). The ground is a sector selector only — the timeline slider is the time interface.
 const dom = renderer.domElement;
 let downX = 0, downY = 0, downT = 0;
 let downPrimary = false; // only the primary button picks — right/middle stay pure camera input
-let downOnGround = false; // the primary press started over the ground disc → eligible to become a scrub
-let groundScrub = false;  // committed to a ground scrub → OrbitControls parked, growHold driven (B2, P3)
-let capturedPointer = -1; // pointerId captured by a ground gesture so release always fires (-1 = none)
-// map a ground-plane hit radius to the growth front: rIn→0, rOut→1 (the SAME band the meadow radii use)
-function groundRadiusToGrow(hit) { return Math.min(1, Math.max(0, (Math.hypot(hit.x, hit.z) - R_IN) / (R_OUT - R_IN))); }
 dom.addEventListener('pointerdown', e => {
   downPrimary = e.button === 0; downX = e.clientX; downY = e.clientY; downT = performance.now();
   cancelTour(); if (reel) endReel(true);
-  downOnGround = false; groundScrub = false;
-  if (downPrimary && groundMesh && !rootsMode) {     // roots reveal owns ground drags for its own camera
-    pointerNDC(e.clientX, e.clientY, _ndc);
-    raycaster.setFromCamera(_ndc, camera);
-    // only the empty disc scrubs — a press that lands on a blossom/leaf keeps its click meaning
-    if (!raycaster.intersectObjects(blossomMeshes, false).length && nearestLeafCluster(e.clientX, e.clientY, 24) < 0) {
-      const hit = rayToGround();
-      // only the SCRUBBABLE band [R_IN, R_OUT] arms a scrub — a press inside R_IN
-      // (the trunk area) would clamp uGrow to 0, so it keeps its plain-click meaning
-      const r = hit ? Math.hypot(hit.x, hit.z) : Infinity;
-      if (hit && r >= R_IN && r <= R_OUT) {
-        downOnGround = true;
-        // capture the pointer so endGroundScrub always fires even if the release
-        // lands off-canvas — otherwise controls.enabled could stay stuck false
-        try { dom.setPointerCapture(e.pointerId); capturedPointer = e.pointerId; } catch (_) {}
-      }
-    }
-  }
 });
-function releaseGroundPointer() {
-  if (capturedPointer !== -1) {
-    try { if (dom.hasPointerCapture && dom.hasPointerCapture(capturedPointer)) dom.releasePointerCapture(capturedPointer); } catch (_) {}
-    capturedPointer = -1;
-  }
-}
-function endGroundScrub() { if (groundScrub) { groundScrub = false; controls.enabled = true; } downOnGround = false; releaseGroundPointer(); }
 dom.addEventListener('pointerup', e => {
-  if (groundScrub) { endGroundScrub(); return; }       // scrub ends; front stays put (like the timeline)
-  releaseGroundPointer();                              // armed but never committed (a click) — drop the capture
   if (e.button !== 0 || !downPrimary) return;
   const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
   if (moved <= 5 && performance.now() - downT <= 200) doPick(e.clientX, e.clientY); // a click, not an orbit drag
 });
-dom.addEventListener('pointercancel', endGroundScrub); // never leave OrbitControls parked if the gesture aborts
 // ---- canopy↔ground flash (B2): hovering a leaf cluster boosts its sector's blades of the same week ----
 function setMeadowFlash(clusterIdx) {
   if (clusterIdx < 0) { U.uFlashSector.value = -1; return; }
   const cl = leafClusters[clusterIdx];
   U.uFlashSector.value = cl.sector; U.uFlashBorn.value = cl.born;
 }
-// hover affordance — pointer cursor + week panel + canopy flash, throttled. Once a scrub commits this
-// still runs (cheap) but the panel/flash are suppressed so a drag doesn't flash the detail panel.
+// hover affordance — pointer cursor + week panel + canopy flash, throttled.
 let hoverT = 0;
 dom.addEventListener('pointermove', e => {
-  // ground scrub: while committed, drive the shared growHold from the ray's ground radius each move
-  if (groundScrub) {
-    pointerNDC(e.clientX, e.clientY, _ndc);
-    raycaster.setFromCamera(_ndc, camera);
-    const hit = rayToGround();
-    if (hit) growHold = groundRadiusToGrow(hit);
-    return;
-  }
-  // commit to a ground scrub once the press leaves the click window (5px), started on the disc,
-  // and it wasn't a quick tap — park OrbitControls so the drag scrubs instead of orbiting
-  if (downPrimary && downOnGround && !groundScrub && Math.hypot(e.clientX - downX, e.clientY - downY) > 5) {
-    groundScrub = true; controls.enabled = false; scrubbing = false;
-    pointerNDC(e.clientX, e.clientY, _ndc);
-    raycaster.setFromCamera(_ndc, camera);
-    const hit = rayToGround();
-    if (hit) growHold = groundRadiusToGrow(hit);
-    return;
-  }
   const now = performance.now();
   if (now - hoverT < 60) return; hoverT = now;
   pointerNDC(e.clientX, e.clientY, _ndc);
@@ -1238,17 +1185,6 @@ dom.addEventListener('pointermove', e => {
   if (bucket && !clickPanelOpen) { showMeadow(bucket); hoverPanelOpen = true; }
   else if (hoverPanelOpen && !clickPanelOpen) { closePanel(); hoverPanelOpen = false; }
   dom.style.cursor = (overBlossom || li >= 0 || bucket) ? 'pointer' : '';
-});
-
-// ---- double-click the ground → jump to today (B2, P3) — mirrors the timeline's dblclick ----
-dom.addEventListener('dblclick', e => {
-  if (rootsMode) return;
-  pointerNDC(e.clientX, e.clientY, _ndc);
-  raycaster.setFromCamera(_ndc, camera);
-  const hit = rayToGround();
-  if (!hit || Math.hypot(hit.x, hit.z) > R_OUT) return;   // only the ground disc, not empty sky
-  if (reel) endReel(true);
-  growHold = -1; growStart = performance.now() - 1e7;      // release the hold, snap the sweep to today (uGrow→1)
 });
 
 // ---- keyboard: Escape — precedence: leave the reel first (you're mid-show), then the
@@ -1672,10 +1608,10 @@ function tick() {
   const kf = 1 - Math.exp(-dt / 0.05);
   U.uFlashGain.value += ((U.uFlashSector.value >= 0 ? 0.8 : 0) - U.uFlashGain.value) * kf;
 
-  // ---- time-cursor ring (B2): the growth front on the ground. Visible while scrubbing (timeline OR
-  // ground) or replaying; eases out ~1s idle. During replay a gentle pulse reads as the growth front. ----
+  // ---- time-cursor ring (B2): the growth front on the ground. Visible while scrubbing (the timeline
+  // slider) or replaying; eases out ~1s idle. During replay a gentle pulse reads as the growth front. ----
   {
-    const active = scrubbing || groundScrub || !!reel;
+    const active = scrubbing || !!reel;
     const g = U.uGrow.value;
     timeRing.scale.setScalar(R_IN + (R_OUT - R_IN) * g);          // radius = lerp(2.2, 13.5, uGrow)
     const pulse = reel ? (0.75 + 0.25 * Math.sin(U.uTime.value * 4.0)) : 1; // replay front glow
@@ -1781,7 +1717,7 @@ window.__dbg = {
     filter: filterIndex < 0 ? null : SECTORS[filterIndex].label, panelVisible: panelVisible(),
     tourActive: !!tour, rootsMode, reel: !!reel, grow: +U.uGrow.value.toFixed(4),
     sound: soundOn, audioLive: !!audio, recording: !!recorder, dpr: renderer.getPixelRatio(),
-    groundScrub, flashSector: U.uFlashSector.value, ringOpacity: +timeRing.material.opacity.toFixed(3),
+    flashSector: U.uFlashSector.value, ringOpacity: +timeRing.material.opacity.toFixed(3),
     date: fmtDate(U.uGrow.value <= 0 ? T0 : growToMs(U.uGrow.value)),
   }),
 };
