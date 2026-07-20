@@ -162,3 +162,4 @@ vault:
 # with `node generator/build.mjs`) to see your own sector-attributed roots + note aggregates.
 privacy:
   roots: silhouette
+  contributions: combined  # public-only | combined | hidden — combined discloses weekly per-sector aggregates (count+weight) of private work; never ids/names (docs/03 §6 rule 3)
