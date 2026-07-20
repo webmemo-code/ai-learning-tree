@@ -1104,12 +1104,16 @@ function weekLabel(weekTs) {                        // "2026-07-13" → "Jul 13,
 function showMeadow(bucket) {
   const s = SECTORS[bucket.sector];
   if (!s) return;
-  const pub = bucket.count - bucket.privCount;      // public share = total minus the private count
+  // coerce every tree.json-derived value: strings through esc(), numbers through
+  // Number() — a malformed bucket field can't inject markup into the panel
+  const count = Number(bucket.count), privCount = Number(bucket.privCount), weight = Number(bucket.weight);
+  const pub = count - privCount;                    // public share = total minus the private count
+  const hex = new THREE.Color(s.hue).getHexString(); // hoisted — one construction per hue
   elTitle.textContent = `🌾 Week of ${weekLabel(bucket.weekTs)}`;
   elBody.innerHTML =
-    `<div class="meta"><span class="dot" style="color:#${new THREE.Color(s.hue).getHexString()};background:#${new THREE.Color(s.hue).getHexString()}"></span><b>${esc(s.label)}</b></div>` +
-    `<div class="meta"><b>${bucket.count}</b> contribution${bucket.count !== 1 ? 's' : ''} · ${pub} public · ${bucket.privCount} private</div>` +
-    `<div class="meta">weight <b>${bucket.weight}</b></div>` +
+    `<div class="meta"><span class="dot" style="color:#${hex};background:#${hex}"></span><b>${esc(s.label)}</b></div>` +
+    `<div class="meta"><b>${count}</b> contribution${count !== 1 ? 's' : ''} · ${pub} public · ${privCount} private</div>` +
+    `<div class="meta">weight <b>${weight}</b></div>` +
     `<div class="meta" style="margin-top:6px;color:#7f93aa">weekly aggregate — no ids leave the tree</div>`;
   elDetail.classList.add('on');
 }
@@ -1148,6 +1152,7 @@ let downX = 0, downY = 0, downT = 0;
 let downPrimary = false; // only the primary button picks — right/middle stay pure camera input
 let downOnGround = false; // the primary press started over the ground disc → eligible to become a scrub
 let groundScrub = false;  // committed to a ground scrub → OrbitControls parked, growHold driven (B2, P3)
+let capturedPointer = -1; // pointerId captured by a ground gesture so release always fires (-1 = none)
 // map a ground-plane hit radius to the growth front: rIn→0, rOut→1 (the SAME band the meadow radii use)
 function groundRadiusToGrow(hit) { return Math.min(1, Math.max(0, (Math.hypot(hit.x, hit.z) - R_IN) / (R_OUT - R_IN))); }
 dom.addEventListener('pointerdown', e => {
@@ -1160,13 +1165,28 @@ dom.addEventListener('pointerdown', e => {
     // only the empty disc scrubs — a press that lands on a blossom/leaf keeps its click meaning
     if (!raycaster.intersectObjects(blossomMeshes, false).length && nearestLeafCluster(e.clientX, e.clientY, 24) < 0) {
       const hit = rayToGround();
-      if (hit && Math.hypot(hit.x, hit.z) <= R_OUT) downOnGround = true;
+      // only the SCRUBBABLE band [R_IN, R_OUT] arms a scrub — a press inside R_IN
+      // (the trunk area) would clamp uGrow to 0, so it keeps its plain-click meaning
+      const r = hit ? Math.hypot(hit.x, hit.z) : Infinity;
+      if (hit && r >= R_IN && r <= R_OUT) {
+        downOnGround = true;
+        // capture the pointer so endGroundScrub always fires even if the release
+        // lands off-canvas — otherwise controls.enabled could stay stuck false
+        try { dom.setPointerCapture(e.pointerId); capturedPointer = e.pointerId; } catch (_) {}
+      }
     }
   }
 });
-function endGroundScrub() { if (groundScrub) { groundScrub = false; controls.enabled = true; } downOnGround = false; }
+function releaseGroundPointer() {
+  if (capturedPointer !== -1) {
+    try { if (dom.hasPointerCapture && dom.hasPointerCapture(capturedPointer)) dom.releasePointerCapture(capturedPointer); } catch (_) {}
+    capturedPointer = -1;
+  }
+}
+function endGroundScrub() { if (groundScrub) { groundScrub = false; controls.enabled = true; } downOnGround = false; releaseGroundPointer(); }
 dom.addEventListener('pointerup', e => {
   if (groundScrub) { endGroundScrub(); return; }       // scrub ends; front stays put (like the timeline)
+  releaseGroundPointer();                              // armed but never committed (a click) — drop the capture
   if (e.button !== 0 || !downPrimary) return;
   const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
   if (moved <= 5 && performance.now() - downT <= 200) doPick(e.clientX, e.clientY); // a click, not an orbit drag

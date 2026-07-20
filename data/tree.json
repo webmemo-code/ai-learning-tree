@@ -1291,16 +1291,6 @@
     },
     {
       "born": 0.9895,
-      "count": 1,
-      "level": 1,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 0,
-      "weekTs": "2026-07-13",
-      "weight": 1
-    },
-    {
-      "born": 0.9895,
       "count": 5,
       "level": 2,
       "privCount": 5,
@@ -1311,33 +1301,33 @@
     },
     {
       "born": 0.9895,
-      "count": 2,
+      "count": 1,
       "level": 1,
       "privCount": 0,
       "privWeight": 0,
       "sector": 3,
       "weekTs": "2026-07-13",
-      "weight": 1.9
+      "weight": 0.9
     },
     {
       "born": 0.9895,
-      "count": 18,
+      "count": 17,
       "level": 3,
       "privCount": 17,
       "privWeight": 19.2,
       "sector": 4,
       "weekTs": "2026-07-13",
-      "weight": 20.2
+      "weight": 19.2
     },
     {
       "born": 0.9895,
-      "count": 49,
+      "count": 48,
       "level": 4,
       "privCount": 12,
       "privWeight": 15.78,
       "sector": 8,
       "weekTs": "2026-07-13",
-      "weight": 74.73
+      "weight": 73.73
     }
   ],
   "eventMeta": {

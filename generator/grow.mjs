@@ -35,12 +35,15 @@
 //
 // algoVersion 3.1.0 — CONTRIBUTION MEADOW (ADR-0010). Additive MINOR bump: a new
 // top-level `contribution` array of weekly per-sector activity buckets (a
-// GitHub-style density field unrolled onto the ground ring). No existing geometry
-// moves — every segment/leaf/blossom/firefly is byte-identical to 3.0.0 from the
-// same log+seed; the meadow is a strictly additive layer keyed off the same
-// ts->born normalization the canopy uses. The new privacy.contributions knob
-// (public-only | combined | hidden) gates whether private work joins the buckets
-// as an AGGREGATE share (never ids/names, docs/03 §6 rule 3).
+// GitHub-style density field unrolled onto the ground ring). Buckets aggregate
+// GITHUB-SOURCE commits only — vault notes stay roots-only (ADR-0002) and manual
+// milestones stay blossoms; the same source === 'github' gate ADR-0009 uses for
+// private canopy-lift keeps knowledge out of the above-ground meadow. No existing
+// geometry moves — every segment/leaf/blossom/firefly is byte-identical to 3.0.0
+// from the same log+seed; the meadow is a strictly additive layer keyed off the
+// same ts->born normalization the canopy uses. The new privacy.contributions knob
+// (public-only | combined | hidden) gates whether private GitHub work joins the
+// buckets as an AGGREGATE share (never ids/names, docs/03 §6 rule 3).
 
 import { getTaxonomy } from './taxonomy.mjs';
 
@@ -674,12 +677,18 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
   }));
 
   // ---- contribution meadow: weekly per-sector activity buckets (ADR-0010) ----
-  // A GitHub-style density field, unrolled onto the ground ring. Every event with
-  // a KNOWN sector (commits AND milestones — milestones are rare, weight 1, no
-  // special case) lands in one absolute-UTC-week bucket; unclassified events keep
-  // their gray-shoots signal and are skipped here. Absolute weeks anchored at the
-  // first ISO Monday of the epoch (1970-01-05) mean a bucket's weekTs never shifts
-  // as new events append — old ground stays put while the rim grows outward.
+  // A GitHub-style density field, unrolled onto the ground ring. GITHUB-SOURCE
+  // commits ONLY land in the buckets (source === 'github', mirroring the ADR-0009
+  // isPrivateWork gate) — because in `combined` mode a bucket may include private
+  // events, and vault notes (source 'obsidian') are always private and always
+  // roots-only (ADR-0002); folding them into the above-ground meadow would leak
+  // knowledge into work-rhythm aggregates. Manual milestones (source 'manual') are
+  // therefore also excluded — they already carry their own signal as blossoms, so
+  // they never need a ground bucket. Unclassified events keep their gray-shoots
+  // signal and are skipped here too. Each qualifying event lands in one absolute-UTC
+  // -week bucket; absolute weeks anchored at the first ISO Monday of the epoch
+  // (1970-01-05) mean a bucket's weekTs never shifts as new events append — old
+  // ground stays put while the rim grows outward.
   // PRIVACY (docs/03 §6 rule 3): public-only computes buckets from public events
   // alone; combined folds private events in and reports privCount/privWeight as
   // their AGGREGATE share (never ids/names); hidden omits the array entirely.
@@ -691,6 +700,8 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     // key "sec|week" -> accumulator; born deferred until after we know the field max
     const buckets = new Map();
     for (const e of evs) {
+      if (e.source !== 'github') continue;  // github commits only — vault notes stay
+                                            // roots-only (ADR-0002), milestones stay blossoms
       const sec = secIndex.get(e.sector);
       if (sec === undefined) continue;      // unclassified: skip (gray shoots own that signal)
       if (e.private && !includePriv) continue;

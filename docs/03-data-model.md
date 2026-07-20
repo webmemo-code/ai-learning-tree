@@ -126,9 +126,11 @@ stratum allows. Branches literally *colonize the space your work opened up*.
   YYYY-MM-DD), count, weight, privCount, privWeight, level (1..4, log-damped to the
   field max), born (the same ts→born normalization the canopy uses) }`. Weeks are
   anchored at the first epoch Monday (1970-01-05) so a bucket never shifts as new
-  events append. Milestones bucket like any classified event (weight 1, no special
-  case); unclassified events are skipped (they keep their gray-shoots signal).
-  Gated by `privacy.contributions` (see §6).
+  events append. Buckets aggregate **GitHub-source commits only** — milestones
+  (source `manual`) keep their blossom signal and vault notes (source `obsidian`)
+  stay roots-only (ADR-0002/ADR-0010), so neither enters the above-ground meadow;
+  unclassified events are skipped too (they keep their gray-shoots signal). Gated by
+  `privacy.contributions` (see §6).
 
 ## 5. Replay (time-lapse) for free
 

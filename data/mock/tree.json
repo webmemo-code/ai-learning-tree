@@ -434,16 +434,6 @@
       "weight": 1.25
     },
     {
-      "born": 0.2093,
-      "count": 1,
-      "level": 2,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 8,
-      "weekTs": "2024-11-11",
-      "weight": 1.46
-    },
-    {
       "born": 0.2274,
       "count": 1,
       "level": 2,
@@ -465,13 +455,13 @@
     },
     {
       "born": 0.2365,
-      "count": 2,
-      "level": 3,
+      "count": 1,
+      "level": 2,
       "privCount": 0,
       "privWeight": 0,
       "sector": 0,
       "weekTs": "2024-12-02",
-      "weight": 2.49
+      "weight": 0.88
     },
     {
       "born": 0.2365,
@@ -539,16 +529,6 @@
       "level": 2,
       "privCount": 0,
       "privWeight": 0,
-      "sector": 4,
-      "weekTs": "2025-01-20",
-      "weight": 1.46
-    },
-    {
-      "born": 0.3001,
-      "count": 1,
-      "level": 2,
-      "privCount": 0,
-      "privWeight": 0,
       "sector": 5,
       "weekTs": "2025-01-20",
       "weight": 1.34
@@ -592,16 +572,6 @@
       "sector": 6,
       "weekTs": "2025-02-03",
       "weight": 1.02
-    },
-    {
-      "born": 0.3273,
-      "count": 1,
-      "level": 2,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 1,
-      "weekTs": "2025-02-10",
-      "weight": 1.46
     },
     {
       "born": 0.3273,
@@ -682,26 +652,6 @@
       "sector": 4,
       "weekTs": "2025-03-03",
       "weight": 1.37
-    },
-    {
-      "born": 0.3636,
-      "count": 1,
-      "level": 3,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 0,
-      "weekTs": "2025-03-10",
-      "weight": 2.01
-    },
-    {
-      "born": 0.3636,
-      "count": 1,
-      "level": 3,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 5,
-      "weekTs": "2025-03-10",
-      "weight": 1.75
     },
     {
       "born": 0.3727,
@@ -809,16 +759,6 @@
       "level": 2,
       "privCount": 0,
       "privWeight": 0,
-      "sector": 3,
-      "weekTs": "2025-04-14",
-      "weight": 1.47
-    },
-    {
-      "born": 0.409,
-      "count": 1,
-      "level": 2,
-      "privCount": 0,
-      "privWeight": 0,
       "sector": 5,
       "weekTs": "2025-04-14",
       "weight": 1.38
@@ -904,16 +844,6 @@
       "weight": 1.58
     },
     {
-      "born": 0.4453,
-      "count": 1,
-      "level": 3,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 4,
-      "weekTs": "2025-05-12",
-      "weight": 2.5
-    },
-    {
       "born": 0.4544,
       "count": 1,
       "level": 2,
@@ -932,16 +862,6 @@
       "sector": 4,
       "weekTs": "2025-05-19",
       "weight": 1.29
-    },
-    {
-      "born": 0.4544,
-      "count": 1,
-      "level": 2,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 7,
-      "weekTs": "2025-05-19",
-      "weight": 1.55
     },
     {
       "born": 0.4635,
@@ -996,16 +916,6 @@
     {
       "born": 0.4816,
       "count": 1,
-      "level": 3,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 1,
-      "weekTs": "2025-06-09",
-      "weight": 2.33
-    },
-    {
-      "born": 0.4816,
-      "count": 1,
       "level": 2,
       "privCount": 0,
       "privWeight": 0,
@@ -1044,26 +954,6 @@
       "weight": 2.25
     },
     {
-      "born": 0.5088,
-      "count": 1,
-      "level": 2,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 6,
-      "weekTs": "2025-06-30",
-      "weight": 1.54
-    },
-    {
-      "born": 0.5179,
-      "count": 1,
-      "level": 2,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 8,
-      "weekTs": "2025-07-07",
-      "weight": 1.21
-    },
-    {
       "born": 0.527,
       "count": 1,
       "level": 2,
@@ -1082,16 +972,6 @@
       "sector": 8,
       "weekTs": "2025-07-14",
       "weight": 2.43
-    },
-    {
-      "born": 0.5361,
-      "count": 1,
-      "level": 2,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 0,
-      "weekTs": "2025-07-21",
-      "weight": 1.37
     },
     {
       "born": 0.5361,
@@ -1184,16 +1064,6 @@
       "weight": 1.69
     },
     {
-      "born": 0.5905,
-      "count": 1,
-      "level": 2,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 4,
-      "weekTs": "2025-09-01",
-      "weight": 1.23
-    },
-    {
       "born": 0.5996,
       "count": 1,
       "level": 2,
@@ -1215,13 +1085,13 @@
     },
     {
       "born": 0.6087,
-      "count": 2,
-      "level": 4,
+      "count": 1,
+      "level": 2,
       "privCount": 0,
       "privWeight": 0,
       "sector": 8,
       "weekTs": "2025-09-15",
-      "weight": 3.95
+      "weight": 1.43
     },
     {
       "born": 0.6178,
@@ -1252,16 +1122,6 @@
       "sector": 8,
       "weekTs": "2025-09-29",
       "weight": 1.1
-    },
-    {
-      "born": 0.6359,
-      "count": 1,
-      "level": 3,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 7,
-      "weekTs": "2025-10-06",
-      "weight": 2.29
     },
     {
       "born": 0.645,
@@ -1356,16 +1216,6 @@
     {
       "born": 0.6723,
       "count": 1,
-      "level": 3,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 3,
-      "weekTs": "2025-11-03",
-      "weight": 2.11
-    },
-    {
-      "born": 0.6723,
-      "count": 1,
       "level": 2,
       "privCount": 0,
       "privWeight": 0,
@@ -1452,16 +1302,6 @@
       "sector": 8,
       "weekTs": "2025-11-24",
       "weight": 1.5
-    },
-    {
-      "born": 0.7086,
-      "count": 1,
-      "level": 3,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 4,
-      "weekTs": "2025-12-01",
-      "weight": 2.23
     },
     {
       "born": 0.7086,
@@ -1574,16 +1414,6 @@
       "weight": 1.77
     },
     {
-      "born": 0.763,
-      "count": 1,
-      "level": 3,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 5,
-      "weekTs": "2026-01-12",
-      "weight": 2.38
-    },
-    {
       "born": 0.7721,
       "count": 1,
       "level": 2,
@@ -1645,13 +1475,13 @@
     },
     {
       "born": 0.7903,
-      "count": 2,
-      "level": 4,
+      "count": 1,
+      "level": 2,
       "privCount": 0,
       "privWeight": 0,
       "sector": 0,
       "weekTs": "2026-02-02",
-      "weight": 3.7
+      "weight": 1.19
     },
     {
       "born": 0.7903,
@@ -1906,22 +1736,12 @@
     {
       "born": 0.9264,
       "count": 1,
-      "level": 3,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 4,
-      "weekTs": "2026-05-18",
-      "weight": 1.98
-    },
-    {
-      "born": 0.9264,
-      "count": 2,
-      "level": 3,
+      "level": 2,
       "privCount": 0,
       "privWeight": 0,
       "sector": 8,
       "weekTs": "2026-05-18",
-      "weight": 3.04
+      "weight": 1.35
     },
     {
       "born": 0.9355,
@@ -1942,16 +1762,6 @@
       "sector": 4,
       "weekTs": "2026-05-25",
       "weight": 1.41
-    },
-    {
-      "born": 0.9355,
-      "count": 1,
-      "level": 3,
-      "privCount": 0,
-      "privWeight": 0,
-      "sector": 5,
-      "weekTs": "2026-05-25",
-      "weight": 1.76
     },
     {
       "born": 0.9355,
@@ -2035,13 +1845,13 @@
     },
     {
       "born": 0.9627,
-      "count": 3,
-      "level": 4,
+      "count": 2,
+      "level": 3,
       "privCount": 0,
       "privWeight": 0,
       "sector": 5,
       "weekTs": "2026-06-15",
-      "weight": 4.75
+      "weight": 2.2
     },
     {
       "born": 0.9627,
@@ -2235,13 +2045,13 @@
     },
     {
       "born": 0.99,
-      "count": 3,
-      "level": 4,
+      "count": 2,
+      "level": 3,
       "privCount": 0,
       "privWeight": 0,
       "sector": 8,
       "weekTs": "2026-07-06",
-      "weight": 5.06
+      "weight": 2.76
     },
     {
       "born": 0.9991,

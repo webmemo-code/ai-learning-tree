@@ -4,8 +4,9 @@
 // emitted `contribution` array is asserted. Covers: absolute-week bucketing across
 // a Sunday/Monday UTC boundary; the privacy.contributions knob (public-only vs
 // combined vs hidden); privCount/privWeight aggregate reporting; sort order; level
-// bounds; and the "every sector-classified event lands in exactly one bucket"
-// invariant. Style-matched to harvester/test-harvest.mjs's eq/ok harness.
+// bounds; and the "only github-source commits bucket — milestones stay blossoms,
+// vault notes stay roots-only" invariant (ADR-0010). Style-matched to
+// harvester/test-harvest.mjs's eq/ok harness.
 //
 //   node generator/test-contribution.mjs
 
@@ -112,26 +113,43 @@ const contribOf = (events, cfg = {}) => grow(events, { ...baseCfg, ...cfg }).con
 }
 
 // ============================================================================
-// 6. every sector-classified event lands in exactly one bucket; unclassified skipped
+// 6. only GITHUB-SOURCE commits bucket: milestones (source 'manual') and vault
+//    notes (source 'obsidian') are EXCLUDED; unclassified skipped (ADR-0010).
+//    Milestones keep their blossom signal; vault notes stay roots-only (ADR-0002).
 // ============================================================================
 {
   const events = [
     ev('2026-07-06T09:00:00Z', 'build.pro-code', 1, false),
     ev('2026-07-06T10:00:00Z', 'build.pro-code', 1, true),
     ev('2026-07-13T09:00:00Z', 'create.copy', 1, false),
-    ev('2026-07-13T10:00:00Z', 'create.copy', 1, false, 'milestone'), // milestones bucket too (no special case)
+    { id: 'ms0', ts: '2026-07-13T10:00:00Z', source: 'manual', kind: 'milestone', sector: 'create.copy', weight: 1, private: false }, // milestone -> EXCLUDED (blossom, not a bucket)
     ev('2026-07-13T11:00:00Z', 'not-a-real-sector', 1, false),        // unclassified -> skipped
   ];
   const cCombined = contribOf(events, { privacy: { contributions: 'combined' } });
   const sumCombined = cCombined.reduce((s, b) => s + b.count, 0);
-  eq(sumCombined, 4, 'combined: bucket counts sum to the 4 sector-classified events (unclassified skipped)');
+  eq(sumCombined, 3, 'combined: bucket counts sum to the 3 github-source classified commits (milestone + unclassified excluded)');
 
   const cPublic = contribOf(events); // public-only default
   const sumPublic = cPublic.reduce((s, b) => s + b.count, 0);
-  eq(sumPublic, 3, 'public-only: bucket counts sum to the 3 PUBLIC sector-classified events');
-  // milestone (weight 1) is counted like any other classified event
+  eq(sumPublic, 2, 'public-only: bucket counts sum to the 2 PUBLIC github-source commits');
+  // the manual milestone does NOT share the week bucket — only the github commit lands there
   const wk = cPublic.find((b) => b.weekTs === '2026-07-13');
-  eq(wk.count, 2, 'public-only: the milestone shares its week bucket with the commit (no special case)');
+  eq(wk.count, 1, 'public-only: the milestone (source manual) is excluded — only the github commit buckets');
+}
+
+// ============================================================================
+// 7. an obsidian-source private event is EXCLUDED even in combined mode
+//    (vault knowledge stays roots-only, ADR-0002/ADR-0010) — it must never
+//    contaminate the above-ground meadow the way github private work may.
+// ============================================================================
+{
+  const note = { id: 'note0', ts: '2026-07-13T12:00:00Z', source: 'obsidian', kind: 'note', sector: 'build.pro-code', weight: 3, private: true };
+  const commit = ev('2026-07-13T09:00:00Z', 'build.pro-code', 2, true); // github private -> DOES bucket in combined
+  const c = contribOf([note, commit], { privacy: { contributions: 'combined' } });
+  eq(c.length, 1, 'combined: one bucket (only the github event)');
+  eq(c[0].count, 1, 'combined: the obsidian note is NOT counted (roots-only, ADR-0002)');
+  eq(c[0].weight, 2, 'combined: the obsidian note weight is NOT summed');
+  eq([c[0].privCount, c[0].privWeight], [1, 2], 'combined: only the github private commit contributes to the private share');
 }
 
 // ----------------------------------------------------------------------------
