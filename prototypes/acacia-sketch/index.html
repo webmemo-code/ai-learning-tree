@@ -841,8 +841,12 @@ function tourToSector(idx) {
   // sector's own wedge would sit the camera directly on top of its ground label (invisible, "on its
   // head") — from the far side the bough, meadow trail and ground label all frame in front of us.
   const dir = V3(-Math.cos(deg(s.az)), 0, -Math.sin(deg(s.az)));
-  const dist = 11 + s.act * 4 + s.level * 0.6;                       // frame the whole limb
-  const camPos = centroid.clone().addScaledVector(dir, dist).add(V3(0, 5.0, 0)); // slightly higher → the label reads
+  // dist is measured FROM THE CENTROID, and the centroid sits on the sector's side
+  // (~radius 6) — so after crossing the trunk the camera only ends up (dist - 6) past
+  // it. The opposite-side flip therefore needs a larger base or the wedge fills the
+  // frame and the bough above it is cut off entirely.
+  const dist = 20 + s.act * 4 + s.level * 0.6;                       // frame limb + label from across
+  const camPos = centroid.clone().addScaledVector(dir, dist).add(V3(0, 7.0, 0)); // higher → label below, twigs above
   startTour(camPos, centroid.clone(), 1.6, false);
 }
 
