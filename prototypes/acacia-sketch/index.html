@@ -837,9 +837,12 @@ function tourToSector(idx) {
   const centroid = new THREE.Vector3();
   if (clusters.length) { for (const c of clusters) centroid.add(c.center); centroid.multiplyScalar(1 / clusters.length); }
   else centroid.set(Math.cos(deg(s.az)) * 6, 6, Math.sin(deg(s.az)) * 6);
-  const dir = V3(Math.cos(deg(s.az)), 0, Math.sin(deg(s.az)));
+  // Park on the OPPOSITE azimuth and look back across the trunk at the wedge. Flying out over the
+  // sector's own wedge would sit the camera directly on top of its ground label (invisible, "on its
+  // head") — from the far side the bough, meadow trail and ground label all frame in front of us.
+  const dir = V3(-Math.cos(deg(s.az)), 0, -Math.sin(deg(s.az)));
   const dist = 11 + s.act * 4 + s.level * 0.6;                       // frame the whole limb
-  const camPos = centroid.clone().addScaledVector(dir, dist).add(V3(0, 2.6, 0));
+  const camPos = centroid.clone().addScaledVector(dir, dist).add(V3(0, 5.0, 0)); // slightly higher → the label reads
   startTour(camPos, centroid.clone(), 1.6, false);
 }
 
