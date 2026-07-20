@@ -40,9 +40,11 @@ repos:
   cosine:                              build.pro-code
 
   # DISTRIBUTE / seo — search + knowledge-graph tooling
-  entity-map:                          distribute.seo
   google-knowledge-graph-retriever:    distribute.seo
   google-knowledge-graph-request:      distribute.seo
+
+  # DISTRIBUTE / geo — generative-engine optimization: entity & ontology tooling
+  entity-map:                          distribute.geo
 
   # CREATE / copy — writing + publishing pipelines
   copywriting-style-guide:             create.copy
