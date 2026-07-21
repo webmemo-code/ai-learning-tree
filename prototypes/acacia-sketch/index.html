@@ -696,7 +696,7 @@ if (TREE.fireflies.length) {
 // aBorn sprout (here it SCALES HEIGHT so the grass grows upward as the replay front passes), the
 // uSectorDim[${NSEC}] constant-index dim-not-hide loop, and the (1.0 - 0.88·uRootsMode) crown fade.
 let meadowCount = 0;
-let meadowMesh = null;            // the InstancedMesh — hover flash + idle checks read it back (B2)
+let meadowMesh = null;            // the blade Mesh (InstancedBufferGeometry) — kept for parity/debug; not read back
 let meadowMotes = [];            // { x, z, bucket } per blade — the manual ground pick projects onto these
 let weekBornWidth = 0.02;        // one week as a born-fraction — the canopy↔ground flash match window
 const R_IN = 2.2, R_OUT = 13.5;  // the time-cursor ring lerps its radius across this band as uGrow sweeps (B2)
@@ -810,7 +810,7 @@ if (CONTRIB.length) {
   const meadow = new THREE.Mesh(geo, mat);
   meadow.frustumCulled = false;
   scene.add(meadow);
-  meadowMesh = meadow;                       // kept for the hover flash / idle-visibility checks (B2)
+  meadowMesh = meadow;                       // kept for symmetry with mood-sketch and future debug hooks; not read back
   meadowMotes = motes;                       // { x, z, bucket, ... } — the manual ground pick reads these
   U.uFlashWidth.value = weekBornWidth;       // match window now that the span is known
 }
