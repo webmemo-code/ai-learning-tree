@@ -85,8 +85,8 @@ try {
         arrows</b> to walk, <b>wheel</b> to glide, click a tree to meet its grower.`,
       note: 'grove walk 001 · impostor LOD — visit a tree to see it in full',
       // the two local real members open their own full renderer, not GitHub
-      visitLink: (t) => t.url && t.url.endsWith('data/mock/tree.json') ? '../mood-sketch/?data=mock'
-        : t.url && t.url.endsWith('data/tree.json') ? '../mood-sketch/'
+      visitLink: (t) => t.url && t.url.endsWith('data/mock/tree.json') ? '../acacia-sketch/?data=mock'
+        : t.url && t.url.endsWith('data/tree.json') ? '../acacia-sketch/'
         : (/^[\w.-]+\/[\w.-]+$/.test(t.tree || '') && !t.tree.startsWith('member/') ? `https://github.com/${t.tree}` : null),
     };
   }

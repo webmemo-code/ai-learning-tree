@@ -38,14 +38,14 @@ Then open <http://127.0.0.1:8123/> — the root page redirects to the acacia vie
 | --- | --- |
 | `/` | Redirects to the acacia viewer (same as the live site) |
 | `/prototypes/acacia-sketch/` | **The reference renderer** — savanna-night acacia, replay, timeline, filters, roots reveal, sound, clip recording |
-| `/prototypes/mood-sketch/` | The original night-garden renderer, same data and interactions |
+| `/prototypes/mood-sketch/` | Retired (#46) — redirects to the acacia viewer, params carried over |
 | `/prototypes/grove-sketch/` | Top-down 2D map of a mock grove |
 | `/prototypes/grove-walk/` | First-person walkable 3D grove (drag to look, WASD to walk) |
 | `/prototypes/acacia-look/` | Static 2D concept board (this one also works from `file://`) |
 
 ## Useful URL parameters
 
-Both tree renderers (acacia-sketch and mood-sketch) accept:
+The acacia-sketch renderer accepts:
 
 | Param | Effect |
 | --- | --- |
