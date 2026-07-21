@@ -1699,13 +1699,15 @@ rootsBtn.addEventListener('click', () => setRootsMode(!rootsMode));
 // ---- tiered pagoda toggle 🏯 — preference persists like sound; ?pagoda=1 deep-links it on ----
 const pagodaBtn = document.getElementById('pagodaBtn');
 if (!pagodaMeshes.length) pagodaBtn.style.display = 'none'; // nothing outgrown yet → no toggle
-function setPagoda(on) {
+// persist=true only on an explicit user click: the initial-load call (and __dbg pokes,
+// and a tree with no outgrown ceilings) must never overwrite a previously saved choice
+function setPagoda(on, persist) {
   pagodaOn = !!on && pagodaMeshes.length > 0;
   pagodaBtn.setAttribute('aria-pressed', String(pagodaOn));
-  store.set('tree-pagoda', pagodaOn ? '1' : '0');
+  if (persist && pagodaMeshes.length) store.set('tree-pagoda', pagodaOn ? '1' : '0');
 }
 pagodaBtn.addEventListener('click', () => {
-  setPagoda(!pagodaOn);
+  setPagoda(!pagodaOn, true);
   toast(pagodaOn ? '🏯 Ghost pads mark each ceiling this crown has outgrown' : '🏯 Pagoda off');
 });
 setPagoda(PARAMS.get('pagoda') === '1' || store.get('tree-pagoda') === '1');
