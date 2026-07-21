@@ -229,6 +229,24 @@ const secIndex = new Map(SECTORS.map((s, i) => [s.label, i])); // public identit
 const NOW = Date.parse(TREE.generatedFrom.latestTs); // the log's now-anchor (relative dates key off this)
 const DAY = 86400000;
 
+// ---------- contribution buckets (phase 6 · meadow) — GUARDED so older tree.json renders as today ----------
+// One weekly per-sector aggregate each: { sector, weekTs, count, weight, privCount, privWeight, level, born }.
+// Sourced from generator/grow.mjs (Task A). Absent key ⇒ empty array ⇒ the meadow simply never builds
+// (same defensive pattern as hasRoots). Public-only fixtures carry privWeight==0 → no moonlit desaturation.
+const CONTRIB = TREE.contribution || [];
+// per-sector nearest-neighbour angular gap (degrees), computed ONCE: sector azimuths are UNEVENLY spaced
+// (video 95° ↔ 3d 115° is only 20° apart), so a fixed scatter jitter would bleed a blade into the wrong
+// wedge. Jitter is later clamped to 0.35× this gap, keeping a clear channel between neighbouring sectors.
+const SEC_GAP = SECTORS.map((s, i) => {
+  let best = 180;
+  for (let j = 0; j < NSEC; j++) {
+    if (j === i) continue;
+    let d = Math.abs(((SECTORS[j].az - s.az + 540) % 360) - 180); // wrapped angular distance, 0..180
+    if (d < best) best = d;
+  }
+  return best || 180; // lone sector (NSEC===1) → full swing
+});
+
 // ---------- time axis (phase 5): uGrow ↔ real dates ----------
 // Mirrors generator/grow.mjs tNorm(): the trunk occupies the first TRUNK_SPAN of the
 // sweep, then born maps linearly across [earliestTs, latestTs]. Inverting that gives
@@ -299,6 +317,10 @@ const U = {
   uBandY0: { value: -1e6 }, uBandY1: { value: -1e6 }, // stratum-hover band, sentinel = inactive
   uBandGain: { value: 0 },                            // eased 0→~0.6 while a stratum row is hovered
   uRootsMode: { value: 0 },                           // roots reveal: 0 idle → 1 below-ground, eased ~0.8s
+  // canopy↔ground flash (B2): hovering a leaf cluster boosts the meadow blades of the SAME sector
+  // born within a week of the cluster. uFlashSector = -1 idle; uFlashGain eases 0→~0.8 (glow ×1.8 max).
+  uFlashSector: { value: -1 }, uFlashBorn: { value: 0 }, uFlashGain: { value: 0 },
+  uFlashWidth: { value: 0.02 },                        // one week as a born-fraction; set once the span is known
 };
 
 // ---------- savanna night (concept 3): sky bands by elevation + stars above the Expert line ----------
@@ -666,6 +688,133 @@ if (TREE.fireflies.length) {
   scene.add(fireflies);
 }
 
+// ---------- contribution meadow 🌾 — the growth log unrolled as blades on the ground ----------
+// Every non-empty weekly bucket scatters `level` (1..4) luminous grass blades on the ground disc.
+// Height encodes the week's contribution count; radius encodes WHEN (rim = recent); azimuth sits in
+// the bucket's sector wedge; colour is the sector hue, paled toward moonlit blue by the private share.
+// Rendering copies the firefly/leaf recipe: crossed additive quads with a base→tip alpha gradient,
+// aBorn sprout (here it SCALES HEIGHT so the grass grows upward as the replay front passes), the
+// uSectorDim[${NSEC}] constant-index dim-not-hide loop, and the (1.0 - 0.88·uRootsMode) crown fade.
+let meadowCount = 0;
+let meadowMesh = null;            // the blade Mesh (InstancedBufferGeometry) — kept for parity/debug; not read back
+let meadowMotes = [];            // { x, z, bucket } per blade — the manual ground pick projects onto these
+let weekBornWidth = 0.02;        // one week as a born-fraction — the canopy↔ground flash match window
+const R_IN = 2.2, R_OUT = 13.5;  // the time-cursor ring lerps its radius across this band as uGrow sweeps (B2)
+if (CONTRIB.length) {
+  const maxCount = Math.max(1, ...CONTRIB.map(b => b.count)); // height normaliser (log-damped below)
+  const rIn = 2.2, rOut = 13.5, ringSpan = rOut - rIn;
+  // one week as a fraction of the whole span → the radial jitter band (±0.5 ring) and keeps weeks legible
+  const oneWeek = 7 * DAY;
+  const totalSpan = Math.max(oneWeek, NOW - T0);
+  const ringWidth = ringSpan * (oneWeek / totalSpan);
+  weekBornWidth = oneWeek / totalSpan;      // born spans [0,1] over the log → one week is this wide (flash window)
+  const pale = new THREE.Color(0x9fb4c8);   // moonlit blue — private share fades the sector hue toward this
+  const hue = new THREE.Color();
+  // gather one instance per mote (level motes per bucket), each seeded per the spec so the
+  // scatter is byte-stable across reloads (renderer-local PRNG rule, line ~165).
+  const motes = [];
+  for (const b of CONTRIB) {
+    const s = SECTORS[b.sector];
+    if (!s) continue;                                     // defensive: bucket sector out of range
+    const gap = SEC_GAP[b.sector];
+    const privShare = b.weight > 0 ? Math.min(1, b.privWeight / b.weight) : 0;
+    // height from count (log-damped, normalised to the field max), matching the level-quant damping family
+    const hBase = 0.12 + 0.55 * Math.log2(1 + b.count) / Math.log2(1 + maxCount);
+    const level = Math.max(1, Math.min(4, b.level));
+    for (let i = 0; i < level; i++) {
+      const rand = mulberry32(strHash('meadow|' + b.sector + '|' + b.weekTs + '|' + i));
+      // azimuth: sector centre ± 0.35×nearest-neighbour-gap → a clear channel between uneven wedges
+      const az = deg(s.az + (rand() * 2 - 1) * 0.35 * gap);
+      // radius: recent at rim (born→1 is the rim), ± half a ring's worth of jitter
+      const r = Math.min(rOut, Math.max(rIn, rIn + ringSpan * b.born + (rand() * 2 - 1) * 0.5 * ringWidth));
+      // height ±20% per-mote variance, capped at 0.9 (blades stay under the understory canopy)
+      const h = Math.min(0.9, hBase * (0.8 + 0.4 * rand()));
+      hue.set(s.hue).lerp(pale, 0.45 * privShare); // moonlit desaturation for the private share
+      const bright = 0.4 + 0.6 * (level / 4);      // brightness scales with the week's intensity level
+      motes.push({
+        x: Math.cos(az) * r, z: Math.sin(az) * r,
+        h, born: b.born, sector: b.sector, bucket: b,   // bucket ref: the hover panel reads its aggregates
+        r: hue.r * bright, g: hue.g * bright, b: hue.b * bright,
+      });
+    }
+  }
+  const n = motes.length; meadowCount = n;
+  // crossed-quad template: two upright quads at 90°, ~0.06 wide, unit-tall (height scales per-instance).
+  // position.y ∈ [0,1] doubles as the base→tip gradient parameter (uv.y), fed to the fragment alpha.
+  const HW = 0.03; // half-width → ~0.06 blade
+  const tpos = new Float32Array([
+    // quad A (facing +x/-x), two triangles
+    -HW, 0, 0,  HW, 0, 0,  HW, 1, 0,   -HW, 0, 0,  HW, 1, 0,  -HW, 1, 0,
+    // quad B (rotated 90°, facing +z/-z)
+    0, 0, -HW,  0, 0, HW,  0, 1, HW,    0, 0, -HW,  0, 1, HW,  0, 1, -HW,
+  ]);
+  const tuvY = new Float32Array([0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1]); // base(0)→tip(1) per vertex
+  const geo = new THREE.InstancedBufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(tpos, 3));
+  geo.setAttribute('aY', new THREE.BufferAttribute(tuvY, 1));
+  const off = new Float32Array(n * 3), col = new Float32Array(n * 3);
+  const born = new Float32Array(n), height = new Float32Array(n), sect = new Float32Array(n);
+  motes.forEach((mo, i) => {
+    off.set([mo.x, 0.02, mo.z], i * 3);   // sit on the ground disc (y≈0.02, atop CircleGeometry at -0.02)
+    col.set([mo.r, mo.g, mo.b], i * 3);
+    born[i] = mo.born; height[i] = mo.h; sect[i] = mo.sector;
+  });
+  geo.setAttribute('aOffset', new THREE.InstancedBufferAttribute(off, 3));
+  geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(col, 3));
+  geo.setAttribute('aBorn', new THREE.InstancedBufferAttribute(born, 1));
+  geo.setAttribute('aHeight', new THREE.InstancedBufferAttribute(height, 1));
+  geo.setAttribute('aSector', new THREE.InstancedBufferAttribute(sect, 1));
+  const mat = new THREE.ShaderMaterial({
+    uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: /* glsl */`
+      attribute float aY; attribute vec3 aOffset, aColor; attribute float aBorn, aHeight, aSector;
+      uniform float uGrow, uTime, uRootsMode; uniform int uFilterSector;
+      uniform float uSectorDim[${NSEC}], uSharedDim;
+      uniform int uFlashSector; uniform float uFlashBorn, uFlashGain, uFlashWidth; // canopy↔ground flash (B2)
+      varying vec3 vColor; varying float vY, vGrad;
+      void main() {
+        // aBorn sprout: the blade grows UPWARD as the growth front reaches its week (0..1 height scale)
+        float sprout = clamp((uGrow - aBorn) / 0.05, 0.0, 1.0);
+        // sector dim-not-hide (constant-index loop → safe on every driver, mirrors the branch shader)
+        float dim = 1.0;
+        if (uFilterSector >= 0) {
+          if (aSector < -0.5) dim = uSharedDim;
+          else { for (int k = 0; k < ${NSEC}; k++) if (k == int(aSector + 0.5)) dim = uSectorDim[k]; }
+        }
+        float rootDim = 1.0 - 0.88 * uRootsMode;        // meadow fades with the crown in the roots reveal
+        // a whisper of wind sway that grows with height (base pinned to the ground)
+        float sway = sin(uTime * 1.1 + aOffset.x * 2.3 + aOffset.z) * 0.02 * aY;
+        vec3 p = position;
+        p.x *= max(0.35, sprout);                        // young blades are a touch thinner too
+        p.y *= aHeight * sprout;                         // HEIGHT is the count encoding, sprouted by born
+        p.x += sway;
+        vec3 world = aOffset + p;
+        // canopy↔ground flash: a hovered leaf cluster boosts same-sector blades born within a week of it.
+        // Constant-index match (safe on every driver, mirrors the dim loop); ×1.8 max, eased via uFlashGain.
+        float flash = 0.0;
+        if (uFlashSector >= 0 && int(aSector + 0.5) == uFlashSector && abs(aBorn - uFlashBorn) < uFlashWidth)
+          flash = uFlashGain;
+        vColor = aColor * dim * rootDim * (1.0 + 0.8 * flash);
+        vY = aY; vGrad = sprout;
+        gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
+      }`,
+    fragmentShader: /* glsl */`
+      varying vec3 vColor; varying float vY, vGrad;
+      void main() {
+        // vertical alpha gradient: bright at the base, transparent at the tip (firefly-style falloff)
+        float a = (1.0 - vY) * (1.0 - vY) * 0.85 * vGrad;
+        if (a < 0.01) discard;
+        gl_FragColor = vec4(vColor, a);
+      }`,
+  });
+  const meadow = new THREE.Mesh(geo, mat);
+  meadow.frustumCulled = false;
+  scene.add(meadow);
+  meadowMesh = meadow;                       // kept for symmetry with mood-sketch and future debug hooks; not read back
+  meadowMotes = motes;                       // { x, z, bucket, ... } — the manual ground pick reads these
+  U.uFlashWidth.value = weekBornWidth;       // match window now that the span is known
+}
+
 // ---------- strata bands — atmosphere you can read, not gridlines ----------
 const strataRings = []; // { mesh, y } — one boundary ring per stratum floor (i=1..3)
 for (let i = 1; i < STRATA.length; i++) {
@@ -681,6 +830,21 @@ for (let i = 1; i < STRATA.length; i++) {
   scene.add(ring);
   strataRings.push({ mesh: ring, y: s.y0 });
 }
+
+// ---------- time-cursor ring (B2) — the growth front, read on the ground disc ----------
+// A thin soft-cyan hoop (unit radius, scaled per-frame to lerp(2.2,13.5,uGrow)) borrowing the
+// strataRings recipe: additive, no depth write, so it glows over the meadow without occluding it.
+// It fades IN while the timeline is scrubbed or the replay plays, and eases OUT (~1s) when idle;
+// during replay a gentle brightness pulse makes the expanding hoop read as the growth front.
+const timeRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.985, 1.015, 96),
+  new THREE.MeshBasicMaterial({ color: 0x4fd8c4, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })
+);
+timeRing.rotation.x = -Math.PI / 2;
+timeRing.position.y = 0.03;                 // just above the blade bases (y≈0.02), under the canopy
+timeRing.renderOrder = 3;
+scene.add(timeRing);
+
 // stratum labels as small billboarded sprites at the rim
 function labelSprite(text, color) {
   const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128;
@@ -921,6 +1085,32 @@ function azToSector(az) {                          // az radians → nearest sec
   }
   return best;
 }
+// ---- ground plane math (B2) — used by the meadow hover pick ----
+// The current raycaster.ray, intersected with y=0. Returns the world XZ hit or null (ray parallel /
+// pointing away from the disc). Cheaper and more forgiving than raycasting a merged instanced mesh.
+const _gp = new THREE.Vector3();
+function rayToGround() {
+  const o = raycaster.ray.origin, d = raycaster.ray.direction;
+  if (Math.abs(d.y) < 1e-6) return null;
+  const t = -o.y / d.y;
+  if (t <= 0) return null;                          // plane is behind the camera
+  return _gp.set(o.x + d.x * t, 0, o.z + d.z * t);
+}
+// Nearest meadow blade to the ground hit, within ~0.35 world units → its bucket (or null). The blades
+// are a merged instanced geometry (no per-instance raycast), so we pick against the stored mote offsets.
+function pickMeadow(x, y) {
+  if (!meadowMotes.length) return null;
+  pointerNDC(x, y, _ndc);
+  raycaster.setFromCamera(_ndc, camera);
+  const hit = rayToGround();
+  if (!hit) return null;
+  let best = null, bestD = 0.35 * 0.35;
+  for (const mo of meadowMotes) {
+    const dx = mo.x - hit.x, dz = mo.z - hit.z, d = dx * dx + dz * dz;
+    if (d < bestD) { bestD = d; best = mo; }
+  }
+  return best ? best.bucket : null;
+}
 function doPick(x, y) {
   pointerNDC(x, y, _ndc);
   raycaster.setFromCamera(_ndc, camera);
@@ -928,18 +1118,18 @@ function doPick(x, y) {
   if (rootsMode) {
     if (rootClusters.length) {                    // owner mode: nearest sector root cluster
       const ri = nearestRootCluster(x, y, 24);
-      if (ri >= 0) { showRoot(rootClusters[ri].sector); return 'root'; }
+      if (ri >= 0) { showRoot(rootClusters[ri].sector); clickPanelOpen = true; hoverPanelOpen = false; return 'root'; }
       closePanel(); return null;
     }
     showRootPrivate();                            // silhouette mode: no attribution to show
-    return 'root';
+    clickPanelOpen = true; hoverPanelOpen = false; return 'root';
   }
   // 1) blossoms — raycast the little spheres directly (does NOT touch the filter)
   const bHit = raycaster.intersectObjects(blossomMeshes, false);
-  if (bHit.length) { showBlossom(bHit[0].object); return 'blossom'; }
+  if (bHit.length) { showBlossom(bHit[0].object); clickPanelOpen = true; hoverPanelOpen = false; return 'blossom'; }
   // 2) leaves — nearest projected cluster within ~24px (also filter-neutral)
   const li = nearestLeafCluster(x, y, 24);
-  if (li >= 0) { showLeaf(li); return 'leaf'; }
+  if (li >= 0) { showLeaf(li); clickPanelOpen = true; hoverPanelOpen = false; return 'leaf'; }
   // 3) ground compass wedge → toggle sector filter
   if (groundMesh) {
     const gHit = raycaster.intersectObject(groundMesh, false);
@@ -961,7 +1151,10 @@ const elDetail = document.getElementById('detail');
 const elTitle = document.getElementById('detailTitle');
 const elBody = document.getElementById('detailBody');
 document.getElementById('detailClose').addEventListener('click', closePanel);
-function closePanel() { elDetail.classList.remove('on'); }
+// panel provenance (B2): a CLICK panel (leaf/blossom/roots) suppresses the meadow HOVER panel so the
+// two don't fight — hover only shows when nothing was clicked open.
+let clickPanelOpen = false, hoverPanelOpen = false;
+function closePanel() { elDetail.classList.remove('on'); clickPanelOpen = false; hoverPanelOpen = false; }
 function panelVisible() { return elDetail.classList.contains('on'); }
 const KIND_ICON = { commit: '🔧', note: '📝', milestone: '🌸', shipped: '🚀' };
 function relDate(days) { // relative to the log's now-anchor
@@ -1014,6 +1207,36 @@ function showBlossom(mesh) {
   elDetail.classList.add('on');
   chime(b.sector); // the level-up chime, replayed on demand (docs/02 §4.2)
 }
+// ---- canopy↔ground flash (B2): hovering a leaf cluster boosts its sector's blades of the same week ----
+function setMeadowFlash(clusterIdx) {
+  if (clusterIdx < 0) { U.uFlashSector.value = -1; return; }
+  const cl = leafClusters[clusterIdx];
+  U.uFlashSector.value = cl.sector; U.uFlashBorn.value = cl.born;
+}
+// ---- meadow week panel (B2: AGGREGATES ONLY — never an event id; docs/03 §6 rule 3) ----
+// Hovering a blade reads its weekly bucket back out: which sector, how many contributions that week,
+// the public/private split, and the summed weight. No ids ever leave the aggregate — same disclosure
+// contract the roots panel and the strip honour.
+function weekLabel(weekTs) {                        // "2026-07-13" → "Jul 13, 2026" (bucket Monday)
+  const d = new Date(weekTs + 'T00:00:00Z');
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+}
+function showMeadow(bucket) {
+  const s = SECTORS[bucket.sector];
+  if (!s) return;
+  // coerce every tree.json-derived value: strings through esc(), numbers through
+  // Number() — a malformed bucket field can't inject markup into the panel
+  const count = Number(bucket.count), privCount = Number(bucket.privCount), weight = Number(bucket.weight);
+  const pub = count - privCount;                    // public share = total minus the private count
+  const hex = new THREE.Color(s.hue).getHexString(); // hoisted — one construction per hue
+  elTitle.textContent = `🌾 Week of ${weekLabel(bucket.weekTs)}`;
+  elBody.innerHTML =
+    `<div class="meta"><span class="dot" style="color:#${hex};background:#${hex}"></span><b>${esc(s.label)}</b></div>` +
+    `<div class="meta"><b>${count}</b> contribution${count !== 1 ? 's' : ''} · ${pub} public · ${privCount} private</div>` +
+    `<div class="meta">weight <b>${weight}</b></div>` +
+    `<div class="meta" style="margin-top:6px;color:#7f93aa">weekly aggregate — no ids leave the tree</div>`;
+  elDetail.classList.add('on');
+}
 
 // ---- roots detail (OWNER mode: aggregates only; NEVER per-note data — docs/03 §6.3) ----
 function showRoot(sectorIndex) {
@@ -1050,17 +1273,27 @@ dom.addEventListener('pointerup', e => {
   const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
   if (moved <= 5 && performance.now() - downT <= 200) doPick(e.clientX, e.clientY); // a click, not an orbit drag
 });
-// hover affordance — pointer cursor over a pickable, throttled
+// hover affordance — pointer cursor + week panel + canopy flash, throttled.
 let hoverT = 0;
 dom.addEventListener('pointermove', e => {
   const now = performance.now();
   if (now - hoverT < 60) return; hoverT = now;
   pointerNDC(e.clientX, e.clientY, _ndc);
   raycaster.setFromCamera(_ndc, camera);
-  const over = rootsMode
-    ? (rootClusters.length > 0 && nearestRootCluster(e.clientX, e.clientY, 24) >= 0)
-    : (raycaster.intersectObjects(blossomMeshes, false).length > 0 || nearestLeafCluster(e.clientX, e.clientY, 24) >= 0);
-  dom.style.cursor = over ? 'pointer' : '';
+  if (rootsMode) {
+    dom.style.cursor = (rootClusters.length > 0 && nearestRootCluster(e.clientX, e.clientY, 24) >= 0) ? 'pointer' : '';
+    setMeadowFlash(-1);
+    return;
+  }
+  const overBlossom = raycaster.intersectObjects(blossomMeshes, false).length > 0;
+  const li = nearestLeafCluster(e.clientX, e.clientY, 24);
+  setMeadowFlash(overBlossom ? -1 : li);            // hovering a leaf cluster lights its week on the ground
+  // meadow week panel: only when nothing higher-priority is under the pointer and no CLICK panel is open
+  // (don't fight leaf/blossom/roots panels the user opened) — hovering off hides the hover panel again
+  const bucket = (!overBlossom && li < 0) ? pickMeadow(e.clientX, e.clientY) : null;
+  if (bucket && !clickPanelOpen) { showMeadow(bucket); hoverPanelOpen = true; }
+  else if (hoverPanelOpen && !clickPanelOpen) { closePanel(); hoverPanelOpen = false; }
+  dom.style.cursor = (overBlossom || li >= 0 || bucket) ? 'pointer' : '';
 });
 
 // ---- keyboard: Escape — precedence: leave the reel first (you're mid-show), then the
@@ -1344,6 +1577,49 @@ function toast(msg) {
 // ---------- timeline — scrub the growth front through the tree's history ----------
 const tlDate = document.getElementById('tlDate'), tlFill = document.getElementById('tlFill'),
       tlHandle = document.getElementById('tlHandle'), tlTrack = document.getElementById('tlTrack');
+
+// ---------- timeline density strip — the meadow ring, unrolled under the scrubber ----------
+// Paints the SAME contribution buckets into #tlTrack's background: x = week over [T0, NOW]
+// (the time-axis span), column brightness = summed level across sectors (normalised), hue = the
+// weight-weighted blend of that week's sector hues, desaturated by the week's aggregate private
+// share. Guarded on CONTRIB.length so an older tree.json leaves the plain track untouched.
+if (CONTRIB.length) {
+  const W = 400, H = 8;
+  const cols = new Map(); // weekTs → { lvl, r, g, b, wsum, priv } accumulated across sectors
+  for (const b of CONTRIB) {
+    const s = SECTORS[b.sector];
+    if (!s) continue;
+    let c = cols.get(b.weekTs);
+    if (!c) { c = { ts: Date.parse(b.weekTs), lvl: 0, r: 0, g: 0, b: 0, wsum: 0, priv: 0 }; cols.set(b.weekTs, c); }
+    c.lvl += b.level;
+    const col = new THREE.Color(s.hue);
+    c.r += col.r * b.weight; c.g += col.g * b.weight; c.b += col.b * b.weight; // weight-weighted hue blend
+    c.wsum += b.weight; c.priv += b.privWeight;
+  }
+  const list = [...cols.values()];
+  const maxLvl = Math.max(1, ...list.map(c => c.lvl)); // brightness normaliser
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#0a1016'; ctx.fillRect(0, 0, W, H); // dim base so empty weeks read as near-black
+  const span = Math.max(1, NOW - T0);
+  const pale = new THREE.Color(0x9fb4c8), hue = new THREE.Color();
+  for (const c of list) {
+    const x = Math.round(((c.ts - T0) / span) * (W - 1));
+    const bright = 0.25 + 0.75 * (c.lvl / maxLvl);            // summed level → column brightness
+    const privShare = c.wsum > 0 ? Math.min(1, c.priv / c.wsum) : 0;
+    if (c.wsum > 0) hue.setRGB(c.r / c.wsum, c.g / c.wsum, c.b / c.wsum); else hue.set(0x9fb4c8);
+    hue.lerp(pale, 0.45 * privShare).multiplyScalar(bright); // moonlit desaturation for private share
+    const rgb = [Math.round(hue.r * 255), Math.round(hue.g * 255), Math.round(hue.b * 255)];
+    ctx.fillStyle = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+    ctx.fillRect(Math.max(0, x - 1), 0, 3, H);               // ~3px column, soft overlap between weeks
+  }
+  tlTrack.style.backgroundImage = `url(${cv.toDataURL('image/png')})`;
+  tlTrack.style.backgroundSize = '100% 100%';
+  tlTrack.style.backgroundRepeat = 'no-repeat';
+  // let the strip read THROUGH the fill: swap the green→gold gradient for a translucent white wash
+  tlFill.style.background = 'rgba(255,255,255,0.25)';
+  tlFill.style.boxShadow = 'none';
+}
 let scrubbing = false;
 function scrubTo(clientX) {
   const rect = tlTrack.getBoundingClientRect();
@@ -1439,6 +1715,22 @@ function tick() {
   }
   U.uBandGain.value += ((hoveredStratum >= 0 ? 0.6 : 0) - U.uBandGain.value) * k;
 
+  // ---- canopy↔ground flash ease (~0.15s): glow rises while a leaf cluster is hovered, else settles ----
+  const kf = 1 - Math.exp(-dt / 0.05);
+  U.uFlashGain.value += ((U.uFlashSector.value >= 0 ? 0.8 : 0) - U.uFlashGain.value) * kf;
+
+  // ---- time-cursor ring (B2): the growth front on the ground. Visible while scrubbing (the timeline
+  // slider) or replaying; eases out ~1s idle. During replay a gentle pulse reads as the growth front. ----
+  {
+    const active = scrubbing || !!reel;
+    const g = U.uGrow.value;
+    timeRing.scale.setScalar(R_IN + (R_OUT - R_IN) * g);          // radius = lerp(2.2, 13.5, uGrow)
+    const pulse = reel ? (0.75 + 0.25 * Math.sin(U.uTime.value * 4.0)) : 1; // replay front glow
+    const tgt = active ? 0.55 * pulse : 0;
+    const kring = 1 - Math.exp(-dt / 0.32);                       // ~1s ease-out when it goes idle
+    timeRing.material.opacity += (tgt - timeRing.material.opacity) * kring;
+  }
+
   // ---- roots reveal ease (~0.8s): crown → silhouette, roots glow, ground clears, strata fade ----
   const kr = 1 - Math.exp(-dt / 0.28);
   U.uRootsMode.value += ((rootsMode ? 1 : 0) - U.uRootsMode.value) * kr;
@@ -1509,8 +1801,11 @@ if (PARAMS.get('reel') === '1') {
   if (PARAMS.get('roots') === '1' && hasRoots) setRootsMode(true);
 }
 
+// instanced-primitive tally — a quick FPS-budget read (segments/leaves/meadow are the heavy meshes)
+console.info(`AI Learning Tree · ${TREE.segments.length} segments · ${leafCount} leaves · ${meadowCount} meadow blades · ${blossomMeshes.length} blossoms · ${TREE.fireflies.length} fireflies`);
+
 window.__dbg = {
-  U, camera, controls, tree: TREE, segs: TREE.segments.length, leaves: leafCount, clusters: leafClusters.length, blossoms: blossomMeshes.length,
+  U, camera, controls, tree: TREE, segs: TREE.segments.length, leaves: leafCount, meadow: meadowCount, clusters: leafClusters.length, blossoms: blossomMeshes.length,
   acacia: true, crownY: +CROWN_Y.toFixed(3), targetY: +TARGET_Y.toFixed(3),
   // ---- phase-2 hooks for the Playwright verifier (in addition to real pointer events) ----
   setFilter: id => applyFilter(id == null ? -1 : (secIndex.has(id) ? secIndex.get(id) : -1)), // id string or null
@@ -1526,10 +1821,15 @@ window.__dbg = {
     else growHold = Math.min(1, Math.max(0, g));
   },
   journeyUrl,
+  // ---- B2 meadow-interaction hooks ----
+  pickMeadow: (x, y) => pickMeadow(x, y),           // CSS px → the hovered bucket (aggregates) or null
+  showMeadow: (bucket) => { if (bucket) { showMeadow(bucket); hoverPanelOpen = true; } }, // open the week panel by hand
+  setMeadowFlash: (clusterIdx) => setMeadowFlash(clusterIdx == null ? -1 : clusterIdx),  // canopy↔ground flash
   state: () => ({
     filter: filterIndex < 0 ? null : SECTORS[filterIndex].label, panelVisible: panelVisible(),
     tourActive: !!tour, rootsMode, reel: !!reel, grow: +U.uGrow.value.toFixed(4),
     sound: soundOn, audioLive: !!audio, recording: !!recorder, dpr: renderer.getPixelRatio(),
+    flashSector: U.uFlashSector.value, ringOpacity: +timeRing.material.opacity.toFixed(3),
     date: fmtDate(U.uGrow.value <= 0 ? T0 : growToMs(U.uGrow.value)),
   }),
 };
