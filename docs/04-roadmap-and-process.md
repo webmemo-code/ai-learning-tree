@@ -95,21 +95,18 @@ Next steps, roughly in value order:
 3. **Refresh the shared clip** 🎥 — the phase-5 exit artifact predates the
    species change; record a new 30-second acacia replay (the pad-lift moment is
    now the climax) and use it wherever the old clip lives.
-4. **Decide the canonical viewer page** — mood-sketch still renders the acacia
-   in the old night-garden dressing; acacia-sketch is the reference. Either
-   promote acacia-sketch to the primary embed/share target or fold the savanna
-   dressing into mood-sketch — carrying both indefinitely invites drift.
-5. **Tiered Pagoda toggle** *(optional, concept 2)* — persistent pads at every
-   crossed stratum as an owner toggle or replay-only effect. Four sectors now
-   sit at level 2, so crossed-stratum pads finally have something to show.
-6. **Watch the band-fill pacing** — ADR-0009's `BAND_FILL_WEIGHT = 60` is a
+4. **Decide the canonical viewer page** — largely settled in practice: the
+   README, Pages root redirect, auto-captured hero and the meadow port (#39)
+   all treat acacia-sketch as primary, and the Tiered Pagoda ships there only.
+   Remaining call: fold or retire mood-sketch rather than carrying both.
+5. **Watch the band-fill pacing** — ADR-0009's `BAND_FILL_WEIGHT = 60` is a
    first calibration; after a few weeks of daily-lift observation, judge
    whether a band fills too fast/slow. Retuning it is an algoVersion MAJOR
    bump, so batch it with the next geometry change if one comes.
-7. **First Practitioner milestone when it's true** — `build.pro-code` leads at
+6. **First Practitioner milestone when it's true** — `build.pro-code` leads at
    ~fill 54% of the Understory; when a level-3 claim is genuinely earned, one
    entry in [data/milestones.yml](../data/milestones.yml) opens the Canopy.
-8. **Monthly snapshot ritual** (§2 Automation) — first tagged release with the
+7. **Monthly snapshot ritual** (§2 Automation) — first tagged release with the
    acacia beauty shot; the project's own growth rings start with the new species.
 
 ## 5. Long-term risks & mitigations

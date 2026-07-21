@@ -109,6 +109,7 @@
     <button id="replay" title="The tree regrows from seed in 30s under an authored camera">🎬 Replay journey</button>
     <button id="spin">⏸ Orbit</button>
     <button id="rootsBtn" type="button" aria-pressed="false" title="Dip below ground to the private root system">🕳 Roots</button>
+    <button id="pagodaBtn" type="button" aria-pressed="false" title="Ghost pads at every proficiency ceiling this limb has already outgrown — its height history as pagoda tiers">🏯 Pagoda</button>
     <button id="recBtn" type="button" title="Replay the journey and save it as a .webm clip">🎥 Record clip</button>
     <button id="soundBtn" type="button" aria-pressed="false" title="Night-garden ambience + level-up chimes">🔊</button>
     <button id="shareBtn" type="button" title="Copy a link that opens with the 30s replay">⤴ Share</button>
@@ -189,7 +190,7 @@ function fatal(msg) {
 }
 
 // ---------- URL params (deep links, docs in prototypes/README.md) ----------
-// ?data=mock · ?dpr=1 · ?reel=1 (autoplay the journey) · ?filter=<label> · ?roots=1 · ?hud=0 (clean embed)
+// ?data=mock · ?dpr=1 · ?reel=1 (autoplay the journey) · ?filter=<label> · ?roots=1 · ?pagoda=1 · ?hud=0 (clean embed)
 const PARAMS = new URLSearchParams(location.search);
 if (PARAMS.get('hud') === '0') document.body.classList.add('nohud');
 
@@ -686,6 +687,55 @@ if (TREE.fireflies.length) {
   const fireflies = new THREE.Points(g, m2);
   fireflies.frustumCulled = false;
   scene.add(fireflies);
+}
+
+// ---------- tiered pagoda 🏯 — ghost pads at every previously crossed ceiling ----------
+// Concept 2 of the acacia board (docs/04 TODO item 5). The static tree shows PRESENT height
+// only — the crown lifts as a sector levels up, carrying its whole history with it — so this
+// toggle leaves a translucent echo pad at each ceiling a limb has already OUTGROWN: a mature
+// bough reads its own career as pagoda tiers. View-only, derived from public data already in
+// tree.json (sector level, strata, pad positions, blossom borns) — no new disclosure. During
+// the replay each tier fades in only after the level-up blossom that ended its era.
+const pagodaMeshes = [];   // { mesh, sector, born, base } — tick() eases opacity per frame
+let pagodaOn = false;      // resolved after the HUD wires up (?pagoda=1 / stored preference)
+{
+  // one soft radial lens texture shared by every tier (additive-friendly falloff)
+  const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+  const g = cv.getContext('2d');
+  const grad = g.createRadialGradient(64, 64, 6, 64, 64, 62);
+  grad.addColorStop(0, 'rgba(255,255,255,0.9)'); grad.addColorStop(0.65, 'rgba(255,255,255,0.35)'); grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad; g.beginPath(); g.arc(64, 64, 63, 0, 7); g.fill();
+  const lensTex = new THREE.CanvasTexture(cv);
+  const lensGeo = new THREE.CircleGeometry(1, 40);
+  for (const s of TREE.sectors) {
+    if (s.level < 2) continue;
+    const clusters = leafClusters.filter(c => c.sector === s.index);
+    if (!clusters.length) continue;
+    const padTopY = Math.max(...clusters.map(c => c.center.y));
+    for (let pl = 1; pl < s.level; pl++) {
+      const tierCeil = STRATA[pl - 1].y1 - 0.35;            // the ceiling this era lived under
+      const tierY = tierCeil - 0.16;                        // where its pads parked (the generator's pad recipe)
+      if (tierY >= padTopY - 0.2) continue;                 // degenerate: tier not clearly below today's pads
+      // the tier ENDS when the next level's blossom opens — the ghost appears at that replay moment
+      const bl = TREE.blossoms.find(b => b.sector === s.index && b.level === pl + 1);
+      const born = bl ? bl.born : 0.5;
+      // the limb had less reach back then: shrink XZ toward the trunk by the ceiling ratio
+      const k = Math.min(0.92, Math.max(0.45, (tierY + 0.16) / (padTopY + 0.16)));
+      for (const c of clusters) {
+        const mesh = new THREE.Mesh(lensGeo, new THREE.MeshBasicMaterial({
+          map: lensTex, color: s.hue, transparent: true, opacity: 0,
+          depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+        }));
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.position.set(c.center.x * k, tierY, c.center.z * k);
+        mesh.scale.setScalar(c.radius * 0.85);
+        mesh.renderOrder = 2;
+        mesh.visible = false;                               // tick() flips visibility with opacity
+        scene.add(mesh);
+        pagodaMeshes.push({ mesh, sector: s.index, born, base: 0.16 });
+      }
+    }
+  }
 }
 
 // ---------- contribution meadow 🌾 — the growth log unrolled as blades on the ground ----------
@@ -1646,6 +1696,22 @@ const rootsBtn = document.getElementById('rootsBtn');
 if (!hasRoots) rootsBtn.style.display = 'none';    // hidden mode / older tree.json without roots
 rootsBtn.addEventListener('click', () => setRootsMode(!rootsMode));
 
+// ---- tiered pagoda toggle 🏯 — preference persists like sound; ?pagoda=1 deep-links it on ----
+const pagodaBtn = document.getElementById('pagodaBtn');
+if (!pagodaMeshes.length) pagodaBtn.style.display = 'none'; // nothing outgrown yet → no toggle
+// persist=true only on an explicit user click: the initial-load call (and __dbg pokes,
+// and a tree with no outgrown ceilings) must never overwrite a previously saved choice
+function setPagoda(on, persist) {
+  pagodaOn = !!on && pagodaMeshes.length > 0;
+  pagodaBtn.setAttribute('aria-pressed', String(pagodaOn));
+  if (persist && pagodaMeshes.length) store.set('tree-pagoda', pagodaOn ? '1' : '0');
+}
+pagodaBtn.addEventListener('click', () => {
+  setPagoda(!pagodaOn, true);
+  toast(pagodaOn ? '🏯 Ghost pads mark each ceiling this crown has outgrown' : '🏯 Pagoda off');
+});
+setPagoda(PARAMS.get('pagoda') === '1' || store.get('tree-pagoda') === '1');
+
 // ---------- loop ----------
 const clock = new THREE.Clock();
 let fpsAcc = 0, fpsN = 0;
@@ -1721,6 +1787,19 @@ function tick() {
   // ---- canopy↔ground flash ease (~0.15s): glow rises while a leaf cluster is hovered, else settles ----
   const kf = 1 - Math.exp(-dt / 0.05);
   U.uFlashGain.value += ((U.uFlashSector.value >= 0 ? 0.8 : 0) - U.uFlashGain.value) * kf;
+
+  // ---- tiered pagoda ease: tiers follow the toggle, the sector dim, the roots fade,
+  // and the replay front (a tier only exists once its level-up blossom has opened) ----
+  if (pagodaMeshes.length) {
+    const kp = 1 - Math.exp(-dt / 0.15);
+    for (const pg of pagodaMeshes) {
+      const grown = Math.min(1, Math.max(0, (U.uGrow.value - pg.born) / 0.04));
+      const dimS = filterIndex < 0 ? 1 : (U.uSectorDim.value[pg.sector] ?? 1);
+      const tgt = (pagodaOn ? pg.base : 0) * grown * dimS * (1 - 0.88 * U.uRootsMode.value);
+      pg.mesh.material.opacity += (tgt - pg.mesh.material.opacity) * kp;
+      pg.mesh.visible = pg.mesh.material.opacity > 0.004;
+    }
+  }
 
   // ---- time-cursor ring (B2): the growth front on the ground. Visible while scrubbing (the timeline
   // slider) or replaying; eases out ~1s idle. During replay a gentle pulse reads as the growth front. ----
@@ -1813,6 +1892,7 @@ window.__dbg = {
   // ---- phase-2 hooks for the Playwright verifier (in addition to real pointer events) ----
   setFilter: id => applyFilter(id == null ? -1 : (secIndex.has(id) ? secIndex.get(id) : -1)), // id string or null
   setRoots: on => setRootsMode(on),                                                            // roots reveal toggle
+  setPagoda: on => setPagoda(!!on), pagodaTiers: pagodaMeshes.length,                          // tiered-pagoda toggle
   pickAt: (x, y) => doPick(x, y),                                                              // CSS px → runs the pick pipeline
   hasRoots, rootClusters: rootClusters.length,
   // ---- phase-5 hooks ----
@@ -1833,6 +1913,7 @@ window.__dbg = {
     tourActive: !!tour, rootsMode, reel: !!reel, grow: +U.uGrow.value.toFixed(4),
     sound: soundOn, audioLive: !!audio, recording: !!recorder, dpr: renderer.getPixelRatio(),
     flashSector: U.uFlashSector.value, ringOpacity: +timeRing.material.opacity.toFixed(3),
+    pagoda: pagodaOn,
     date: fmtDate(U.uGrow.value <= 0 ? T0 : growToMs(U.uGrow.value)),
   }),
 };

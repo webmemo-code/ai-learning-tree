@@ -92,6 +92,11 @@ These don't exist in the cube and define the tree's own personality:
   gradient sphere (reuse cube's parallax background-sphere pattern, new texture).
 - One consolidated token file from day one (the cube learned this the hard way —
   its 3D hex constants and CSS variables drifted apart).
+- **Tiered Pagoda** 🏯 (toggle, concept 2): the static tree reads *present*
+  proficiency — the crown lifts as a sector levels up. The pagoda toggle leaves a
+  translucent echo pad at each ceiling a limb has already outgrown (shrunk toward
+  the trunk by the era's reach), so a mature bough shows its career as stacked
+  tiers; in the replay each tier appears at its level-up blossom's moment.
 - **Contribution meadow** (phase 6): the weekly growth log unrolled as luminous grass
   blades on the ground disc. **Height = the week's contribution count** (log-damped);
   **radius = when** (recent weeks ring the rim, so the meadow reads like tree rings);
