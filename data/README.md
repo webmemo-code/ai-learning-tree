@@ -102,7 +102,7 @@ duplicate event.
 
 ## Viewing the mock fixture in the renderer
 
-The mood-sketch prototype defaults to the real tree
+The acacia-sketch prototype (the reference renderer) defaults to the real tree
 (`../../data/tree.json`) but accepts a `?data=mock` query param to load the
 frozen fixture instead (`../../data/mock/tree.json`) — useful for demos,
 screenshots, or comparing the pipeline's real output against the known-good

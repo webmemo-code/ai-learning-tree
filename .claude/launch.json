@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "mood-sketch",
+      "name": "tree-viewer",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8123", "--directory", "prototypes/mood-sketch"],
+      "runtimeArgs": ["-m", "http.server", "8123"],
       "port": 8123
     }
   ]
