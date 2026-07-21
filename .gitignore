@@ -1,0 +1,3 @@
+# generated at deploy time by .github/scripts/capture-hero.mjs — lives on the
+# Pages site only, never in git history (nightly binary churn stays out)
+assets/

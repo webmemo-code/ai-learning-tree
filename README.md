@@ -24,11 +24,13 @@ as something alive — and something worth showing to other knowledge workers to
 > in [docs/04 §4](docs/04-roadmap-and-process.md). The
 > origin brain dump lives in [issue #1](https://github.com/webmemo-code/ai-learning-tree/issues/1).
 
-[![Walter's tree on 2026-07-20 — the acacia with four Experimenter limbs and their blossoms, captured from the live viewer](docs/documentation/ai-learning-tree_20260720-live.png)](https://webmemo-code.github.io/ai-learning-tree/prototypes/acacia-sketch/)
-*Captured from the live viewer the day it went online: four sectors bloomed to
-Experimenter — the blue pro-code rib reaches highest (~5.5, lifted by this
-project's own commits), fireflies gather under the pads for the last seven
-days of work. Click the image to orbit the real thing.*
+[![The live tree — this image re-captures itself after every nightly harvest deploy](https://webmemo-code.github.io/ai-learning-tree/assets/tree-latest.png)](https://webmemo-code.github.io/ai-learning-tree/prototypes/acacia-sketch/)
+*The live tree, re-shot automatically on every deploy (nightly, after the
+harvest): blossoms mark evidenced level-ups, fireflies gather under pads worked
+in the last seven days, and the **contribution meadow** glows at the rim — one
+luminous grass ring per week of the growth log, recent weeks outermost. Click
+the image to orbit the real thing. Dated milestone shots are kept in
+[docs/documentation/](docs/documentation/).*
 
 **🌳 [Open the interactive tree](https://webmemo-code.github.io/ai-learning-tree/prototypes/acacia-sketch/)** —
 orbit it, click leaves and blossoms for their commits and milestone evidence,

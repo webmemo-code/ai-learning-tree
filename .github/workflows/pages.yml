@@ -49,6 +49,23 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      # Hero screenshot: shoot the viewer against the tree.json being deployed, so the
+      # README's embedded image (assets/tree-latest.png on the SITE, never committed)
+      # refreshes with every deploy — nightly growth included. Non-fatal: the deploy
+      # matters more than the picture, and the committed milestone shot is copied in
+      # first as a fallback so the URL always resolves. Playwright installs OUTSIDE
+      # the workspace (npm --prefix /tmp/pw) so node_modules never enters the artifact.
+      - name: Capture hero screenshot (non-fatal)
+        continue-on-error: true
+        run: |
+          mkdir -p assets
+          cp docs/documentation/ai-learning-tree_20260721-meadow.png assets/tree-latest.png
+          npm install --prefix /tmp/pw --no-audit --no-fund playwright
+          /tmp/pw/node_modules/.bin/playwright install --with-deps chromium
+          node .github/scripts/capture-hero.mjs assets/tree-latest.png
       - uses: actions/upload-pages-artifact@v4
         with:
           path: .
