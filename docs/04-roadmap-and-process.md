@@ -86,28 +86,28 @@ the first time.*
 Next steps, roughly in value order — each tracked as a labeled issue per §2
 (the doc keeps the narrative, the issue carries the discussion):
 
-1. **Dawn mode** 🌅 ([#43](https://github.com/webmemo-code/ai-learning-tree/issues/43)) — the daylight rig deferred in [02 §1](02-visual-language.md):
+1. **Dawn mode** 🌅 (#43) — the daylight rig deferred in [02 §1](02-visual-language.md):
    golden hour is the acacia's home lighting, and the savanna sunrise is the
    poster shot. Renderer-only (a second lighting/sky preset in acacia-sketch).
-2. **Thorn & Lace** ([#44](https://github.com/webmemo-code/ai-learning-tree/issues/44)) — concept 4 of [the board](../prototypes/acacia-look/README.md):
+2. **Thorn & Lace** (#44) — concept 4 of [the board](../prototypes/acacia-look/README.md):
    the close-up material pass on the new skeleton — zigzag elbow emphasis, tiny
    non-glowing thorns, bipinnate lace leaf billboards. After dawn mode; it's
    polish, not direction.
-3. **Refresh the shared clip** 🎥 ([#45](https://github.com/webmemo-code/ai-learning-tree/issues/45)) — the phase-5 exit artifact predates the
+3. **Refresh the shared clip** 🎥 (#45) — the phase-5 exit artifact predates the
    species change; record a new 30-second acacia replay (the pad-lift moment is
    now the climax) and use it wherever the old clip lives.
-4. **Decide the canonical viewer page** ([#46](https://github.com/webmemo-code/ai-learning-tree/issues/46)) — largely settled in practice: the
+4. **Decide the canonical viewer page** (#46) — largely settled in practice: the
    README, Pages root redirect, auto-captured hero and the meadow port (#39)
    all treat acacia-sketch as primary, and the Tiered Pagoda ships there only.
    Remaining call: fold or retire mood-sketch rather than carrying both.
-5. **Watch the band-fill pacing** ([#47](https://github.com/webmemo-code/ai-learning-tree/issues/47)) — ADR-0009's `BAND_FILL_WEIGHT = 60` is a
+5. **Watch the band-fill pacing** (#47) — ADR-0009's `BAND_FILL_WEIGHT = 60` is a
    first calibration; after a few weeks of daily-lift observation, judge
    whether a band fills too fast/slow. Retuning it is an algoVersion MAJOR
    bump, so batch it with the next geometry change if one comes.
-6. **First Practitioner milestone when it's true** ([#48](https://github.com/webmemo-code/ai-learning-tree/issues/48)) — `build.pro-code` leads at
+6. **First Practitioner milestone when it's true** (#48) — `build.pro-code` leads at
    ~fill 54% of the Understory; when a level-3 claim is genuinely earned, one
    entry in [data/milestones.yml](../data/milestones.yml) opens the Canopy.
-7. **Monthly snapshot ritual** (§2 Automation, [#49](https://github.com/webmemo-code/ai-learning-tree/issues/49)) — first tagged release with the
+7. **Monthly snapshot ritual** (§2 Automation, #49) — first tagged release with the
    acacia beauty shot; the project's own growth rings start with the new species.
 
 ## 5. Long-term risks & mitigations
