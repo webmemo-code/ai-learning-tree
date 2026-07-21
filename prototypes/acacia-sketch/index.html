@@ -703,11 +703,14 @@ const R_IN = 2.2, R_OUT = 13.5;  // the time-cursor ring lerps its radius across
 if (CONTRIB.length) {
   const maxCount = Math.max(1, ...CONTRIB.map(b => b.count)); // height normaliser (log-damped below)
   const rIn = 2.2, rOut = 13.5, ringSpan = rOut - rIn;
-  // one week as a fraction of the whole span → the radial jitter band (±0.5 ring) and keeps weeks legible
+  // one week in BORN units → the radial jitter band (±0.5 ring) and the flash match window.
+  // born-space compresses the log span into [TRUNK_SPAN, 1] (generator tNorm), so one week is
+  // (1 - TRUNK_SPAN)·oneWeek/totalSpan — without the factor both would run ~14% wide of a true week
   const oneWeek = 7 * DAY;
   const totalSpan = Math.max(oneWeek, NOW - T0);
-  const ringWidth = ringSpan * (oneWeek / totalSpan);
-  weekBornWidth = oneWeek / totalSpan;      // born spans [0,1] over the log → one week is this wide (flash window)
+  const weekBorn = (1 - TRUNK_SPAN) * (oneWeek / totalSpan);
+  const ringWidth = ringSpan * weekBorn;
+  weekBornWidth = weekBorn;                 // one week in born units — the canopy↔ground flash window
   const pale = new THREE.Color(0x9fb4c8);   // moonlit blue — private share fades the sector hue toward this
   const hue = new THREE.Color();
   // gather one instance per mote (level motes per bucket), each seeded per the spec so the
