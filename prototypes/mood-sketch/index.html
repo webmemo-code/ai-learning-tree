@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <!-- mood-sketch — RETIRED (issue #46, after the #39/#40 ports left acacia-sketch a
-     strict feature superset). This stub keeps every old link and shared deep link
-     working: query params and hash (e.g. ?data=mock, ?reel=1) carry over to the
-     acacia reference renderer. The night-garden era lives on in git history and
-     ADR-0008's notes. -->
+     strict feature superset). This stub keeps old links and shared deep links
+     working: the JS redirect carries query params and hash (e.g. ?data=mock,
+     ?reel=1) to the acacia reference renderer. The meta-refresh fallback drops
+     them by nature (static HTML) — harmless, since the destination is a
+     three.js app that needs JS anyway. The night-garden era lives on in git
+     history and ADR-0008's notes. -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
