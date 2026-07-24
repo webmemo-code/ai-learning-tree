@@ -1,4 +1,4 @@
-﻿# ai-learning-tree
+# ai-learning-tree
 
 ## Memory (index read at session start; leaves read on demand)
 
