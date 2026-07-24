@@ -19,4 +19,3 @@ ADRs 0001-0007 all committed (0001 one-tree-per-person; 0002 roots=private/Obsid
 
 Reuse from sibling [[project-ai-periodic-cube]]: bloomComposer.ts, lodSystem.ts, tubeEdges.ts (instanced tubes = branches), spriteFactory.ts, audioManager.ts, camera keyframe tours + CameraAnimHelper, dim-not-hide filter pattern.
 
-Reuse from sibling [[project-ai-periodic-cube]]: bloomComposer.ts, lodSystem.ts, tubeEdges.ts (instanced tubes = branches), spriteFactory.ts, audioManager.ts, camera keyframe tours + CameraAnimHelper, dim-not-hide filter pattern.
