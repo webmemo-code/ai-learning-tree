@@ -73,6 +73,7 @@ repos:
 
   # AUTOMATE / workflows — cross-tool glue and content-ops automation
   flickr-to-instagram-automation:      automate.workflows
+  flickr-lightroom-publisher:          automate.workflows
   api_asana_content_retriever:         automate.workflows
   lightroom-metadata-translator:       automate.workflows
   batch-rename-files-powershell-script: automate.workflows
