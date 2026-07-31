@@ -1,0 +1,46 @@
+[
+  {
+    "number": 7,
+    "state": "closed",
+    "created_at": "2025-02-10T09:30:00Z",
+    "updated_at": "2025-02-12T10:00:00Z",
+    "merged_at": "2025-02-12T10:00:00Z",
+    "title": "SECRET pull-request title — must never reach an event",
+    "body": "SECRET pull-request body with a private-path/reference in it",
+    "head": { "ref": "SECRET-branch-name" },
+    "user": { "login": "faketree" }
+  },
+  {
+    "number": 8,
+    "state": "open",
+    "created_at": "2025-02-20T14:00:00Z",
+    "updated_at": "2025-02-20T14:00:00Z",
+    "merged_at": null,
+    "title": "SECRET second PR by the owner",
+    "body": "SECRET body two",
+    "head": { "ref": "SECRET-branch-two" },
+    "user": { "login": "faketree" }
+  },
+  {
+    "number": 10,
+    "state": "open",
+    "created_at": "2025-02-05T08:00:00Z",
+    "updated_at": "2025-07-15T08:00:00Z",
+    "merged_at": null,
+    "title": "SECRET old PR that was reviewed long after it was opened",
+    "body": "SECRET late-review body",
+    "head": { "ref": "SECRET-branch-late" },
+    "user": { "login": "faketree" }
+  },
+  {
+    "number": 9,
+    "state": "open",
+    "created_at": "2025-02-25T14:00:00Z",
+    "updated_at": "2025-02-25T14:00:00Z",
+    "merged_at": null,
+    "title": "SECRET drive-by PR opened by a stranger — not the owner's growth",
+    "body": "SECRET outsider body",
+    "head": { "ref": "SECRET-outsider" },
+    "user": { "login": "someone-else" }
+  }
+]
