@@ -58,6 +58,16 @@
       right perceptual call but it does mean the silhouette UNDERSTATES how much
       bigger 2026 is than 2025 in raw commit terms. The numbers panel is there
       because no encoding of this survives being the only source of truth.
+    - The trunk and the stump therefore both compress with sqrt, and the stump
+      additionally enforces a minimum ring width so 2024Q4 stays visible. Both
+      are documented distortions, not accidents — but they ARE distortions, and
+      if this variant ships, that sqrt has to be stated on the page, not just in
+      a source comment where nobody reads it.
+    - The trunk FLARES UPWARD (thin at the base, fat at the top) because that is
+      genuinely what the data does — output grew ~130x from 2024Q4 to 2026Q2. It
+      is honest and it is also the opposite of every real tree, which costs the
+      metaphor something. I have not corrected it and I do not think it should
+      be corrected, but be clear-eyed that the shape fights the allegory.
     - "Quarter" is a coarse bucket. 2026Q2's 477 commits and its 304 reviews
       happened in a specific order inside those 90 days and this chart cannot
       say anything about that.
@@ -350,12 +360,16 @@ const bandY0 = (i) => TRUNK_Y0 + i * BAND_H;
 // which is exactly how wood works, and it means the two views encode identically.
 const STUMP_R = 6.4;
 const stumpBands = (() => {
-  const widths = QUARTERS.map(q => Math.max(0.06, q.commit)); // raw commit widths, min sliver
+  // sqrt widths: on the stump, ring AREA is what the eye weighs, and area grows with
+  // r^2, so a linear width mapping made 2025's rings invisible next to 2026's. sqrt
+  // keeps the ordering exactly right while leaving every quarter a readable band.
+  // A minimum width guarantees 2024Q4 (3 commits) is a hairline you can still see.
+  const widths = QUARTERS.map(q => Math.max(0.16, Math.sqrt(q.commit)));
   const sum = widths.reduce((a, b) => a + b, 0);
-  let acc = 0.5; // a small pith at the centre
+  let acc = 0.42; // a small pith at the centre
   return QUARTERS.map((q, i) => {
     const r0 = acc;
-    acc += (widths[i] / sum) * (STUMP_R - 0.5);
+    acc += (widths[i] / sum) * (STUMP_R - 0.42);
     return { q, i, r0, r1: acc };
   });
 })();
@@ -371,13 +385,16 @@ const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 40
 // Frame the WHOLE organism: trunk foot (y=0) to the highest crown pad. Crown tips sit
 // at CROWN_Y + lift (lift maxes at 1.8) and pads add ~0.5, so TOP_EXTENT bounds it.
 // Half-height must also cover the label rail out at R_MAX+2.9, hence the width check.
-const TOP_EXTENT = CROWN_Y + 2.4;
-const HALF_W = R_MAX + 4.4;                              // widest thing: the label rail
-const FRAME_Y = TOP_EXTENT * 0.5;
-const vFit = (TOP_EXTENT * 0.5 * 1.25) / Math.tan(deg(22.5));
-const hFit = (HALF_W * 1.12) / (Math.tan(deg(22.5)) * (innerWidth / innerHeight));
-const FRAME_D = Math.max(vFit, hFit);
-camera.position.set(FRAME_D * 0.70, FRAME_Y + TOP_EXTENT * 0.22, FRAME_D * 0.70);
+const TOP_EXTENT = CROWN_Y + 2.4;                        // highest crown pad
+const HALF_W = R_MAX + 5.2;                              // widest thing: the label rail + text
+const FRAME_Y = TOP_EXTENT * 0.46;
+// Fit the full height AND the full width, with real margin. The camera sits only
+// slightly above the midpoint: a near-level eye keeps the trunk's bands parallel to
+// the screen (so they read as rings) instead of stacked ellipses seen from above.
+const vFit = (TOP_EXTENT * 0.62) / Math.tan(deg(22.5));
+const hFit = (HALF_W * 1.15) / (Math.tan(deg(22.5)) * (innerWidth / innerHeight));
+const FRAME_D = Math.max(vFit, hFit) * 1.06;
+camera.position.set(FRAME_D * 0.71, FRAME_Y + TOP_EXTENT * 0.12, FRAME_D * 0.71);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
@@ -672,9 +689,12 @@ function buildTrunk() {
           vec3 col = c * key * shade * bark + c * rim * 0.8;
           // faint breathing glow so the wood feels alive rather than printed
           col += c * 0.045 * (0.5 + 0.5 * sin(uTime * 0.6 + vAux.y));
-          // cross-section view: the standing trunk dissolves to a ghost so the stump's
-          // concentric rings below are readable. Same wood, sliced open.
-          gl_FragColor = vec4(col, mix(1.0, 0.10, uTop));
+          // cross-section view: the standing trunk gets OUT OF THE WAY entirely. A
+          // ghost at 10% still stacked 8 bands of translucent gold over the stump and
+          // washed the inner rings to mud — the slice has to actually remove the wood.
+          float a = 1.0 - smoothstep(0.05, 0.55, uTop);
+          if (a < 0.01) discard;
+          gl_FragColor = vec4(col, a);
         }`,
       transparent: true,
     });
@@ -719,7 +739,11 @@ function labelSpriteFlat(text, color) {
   for (const b of stumpBands) {
     const q = b.q;
     const tot = q.total || 1;
-    let a = deg(-90);
+    // Each ring starts its split at a DIFFERENT azimuth. With a shared start angle the
+    // wedges line up radially across all eight rings and the whole thing collapses into
+    // a sunburst pie — you read four giant slices instead of eight rings. Offsetting by
+    // the golden angle per ring keeps every ring's composition its own local reading.
+    let a = deg(-90) + b.i * 2.399963;
     for (let ki = 0; ki < KINDS.length; ki++) {
       const frac = q.total ? q[KINDS[ki].key] / tot : (KINDS[ki].key === 'commit' ? 1 : 0);
       if (frac <= 0) continue;
@@ -759,7 +783,8 @@ function labelSpriteFlat(text, color) {
         vec3 c = mix(uWood, vC, uMix * step(0.5, vAux.y) + (1.0 - step(0.5, vAux.y)));
         // faint radial grain inside each ring so it reads as wood, not a pie chart
         float grain = 0.86 + 0.14 * sin(vR * 68.0);
-        gl_FragColor = vec4(c * grain * 0.95, uTop * 0.92);
+        if (uTop < 0.02) discard;
+        gl_FragColor = vec4(c * grain * 1.05, uTop);
       }`,
   }));
   stump.rotation.x = 0; stump.position.y = 0.015;
@@ -782,13 +807,35 @@ function labelSpriteFlat(text, color) {
     line.renderOrder = 5;
     scene.add(line);
 
-    // quarter label lying on the stump, along the +X radius
+    // Quarter label lying flat on its ring. The inner rings are narrow (2024Q4 is a
+    // sliver), so labels are pushed onto a LEADER out past the bark with a spoke back
+    // to their ring, fanned over a 70-degree arc so eight of them never collide.
+    const frac = b.i / Math.max(1, stumpBands.length - 1);
+    const la = deg(-118 + frac * 76);                 // fan across the upper-left quadrant
+    const lr = STUMP_R + 0.95 + frac * 0.35;
     const sp = labelSpriteFlat(b.q.key, b.q.collab > 0.4 ? '#ffd9a8' : '#cfe0f2');
-    sp.position.set((b.r0 + b.r1) / 2, 0.03, 0);
+    sp.scale.set(1.15, 1.15, 1.15);
+    sp.position.set(Math.cos(la) * lr, 0.05, Math.sin(la) * lr);
     sp.rotation.x = -Math.PI / 2;
-    sp.renderOrder = 6;
+    sp.renderOrder = 7;
     scene.add(sp);
     stumpLabels.push(sp);
+
+    // spoke from the label in to the middle of its own ring
+    const mr = (b.r0 + b.r1) / 2;
+    const spokeG = new THREE.BufferGeometry().setAttribute('position',
+      new THREE.Float32BufferAttribute([
+        Math.cos(la) * mr, 0.03, Math.sin(la) * mr,
+        Math.cos(la) * (lr - 0.55), 0.03, Math.sin(la) * (lr - 0.55)], 3));
+    const spoke = new THREE.Line(spokeG, new THREE.ShaderMaterial({
+      uniforms: { ...U, uC: { value: new THREE.Color(b.q.collab > 0.4 ? 0xffd0a0 : 0x8fa8c2) } },
+      transparent: true, depthWrite: false,
+      vertexShader: `void main(){ gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+      fragmentShader: `uniform vec3 uC; uniform float uTop;
+        void main(){ gl_FragColor = vec4(uC, uTop * 0.32); }`,
+    }));
+    spoke.renderOrder = 6;
+    scene.add(spoke);
   }
 }
 
@@ -856,7 +903,9 @@ scene.add(ribGroup);
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
         fragmentShader: `uniform vec3 uCol; uniform float uTop; varying vec3 vN;
           void main(){ float k = 0.65 + 0.45 * max(vN.y, 0.0);
-            gl_FragColor = vec4(uCol * k, mix(1.0, 0.18, uTop)); }`,
+            float a = 1.0 - smoothstep(0.05, 0.55, uTop);
+            if (a < 0.01) discard;
+            gl_FragColor = vec4(uCol * k, a); }`,
       })
     );
     ribGroup.add(tube);
@@ -924,7 +973,10 @@ scene.add(ribGroup);
         vec4 t = texture2D(uMap, gl_PointCoord);
         // the crown thins (but never vanishes) overhead — you still see WHICH sectors
         // are live while reading the rings, which is half the point of the view
-        gl_FragColor = vec4(vC * (0.55 + 0.35 * vA), t.a * mix(0.32, 0.12, uTop));
+        // in cross-section the crown stays as a faint coloured haze around the rim —
+        // enough to see WHICH sectors are live while you read the rings, not enough
+        // to compete with them
+        gl_FragColor = vec4(vC * (0.55 + 0.35 * vA), t.a * mix(0.32, 0.07, uTop));
       }`,
   }));
   crown.frustumCulled = false;
@@ -955,6 +1007,7 @@ function labelSprite(text, color, sub, scale = 1) {
 }
 
 const qLabels = [];
+const RAIL_R = R_MAX + 2.6;   // how far off-axis the label ladder hangs
 {
   for (const b of bandMeta) {
     const q = b.q;
@@ -964,27 +1017,24 @@ const qLabels = [];
       hot ? '#ffd9a8' : '#dbe6f2',
       `${q.commit} commits · ${Math.round(q.collab * 100)}% collab`
     );
-    // parked out at a fixed rail so labels form a clean vertical ladder rather than
-    // wobbling in and out with band radius — the ladder IS the time axis
-    sp.position.set(R_MAX + 2.9, (b.y0 + b.y1) / 2, 0);
+    sp.position.set(RAIL_R, (b.y0 + b.y1) / 2, 0);
     scene.add(sp);
-    qLabels.push({ sp, b });
 
-    // leader line from the label rail to the band's actual rim
-    const lg = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(
-      [b.r1, (b.y0 + b.y1) / 2, 0, R_MAX + 2.75, (b.y0 + b.y1) / 2, 0], 3));
-    scene.add(new THREE.Line(lg, new THREE.LineBasicMaterial({
-      color: hot ? 0xffd0a0 : 0x88a2bc, transparent: true, opacity: 0.22 })));
+    // leader line from the band's rim out to its label — rebuilt each frame as the
+    // ladder rides the camera (see the tick loop)
+    const lg = new THREE.BufferGeometry().setAttribute('position',
+      new THREE.Float32BufferAttribute([b.r1, sp.position.y, 0, RAIL_R * 0.97, sp.position.y, 0], 3));
+    const leader = new THREE.Line(lg, new THREE.LineBasicMaterial({
+      color: hot ? 0xffd0a0 : 0x88a2bc, transparent: true, opacity: 0.22, depthWrite: false }));
+    scene.add(leader);
+    qLabels.push({ sp, b, leader });
   }
-  const cap = labelSprite('NOW', '#eaf4ff', `crown · ${CROWN_QS.map(q => q.key).join(' + ')}`, 1.05);
-  cap.position.set(R_MAX + 2.9, CROWN_Y + 1.9, 0);
+  // NOW rides the OPPOSITE side of the rail from the quarter ladder, so it captions the
+  // crown without ever landing under the HUD panel that shares the ladder's screen edge
+  const cap = labelSprite('NOW', '#eaf4ff', `crown · ${CROWN_QS.map(q => q.key).join(' + ')}`, 1.0);
+  cap.position.set(-RAIL_R, CROWN_Y + 0.9, 0);
   scene.add(cap);
-  qLabels.push({ sp: cap, b: null });
-
-  // the vertical rail itself: TIME, drawn as a line, so the ladder has a spine
-  const rg = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(
-    [R_MAX + 2.78, TRUNK_Y0, 0, R_MAX + 2.78, CROWN_Y + 2.0, 0], 3));
-  scene.add(new THREE.Line(rg, new THREE.LineBasicMaterial({ color: 0x7fa0c0, transparent: true, opacity: 0.2 })));
+  qLabels.push({ sp: cap, b: null, leader: null, flip: true });
 }
 
 // ============================================================================
@@ -1030,9 +1080,9 @@ let camAnim = null; // { fromPos, toPos, fromTgt, toTgt, t0, dur }
 
 const ORBIT_POS = camera.position.clone();
 const ORBIT_TGT = new THREE.Vector3(0, FRAME_Y, 0);
-// cross-section: straight down the axis, framed on the STUMP (the concentric rings),
-// not on the trunk top — the stump is what this view exists to show.
-const TOP_POS = new THREE.Vector3(0.001, 15.5, 0.001);
+// cross-section: straight down the axis, framed on the STUMP (the concentric rings)
+// plus its label fan, not on the trunk top — the stump is what this view exists to show.
+const TOP_POS = new THREE.Vector3(0.001, (STUMP_R + 2.6) / Math.tan(deg(22.5)) * 0.92, 0.001);
 const TOP_TGT = new THREE.Vector3(0, 0, 0);
 
 function flyTo(pos, tgt, dur = 1100) {
@@ -1110,9 +1160,30 @@ function tick() {
     if (p >= 1) camAnim = null;
   }
 
-  // quarter labels fade out in cross-section (they'd be edge-on confetti from above)
-  const lo = 1 - U.uTop.value * 0.85;
-  for (const l of qLabels) l.sp.material.opacity = 0.85 * lo;
+  // The side-view label ladder is fully HIDDEN in cross-section — the stump has its own
+  // label fan, and leaving these at low alpha (with depthTest off) smeared unreadable
+  // ghost text across the rings.
+  const lo = Math.max(0, 1 - U.uTop.value * 2.2);
+  // ...and the label ladder RIDES the camera: it always hangs to the screen-right of
+  // the trunk at a fixed radius, so the numbers never swing out of frame during the
+  // orbit and never occlude the wood. The ladder is the time axis; it must stay put.
+  const ca = Math.atan2(camera.position.z, camera.position.x);
+  const rx = Math.cos(ca + Math.PI / 2) * RAIL_R, rz = Math.sin(ca + Math.PI / 2) * RAIL_R;
+  for (const l of qLabels) {
+    l.sp.visible = lo > 0.01;
+    l.sp.material.opacity = 0.85 * lo;
+    const sgn = l.flip ? -1 : 1;
+    l.sp.position.x = rx * sgn; l.sp.position.z = rz * sgn;
+    if (l.leader) {
+      l.leader.visible = lo > 0.01;
+      const p = l.leader.geometry.attributes.position;
+      const inner = l.b ? l.b.r1 : 0.2;
+      p.setXYZ(0, Math.cos(ca + Math.PI / 2) * inner, l.sp.position.y, Math.sin(ca + Math.PI / 2) * inner);
+      p.setXYZ(1, rx * 0.97, l.sp.position.y, rz * 0.97);
+      p.needsUpdate = true;
+      l.leader.material.opacity = 0.22 * lo;
+    }
+  }
 
   controls.update();
   composer.render();

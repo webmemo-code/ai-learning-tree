@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+  AI Learning Tree — FORM MOODBOARD (2D)
+  prototypes/time-axis-board/moodboard.html
+================================================================================
+
+WHAT THIS IS
+  Twelve small 2D sketches of the SAME real data (data/growth-log.jsonl), each
+  proposing a different STRUCTURAL idea for the tree. Zero dependencies, plain
+  canvas, one file. This is the acacia-look/ pattern: a board you choose a
+  direction from by LOOKING, not by reading prose. Click any sketch to blow it
+  up large enough to actually judge.
+
+WHY IT EXISTS — what the three 3D variants taught us
+  whorls / banded-ribs / trunk-rings all shipped, and the verdict was:
+  "They all have interesting aspects, but none is wow!"
+
+  The diagnosis: THE TREE BECAME A CHART WEARING BARK. All three place geometry
+  at computed coordinates instead of GROWING it. A real tree's silhouette comes
+  from COMPETITION — branches racing for light, dying back, thickening where
+  they won. Ours read as diagrams because nothing competed, nothing died,
+  nothing was irregular.
+
+  Specifically:
+    - whorls .......... the trunk is a straight pole encoding ZERO data.
+                        Eight identical fans on a stick.
+    - banded-ribs ..... every rib reaches the top BY CONSTRUCTION, so the
+                        silhouette is the same goblet whatever the data says.
+    - trunk-rings ..... flares upward (thin base, fat top) — the inverse of
+                        every real tree. Its own author called it "a bar chart
+                        in a hat".
+
+  Every sketch on this board is an attempt to make the FORM carry data that the
+  three failures left on the floor.
+
+CONSTRAINTS (decided, not up for re-litigation here)
+  1. TIME STAYS VERTICAL. No radial-time, no topological-time. The brief is
+     organic growth on a vertical time axis: irregular spacing by density,
+     competition between branches.
+  2. THE GOAL IS A LEGIBLE DATA OBJECT, not a beautiful tree. Every mark
+     readable and defensible. It may look good, but READING IT ALWAYS WINS.
+  3. MONTHLY buckets, not quarterly. Quarters gave 8 bands and left half the
+     canvas empty; months give 19 bands and real texture.
+  4. Thickness/size = COMMITS ONLY (a PR's own commits are already in the log,
+     so raw-event size overstates 2026 by ~3x). The mix (commit/pr/review/
+     issue) drives composition and texture, never size.
+
+HONESTY RULES OBEYED HERE
+  - Nothing is invented. 2025-02 is MISSING from the log entirely and every
+    sketch that walks months must show that gap. 2025-05 is a ONE-COMMIT month
+    and must stay tiny.
+  - Two sectors (build.no-code, build.low-code) have ZERO events ever;
+    create.images has exactly 1 and create.video 15. The sector x month grid is
+    only 29% filled. Sketches must survive that sparsity without filler.
+  - Each caption states the sketch's own WEAKNESS. A board of twelve
+    uncritical pitches is useless. Where an idea turned out not to work with
+    this data, it is rendered anyway and labelled a dead end — a documented
+    dead end is a real result.
+
+RUNNING
+  Fetches ../../data/growth-log.jsonl, so serve from the REPO ROOT:
+      python -m http.server 8123
+      http://localhost:8123/prototypes/time-axis-board/moodboard.html
+  ?seed=<anything> for reproducibility; the dice button reseeds.
+
+Palette borrowed from prototypes/acacia-sketch/index.html (savanna night).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Learning Tree — form moodboard (12 sketches)</title>
+<style>
+  :root {
+    --bg:        #05070d;
+    --panel:     rgba(10, 16, 28, 0.55);
+    --edge:      rgba(140, 170, 210, 0.18);
+    --ink:       #cfd8e3;
+    --ink-hi:    #eef4fb;
+    --ink-dim:   #8fa3ba;
+    --ink-dimmer:#7f93aa;
+    --link:      #86b7ff;
+    --warn:      #ffcf6e;
+    --bad:       #ff8f7a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+  }
+  body { padding: 22px 22px 60px; }
+
+  header { max-width: 1500px; margin: 0 auto 20px; }
+  h1 { font-size: 19px; margin: 0 0 3px; font-weight: 600; color: var(--ink-hi); letter-spacing: .02em; }
+  .sub { color: var(--ink-dim); font-size: 12.5px; line-height: 1.6; max-width: 900px; }
+  .sub b { color: var(--ink); font-weight: 600; }
+  .sub code { color: var(--link); font-size: 11.5px; }
+
+  #bar { display: flex; gap: 8px; margin-top: 13px; flex-wrap: wrap; align-items: center; }
+  button {
+    all: unset; cursor: pointer; padding: 7px 14px; border-radius: 8px; font-size: 12.5px;
+    color: #eaf2fb; background: rgba(90, 140, 220, 0.22); border: 1px solid rgba(140, 180, 240, 0.35);
+    transition: background .2s;
+  }
+  button:hover { background: rgba(110, 160, 240, 0.38); }
+  button:focus-visible { outline: 2px solid rgba(150, 190, 250, .75); outline-offset: 2px; }
+  #seedTag {
+    font-size: 11.5px; color: var(--ink-dim); padding: 6px 10px; border-radius: 7px;
+    background: rgba(10,16,28,.6); border: 1px solid var(--edge); font-variant-numeric: tabular-nums;
+  }
+
+  #grid {
+    max-width: 1500px; margin: 0 auto;
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  @media (max-width: 1280px) { #grid { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+  @media (max-width: 940px)  { #grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  @media (max-width: 620px)  { #grid { grid-template-columns: 1fr; } body { padding: 16px 14px 40px; } }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--edge); border-radius: 12px;
+    padding: 12px 13px 13px; cursor: pointer; transition: border-color .18s, transform .18s, background .18s;
+    display: flex; flex-direction: column;
+  }
+  .card:hover { border-color: rgba(150, 190, 250, .55); background: rgba(14, 22, 38, .7); transform: translateY(-2px); }
+  .card:focus-visible { outline: 2px solid rgba(150,190,250,.75); outline-offset: 2px; }
+  .card h2 {
+    font-size: 13px; margin: 0 0 7px; font-weight: 600; color: var(--ink-hi);
+    display: flex; align-items: baseline; gap: 7px;
+  }
+  .card h2 .n {
+    font-size: 10.5px; color: var(--ink-dimmer); font-variant-numeric: tabular-nums;
+    border: 1px solid var(--edge); border-radius: 5px; padding: 1px 5px; flex: none;
+  }
+  .card canvas { width: 100%; height: auto; display: block; border-radius: 8px; background: #070a12; }
+  .cap { font-size: 11.2px; line-height: 1.55; margin-top: 9px; color: var(--ink-dim); }
+  .cap .bet::before  { content: "BET "; color: #7ce65a; letter-spacing: .1em; font-size: 9.5px; }
+  .cap .weak { display: block; margin-top: 4px; color: var(--ink-dimmer); }
+  .cap .weak::before { content: "WEAK "; color: var(--bad); letter-spacing: .1em; font-size: 9.5px; }
+  .cap .dead { display: block; margin-top: 4px; color: var(--warn); }
+  .cap .dead::before { content: "DEAD END "; color: var(--warn); letter-spacing: .1em; font-size: 9.5px; }
+
+  /* ---- modal ---- */
+  #modal {
+    position: fixed; inset: 0; z-index: 100; display: none; background: rgba(3,5,10,.93);
+    padding: 20px; overflow: auto;
+  }
+  #modal.on { display: block; }
+  #mWrap {
+    max-width: 1180px; margin: 0 auto; background: var(--panel); border: 1px solid var(--edge);
+    border-radius: 14px; padding: 16px 18px 18px; position: relative;
+  }
+  #mWrap h2 { font-size: 16px; margin: 0 0 4px; color: var(--ink-hi); font-weight: 600; padding-right: 90px; }
+  #mWrap .cap { font-size: 12.5px; max-width: 900px; }
+  #mCanvas { width: 100%; height: auto; display: block; border-radius: 10px; background: #070a12; margin-top: 10px; }
+  #mNav { position: absolute; top: 14px; right: 14px; display: flex; gap: 6px; }
+  #mNav button { padding: 5px 11px; font-size: 12px; }
+
+  /* ---- error ---- */
+  #err {
+    display: none; max-width: 720px; margin: 40px auto; padding: 22px 24px;
+    background: rgba(40, 12, 12, .5); border: 1px solid rgba(255, 143, 122, .4); border-radius: 12px;
+  }
+  #err.on { display: block; }
+  #err h2 { margin: 0 0 8px; font-size: 15px; color: #ffb3a3; }
+  #err p { font-size: 13px; line-height: 1.65; margin: 6px 0; }
+  #err pre {
+    background: rgba(0,0,0,.4); border: 1px solid var(--edge); border-radius: 8px;
+    padding: 10px 12px; font-size: 12px; color: #b9ccdf; overflow-x: auto;
+  }
+  footer { max-width: 1500px; margin: 26px auto 0; font-size: 11.5px; color: var(--ink-dimmer); line-height: 1.7; }
+  footer b { color: var(--ink-dim); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Form moodboard — twelve structural ideas, one real dataset</h1>
+  <div class="sub">
+    Every sketch draws the <b>same</b> <code>data/growth-log.jsonl</code>: 19 monthly buckets,
+    8 live sectors (2 are permanently empty), size&nbsp;=&nbsp;commits only, mix&nbsp;=&nbsp;texture.
+    The three 3D variants failed because the tree was <b>a chart wearing bark</b> — geometry placed at
+    computed coordinates instead of grown. These twelve try to make the <b>form itself</b> carry data.
+    <b>Click a sketch to enlarge it</b>; thumbnails will not settle this.
+  </div>
+  <div id="bar">
+    <button id="reseed" title="new random seed">&#127922; reseed</button>
+    <span id="seedTag">seed —</span>
+    <span id="dataTag" class="sub" style="font-size:11.5px"></span>
+  </div>
+</header>
+
+<div id="err">
+  <h2>Could not load the growth log</h2>
+  <p>This page fetches <code>../../data/growth-log.jsonl</code>, which only resolves when the page is
+     served from the <b>repo root</b> over http — <code>file://</code> will not work.</p>
+  <pre># from the repo root
+python -m http.server 8123
+# then open
+http://localhost:8123/prototypes/time-axis-board/moodboard.html</pre>
+  <p id="errDetail" style="color:#9fb2c8"></p>
+</div>
+
+<div id="grid"></div>
+
+<footer>
+  <b>Reading the marks.</b> Vertical = time, oldest at the bottom, always monthly.
+  Width/area = commits in that bucket. Hue = sector (taxonomy default-v1).
+  Composition (stripes, dots, roughness, dashes) = the commit/pr/review/issue mix.
+  <br>
+  <b>The three facts every sketch must not hide:</b> 2025-02 is absent from the log entirely (a real gap, drawn as a gap);
+  2025-05 has exactly one commit; <code>build.no-code</code> and <code>build.low-code</code> have never had a single event.
+</footer>
+
+<div id="modal" role="dialog" aria-modal="true">
+  <div id="mWrap">
+    <div id="mNav">
+      <button id="mPrev" title="previous (←)">&#8592;</button>
+      <button id="mNext" title="next (→)">&#8594;</button>
+      <button id="mClose" title="close (Esc)">&#10005;</button>
+    </div>
+    <h2 id="mTitle"></h2>
+    <div class="cap" id="mCap"></div>
+    <canvas id="mCanvas"></canvas>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   0 · seed + rng  (deterministic; ?seed= wins, dice reseeds)
+   ========================================================================== */
+const qs = new URLSearchParams(location.search);
+let SEED = qs.get('seed') || 'acacia';
+
+function fnv(str) {                       // fnv-1a -> 32-bit
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+}
+function mulberry(a) {                    // tiny fast prng
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// every sketch gets its OWN stream keyed by seed+name, so adding a sketch
+// never reshuffles the others.
+const rngFor = (name) => mulberry(fnv(SEED + '|' + name));
+
+/* ==========================================================================
+   1 · taxonomy  (mirrors generator/taxonomy.mjs — az + hue, order authoritative)
+   ========================================================================== */
+const SECTORS = [
+  { id:'create.copy',        label:'copy',      limb:'CREATE',     az: 15, hue:0xffb454 },
+  { id:'create.images',      label:'images',    limb:'CREATE',     az: 55, hue:0xff6ec7 },
+  { id:'create.video',       label:'video',     limb:'CREATE',     az: 95, hue:0xff5d73 },
+  { id:'automate.workflows', label:'workflows', limb:'AUTOMATE',   az:140, hue:0x7ce65a },
+  { id:'distribute.seo',     label:'seo',       limb:'DISTRIBUTE', az:185, hue:0x35d0ba },
+  { id:'distribute.geo',     label:'geo',       limb:'DISTRIBUTE', az:225, hue:0x4aa8ff },
+  { id:'build.no-code',      label:'no-code',   limb:'BUILD',      az:270, hue:0xb59aff },
+  { id:'build.low-code',     label:'low-code',  limb:'BUILD',      az:310, hue:0x8f7bff },
+  { id:'build.pro-code',     label:'pro-code',  limb:'BUILD',      az:350, hue:0x6a8dff },
+  { id:'create.3d',          label:'3d',        limb:'CREATE',     az:115, hue:0xff8f4d },
+];
+const SEC_IX = Object.fromEntries(SECTORS.map((s, i) => [s.id, i]));
+const hexOf  = (h) => '#' + h.toString(16).padStart(6, '0');
+function rgbOf(h) { return [(h >> 16) & 255, (h >> 8) & 255, h & 255]; }
+function rgba(h, a) { const c = rgbOf(h); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+function mixHex(h1, h2, t) {
+  const a = rgbOf(h1), b = rgbOf(h2);
+  return ((a[0] + (b[0]-a[0])*t) << 16 | (a[1] + (b[1]-a[1])*t) << 8 | (a[2] + (b[2]-a[2])*t)) & 0xffffff;
+}
+const KINDS = ['commit', 'pr', 'review', 'issue'];
+const KIND_COL = { commit: 0xcfd8e3, pr: 0x7ce65a, review: 0x4aa8ff, issue: 0xffcf6e };
+
+/* savanna-night palette, lifted from acacia-sketch */
+const PAL = {
+  sky:   0x05070d,
+  haze:  0x5aa66a,   // ground haze / novice
+  dusk:  0x4fd8c4,
+  glow:  0xffcf6e,
+  star:  0xe8ecff,
+  bark:  0x6b5a48,
+  bark2: 0x3a3128,
+  dead:  0x5c6672,   // dead wood grey
+  ink:   0xcfd8e3,
+  dim:   0x7f93aa,
+};
+
+/* ==========================================================================
+   2 · data layer — load the REAL log, bucket by month, never invent
+   ========================================================================== */
+let D = null;   // the derived dataset every sketch reads
+
+function monthKey(ts) { return ts.slice(0, 7); }
+function monthAdd(k, n) {                       // '2025-01' + 1 -> '2025-02'
+  let [y, m] = k.split('-').map(Number);
+  const t = (y * 12 + (m - 1)) + n;
+  return String(Math.floor(t / 12)) + '-' + String((t % 12) + 1).padStart(2, '0');
+}
+function monthDiff(a, b) {
+  const [ya, ma] = a.split('-').map(Number), [yb, mb] = b.split('-').map(Number);
+  return (yb * 12 + mb) - (ya * 12 + ma);
+}
+const MON_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function monLabel(k) { const [y, m] = k.split('-'); return MON_SHORT[+m - 1] + " '" + y.slice(2); }
+
+function buildDataset(events) {
+  // full calendar span so a MISSING month renders as a real, visible gap
+  const keys = events.map(e => monthKey(e.ts)).sort();
+  const first = keys[0], last = keys[keys.length - 1];
+  const months = [];
+  for (let i = 0; i <= monthDiff(first, last); i++) months.push(monthAdd(first, i));
+
+  const blank = () => ({ commit:0, pr:0, review:0, issue:0, milestone:0 });
+  const byMonth = Object.fromEntries(months.map(k => [k, {
+    key: k, total: 0, commits: 0, kinds: blank(),
+    sec: Object.fromEntries(SECTORS.map(s => [s.id, { commits: 0, total: 0, kinds: blank() }])),
+    present: false, projects: new Set(), milestones: [],
+  }]));
+
+  for (const e of events) {
+    const b = byMonth[monthKey(e.ts)];
+    if (!b) continue;
+    b.present = true; b.total++;
+    b.kinds[e.kind] = (b.kinds[e.kind] || 0) + 1;
+    if (e.kind === 'commit') b.commits++;
+    b.projects.add(e.project);
+    if (e.kind === 'milestone') b.milestones.push(e);
+    const s = b.sec[e.sector];
+    if (s) { s.total++; s.kinds[e.kind] = (s.kinds[e.kind] || 0) + 1; if (e.kind === 'commit') s.commits++; }
+  }
+
+  const rows = months.map(k => byMonth[k]);
+  const maxCommits = Math.max(...rows.map(r => r.commits));
+  const totalCommits = rows.reduce((a, r) => a + r.commits, 0);
+
+  // per-sector summary: first/last active month, totals — used by the bough
+  // and dieback sketches. A sector that never appears keeps active=false.
+  const secStats = SECTORS.map(s => {
+    const live = rows.filter(r => r.sec[s.id].commits > 0);
+    const anyEv = rows.filter(r => r.sec[s.id].total > 0);
+    return {
+      ...s,
+      commits: rows.reduce((a, r) => a + r.sec[s.id].commits, 0),
+      events:  rows.reduce((a, r) => a + r.sec[s.id].total, 0),
+      firstIx: live.length ? rows.indexOf(live[0]) : -1,
+      lastIx:  live.length ? rows.indexOf(live[live.length - 1]) : -1,
+      firstAnyIx: anyEv.length ? rows.indexOf(anyEv[0]) : -1,
+      lastAnyIx:  anyEv.length ? rows.indexOf(anyEv[anyEv.length - 1]) : -1,
+      liveMonths: live.length,
+      active: live.length > 0 || anyEv.length > 0,
+    };
+  });
+
+  const gaps = rows.filter(r => !r.present).map(r => r.key);
+  const collab = rows.map(r => {
+    const c = r.kinds.pr + r.kinds.review + r.kinds.issue;
+    return r.total ? c / r.total : 0;
+  });
+
+  return {
+    rows, months, maxCommits, totalCommits, secStats, gaps, collab,
+    nEvents: events.length,
+    milestones: events.filter(e => e.kind === 'milestone'),
+    projects: new Set(events.map(e => e.project)).size,
+  };
+}
+
+async function loadData() {
+  const res = await fetch('../../data/growth-log.jsonl', { cache: 'no-cache' });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+  const txt = await res.text();
+  const evs = [];
+  for (const line of txt.split('\n')) {
+    const t = line.trim();
+    if (!t) continue;
+    try { evs.push(JSON.parse(t)); } catch (_) { /* skip a torn line, never fabricate one */ }
+  }
+  if (!evs.length) throw new Error('growth-log.jsonl parsed to zero events');
+  evs.sort((a, b) => a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : 0);
+  return buildDataset(evs);
+}
+
+/* ==========================================================================
+   3 · tiny 2D helpers shared by the sketches
+   ========================================================================== */
+function clear(g, W, H) {
+  g.clearRect(0, 0, W, H);
+  const grd = g.createLinearGradient(0, 0, 0, H);
+  grd.addColorStop(0,    '#070a12');
+  grd.addColorStop(0.62, '#080c16');
+  grd.addColorStop(1,    '#0b0f18');
+  g.fillStyle = grd; g.fillRect(0, 0, W, H);
+}
+function label(g, txt, x, y, { size = 10, col = PAL.dim, align = 'left', alpha = 1, weight = '' } = {}) {
+  g.save();
+  g.globalAlpha = alpha;
+  g.fillStyle = typeof col === 'number' ? hexOf(col) : col;
+  g.font = `${weight} ${size}px "Segoe UI", system-ui, sans-serif`.trim();
+  g.textAlign = align; g.textBaseline = 'middle';
+  g.fillText(txt, x, y);
+  g.restore();
+}
+// vertical time ruler shared by most sketches: month ticks + the honest gap mark
+function timeRuler(g, x, y0, y1, rows, yOf, S, opts = {}) {
+  const every = opts.every || 3;
+  g.save();
+  g.strokeStyle = 'rgba(140,170,210,.14)'; g.lineWidth = 1 * S;
+  g.beginPath(); g.moveTo(x, y0); g.lineTo(x, y1); g.stroke();
+  rows.forEach((r, i) => {
+    const y = yOf(i);
+    const on = (i % every === 0) || i === rows.length - 1;
+    if (!r.present) {   // MISSING month — mark it, never smooth it
+      g.strokeStyle = rgba(PAL.bad || 0xff8f7a, .5);
+      g.setLineDash([2 * S, 2 * S]); g.lineWidth = 1 * S;
+      g.beginPath(); g.moveTo(x - 4 * S, y); g.lineTo(x + 4 * S, y); g.stroke();
+      g.setLineDash([]);
+      if (opts.gapLabel !== false) label(g, 'no data', x - 7 * S, y, { size: 7.5 * S, col: '#ff8f7a', align: 'right', alpha: .9 });
+      return;
+    }
+    if (!on) return;
+    g.strokeStyle = 'rgba(140,170,210,.3)'; g.lineWidth = 1 * S;
+    g.beginPath(); g.moveTo(x - 3 * S, y); g.lineTo(x, y); g.stroke();
+    label(g, monLabel(r.key), x - 6 * S, y, { size: 8 * S, col: PAL.dim, align: 'right', alpha: .85 });
+  });
+  g.restore();
+}
+// the shared "mix" readout: a 4-segment bar of commit/pr/review/issue
+function mixBar(g, x, y, w, h, kinds) {
+  const tot = KINDS.reduce((a, k) => a + (kinds[k] || 0), 0);
+  if (!tot) return;
+  let cx = x;
+  for (const k of KINDS) {
+    const seg = (kinds[k] || 0) / tot * w;
+    if (seg <= 0) continue;
+    g.fillStyle = rgba(KIND_COL[k], .85);
+    g.fillRect(cx, y, seg, h);
+    cx += seg;
+  }
+}
+function roundRect(g, x, y, w, h, r) {
+  g.beginPath();
+  const rr = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+  g.moveTo(x + rr, y);
+  g.arcTo(x + w, y,     x + w, y + h, rr);
+  g.arcTo(x + w, y + h, x,     y + h, rr);
+  g.arcTo(x,     y + h, x,     y,     rr);
+  g.arcTo(x,     y,     x + w, y,     rr);
+  g.closePath();
+}
+// a slightly wobbly line — the difference between "grown" and "plotted"
+function organicPath(g, pts, rnd, jitter) {
+  g.beginPath();
+  pts.forEach((p, i) => {
+    const jx = jitter ? (rnd() - .5) * jitter : 0;
+    const jy = jitter ? (rnd() - .5) * jitter : 0;
+    if (i === 0) g.moveTo(p[0] + jx, p[1] + jy);
+    else         g.lineTo(p[0] + jx, p[1] + jy);
+  });
+}
+function taperedLimb(g, pts, w0, w1, col, alpha = 1) {
+  // draw a limb as a filled polygon so thickness can vary along it (real wood)
+  if (pts.length < 2) return;
+  const L = [], R = [];
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i];
+    const q = pts[Math.min(i + 1, pts.length - 1)];
+    const o = pts[Math.max(i - 1, 0)];
+    let dx = q[0] - o[0], dy = q[1] - o[1];
+    const m = Math.hypot(dx, dy) || 1; dx /= m; dy /= m;
+    const t = i / (pts.length - 1);
+    const w = (w0 + (w1 - w0) * t) / 2;
+    L.push([p[0] - dy * w, p[1] + dx * w]);
+    R.push([p[0] + dy * w, p[1] - dx * w]);
+  }
+  g.beginPath();
+  L.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]));
+  for (let i = R.length - 1; i >= 0; i--) g.lineTo(R[i][0], R[i][1]);
+  g.closePath();
+  g.fillStyle = typeof col === 'number' ? rgba(col, alpha) : col;
+  g.fill();
+}
+</script>
+<script>
+/* ==========================================================================
+   4 · THE TWELVE SKETCHES
+   Each: { id, title, bet, weak, dead?, draw(g, W, H, D, rnd, S) }
+   S is a scale factor (1 at thumbnail size) so the modal version thickens
+   strokes and text instead of just stretching pixels.
+   ========================================================================== */
+const SKETCHES = [];
+
+/* -- 01 -------------------------------------------------------------------
+   UNEVEN SPACING BY MASS
+   Band height is proportional to that month's commits, so a busy month
+   physically occupies more trunk. Directly attacks "half the canvas empty".
+   ------------------------------------------------------------------------ */
+SKETCHES.push({
+  id: 'mass',
+  title: 'Uneven spacing by mass',
+  bet: 'Time is not uniform. Band height &prop; that month’s commits, so busy months physically own more trunk and the empty canvas problem dies.',
+  weak: 'The one-commit month (May ’25) collapses to a hairline you cannot click, and July ’26 alone eats a fifth of the height — recency dominates by construction.',
+  draw(g, W, H, D, rnd, S) {
+    clear(g, W, H);
+    const padT = 16 * S, padB = 20 * S, padL = 46 * S, padR = 12 * S;
+    const H0 = H - padT - padB;
+    const cx = padL + (W - padL - padR) * 0.52;
+
+    // heights: sqrt-damped commits + a floor so a 1-commit month is still a
+    // visible sliver (honest: it IS tiny, but it must not vanish)
+    const raw = D.rows.map(r => Math.sqrt(r.commits) + 0.55);
+    const sum = raw.reduce((a, b) => a + b, 0);
+    const hs  = raw.map(v => v / sum * H0);
+    const yTop = [];
+    let y = H - padB;
+    for (let i = 0; i < hs.length; i++) { yTop.push(y); y -= hs[i]; }
+    const yOf = (i) => yTop[i] - hs[i] / 2;
+
+    const maxW = (W - padL - padR) * 0.42;
+    D.rows.forEach((r, i) => {
+      const y1 = yTop[i], y0 = y1 - hs[i];
+      const w  = r.commits ? 6 * S + Math.sqrt(r.commits / D.maxCommits) * maxW : 3 * S;
+      // the band body, hued by its dominant sector
+      let best = null, bestN = 0;
+      for (const s of SECTORS) { const n = r.sec[s.id].commits; if (n > bestN) { bestN = n; best = s; } }
+      const col = best ? best.hue : PAL.dead;
+      if (!r.present) {
+        g.strokeStyle = 'rgba(255,143,122,.55)'; g.setLineDash([3 * S, 3 * S]); g.lineWidth = 1.2 * S;
+        g.beginPath(); g.moveTo(cx - 12 * S, (y0 + y1) / 2); g.lineTo(cx + 12 * S, (y0 + y1) / 2); g.stroke();
+        g.setLineDash([]);
+      } else {
+        const grd = g.createLinearGradient(cx - w / 2, 0, cx + w / 2, 0);
+        grd.addColorStop(0, rgba(col, .25)); grd.addColorStop(.5, rgba(col, .8)); grd.addColorStop(1, rgba(col, .25));
+        g.fillStyle = grd;
+        roundRect(g, cx - w / 2, y0 + .6 * S, w, Math.max(1.2 * S, hs[i] - 1.2 * S), Math.min(3 * S, w / 3));
+        g.fill();
+        // mix as a thin inner stripe stack, only when the band is tall enough
+        if (hs[i] > 7 * S) mixBar(g, cx - w / 2, y1 - 3 * S, w, 2 * S, r.kinds);
+      }
+      // ruler labels for taller bands only, else it turns to soup
+      if (hs[i] > 9 * S || i === 0 || i === D.rows.length - 1) {
+        label(g, monLabel(r.key), padL - 6 * S, (y0 + y1) / 2, { size: 8 * S, align: 'right', alpha: .8 });
+        label(g, r.commits ? String(r.commits) : '—', cx + w / 2 + 5 * S, (y0 + y1) / 2,
+              { size: 7.5 * S, col: PAL.dim, alpha: .75 });
+      }
+    });
+    timeRuler(g, padL, padT, H - padB, D.rows, yOf, S, { every: 99, gapLabel: false });
+    label(g, 'band height = commits', W - padR, H - 8 * S, { size: 8 * S, align: 'right', alpha: .55 });
+  }
+});
+
+/* -- 02 -------------------------------------------------------------------
+   COMPETITIVE BRANCHING
+   Sectors compete for angular space each month. Winners widen their wedge and
+   push neighbours aside; losers get squeezed thin. Silhouette from conflict.
+   ------------------------------------------------------------------------ */
+SKETCHES.push({
+  id: 'compete',
+  title: 'Competitive branching',
+  bet: 'Silhouette should come from CONFLICT: each month sectors fight for angular space, a dominant sector crowds its neighbours out, losers thin toward vertical and die back.',
+  weak: 'With only 8 live sectors and one usually >50% of the month, the competition resolves too fast — it reads as one fat branch plus stragglers, and the outline is noisy rather than characterful.',
+  draw(g, W, H, D, rnd, S) {
+    clear(g, W, H);
+    const padT = 14 * S, padB = 18 * S, padL = 44 * S, padR = 10 * S;
+    const baseY = H - padB, topY = padT;
+    const cx = padL + (W - padL - padR) * 0.5;
+    const yOf = (i) => baseY - (i + .5) / D.rows.length * (baseY - topY);
+    const half = (W - padL - padR) * 0.46;
+
+    // Each sector holds a horizontal TERRITORY. Every month the territories are
+    // re-divided by that month's commit share, and each tip moves to the centre
+    // of its new territory: a winner's expansion literally shoves its
+    // neighbours sideways. Widths taper upward (a limb is thickest where it
+    // carries the most wood), which is what trunk-rings got backwards.
+    const live = D.secStats.filter(s => s.active);
+    const nS = live.length;
+    const span = (W - padL - padR) * .84;
+    const x0 = padL + ((W - padL - padR) - span) / 2;
+    const tips = live.map((s, k) => ({ s, x: x0 + span * (k + .5) / nS, y: baseY, w: 1.4 * S, run: 0 }));
+    timeRuler(g, padL, topY, baseY, D.rows, yOf, S, { every: 3 });
+
+    D.rows.forEach((r, i) => {
+      const y = yOf(i);
+      const monthTot = live.reduce((a, s) => a + r.sec[s.id].commits, 0);
+      // territory widths = share of the month (+ a floor so a loser is squeezed
+      // thin but never annihilated); laid out left to right in taxonomy order
+      const shares = live.map(s => monthTot ? r.sec[s.id].commits / monthTot : 1 / nS);
+      const floor = 0.02;
+      const adj = shares.map(v => v * (1 - floor * nS) + floor);
+      const centres = []; let cur = 0;
+      for (const a of adj) { centres.push(cur + a / 2); cur += a; }
+      live.forEach((s, k) => {
+        const t = tips[k];
+        const c = r.sec[s.id].commits;
+        const targetX = x0 + span * centres[k];
+        // move only part of the way — wood cannot teleport
+        const nx = t.x + (targetX - t.x) * 0.42 + (rnd() - .5) * 2.2 * S;
+        const ny = y;
+        // width: this sector's share of the month, tapering with height
+        const w1 = Math.max(0.8 * S, (1 * S + Math.sqrt(c) * 0.95 * S) * (1 - i / D.rows.length * .35));
+        taperedLimb(g, [[t.x, t.y], [nx, ny]], t.w, w1, c ? s.hue : PAL.dead, c ? .88 : .3);
+        if (c) {
+          g.fillStyle = rgba(s.hue, .45);
+          g.beginPath(); g.arc(nx, ny, Math.min(4 * S, .7 * S + Math.sqrt(c) * .45 * S), 0, 7); g.fill();
+        } else { t.run++; }
+        t.x = Math.max(padL + 4 * S, Math.min(W - padR - 4 * S, nx)); t.y = ny; t.w = w1;
+      });
+      if (!r.present) {
+        g.strokeStyle = 'rgba(255,143,122,.4)'; g.setLineDash([3 * S, 3 * S]); g.lineWidth = 1 * S;
+        g.beginPath(); g.moveTo(padL, y); g.lineTo(W - padR, y); g.stroke(); g.setLineDash([]);
+      }
+    });
+    tips.forEach(t => label(g, t.s.label, t.x, topY + 4 * S,
+      { size: 7 * S, col: t.s.hue, align: 'center', alpha: .9 }));
+    label(g, 'territory width = share of that month', W / 2, H - 6 * S, { size: 7.5 * S, align: 'center', alpha: .55 });
+  }
+});
+
+/* -- 03 -------------------------------------------------------------------
+   DIEBACK / DEAD WOOD
+   A sector that goes dormant keeps a bare grey branch. The two never-used
+   sectors become visible ABSENCE — stubs at the base that never grew.
+   ------------------------------------------------------------------------ */
+SKETCHES.push({
+  id: 'dieback',
+  title: 'Dieback &amp; dead wood',
+  bet: 'What you stopped doing is data. Dormant sectors keep bare grey wood, active ones carry foliage — and the two never-used sectors are visible stubs, absence you can point at.',
+  weak: 'Ruthlessly honest and slightly grim: with 4 of 10 sectors mostly dead the tree looks half-killed, which flatters nobody — and “dormant” is indistinguishable from “finished”.',
+  draw(g, W, H, D, rnd, S) {
+    clear(g, W, H);
+    const padT = 14 * S, padB = 26 * S, padL = 42 * S, padR = 10 * S;
+    const baseY = H - padB, topY = padT;
+    const cx = padL + (W - padL - padR) * 0.5;
+    const n = D.rows.length;
+    const yOf = (i) => baseY - (i + .5) / n * (baseY - topY);
+    timeRuler(g, padL, topY, baseY, D.rows, yOf, S, { every: 4 });
+
+    // trunk = cumulative commits, thickest at the base (real wood)
+    const cum = [];
+    let acc = 0;
+    for (let i = n - 1; i >= 0; i--) { acc += D.rows[i].commits; cum[i] = acc; }
+    const trunkPts = D.rows.map((r, i) => [cx + Math.sin(i * .9) * 2.2 * S, yOf(i)]);
+    trunkPts.unshift([cx, baseY + 8 * S]);
+    for (let i = 0; i < trunkPts.length - 1; i++) {
+      const w0 = 2 * S + Math.sqrt(cum[Math.max(0, i - 1)] / D.totalCommits) * 15 * S;
+      const w1 = 2 * S + Math.sqrt(cum[Math.min(n - 1, i)] / D.totalCommits) * 15 * S;
+      taperedLimb(g, [trunkPts[i], trunkPts[i + 1]], w0, w1, PAL.bark, .95);
+    }
+
+    // limbs are drawn month by month: a limb only ADVANCES in a month it was
+    // active. Dormant stretches continue as grey dead wood at constant width;
+    // a limb that never revives simply STOPS. Nothing is guaranteed to reach
+    // the top — that was banded-ribs' fatal "every rib reaches the top".
+    const grew = D.secStats.filter(s => s.active);
+    const maxSecCommits = Math.max(...grew.map(s => s.commits), 1);
+    grew.forEach((s, k) => {
+      const side = k % 2 ? 1 : -1;
+      const slot = Math.floor(k / 2);
+      const reach = (W - padL - padR) * (0.16 + 0.24 * (slot / 2));
+      const i0 = s.firstAnyIx;
+      let x = cx + side * 3 * S, y = yOf(i0);
+      // width accumulates like real wood: sqrt of commits SO FAR on this limb
+      let sofar = 0;
+      let wPrev = 1 * S + Math.sqrt(s.commits / maxSecCommits) * 7 * S;
+      let lastActive = i0, tipDead = false;
+      for (let i = i0; i < n; i++) {
+        const c = D.rows[i].sec[s.id].total;
+        const y2 = yOf(i);
+        const dormant = c === 0;
+        if (dormant && (i - lastActive) > 4) { tipDead = true; break; }   // it died
+        // active months push OUTWARD (chasing light), dormant ones barely move.
+        // Budgeted so a limb spends its whole reach over its whole lifetime —
+        // otherwise the busiest sectors run off the canvas horizontally.
+        const adv = dormant ? 0.06 : (0.30 + 0.70 * Math.sqrt(c / 60));
+        const x2 = x + side * (reach / Math.max(4, n - i0)) * adv + (rnd() - .5) * 1.4 * S;
+        sofar += D.rows[i].sec[s.id].commits;
+        const w2 = Math.max(0.9 * S, (1 * S + Math.sqrt(sofar / maxSecCommits) * 7 * S) * (1 - i / n * 0.55));
+        taperedLimb(g, [[x, y], [x2, y2]], wPrev, w2, dormant ? PAL.dead : s.hue, dormant ? .35 : .88);
+        if (!dormant) {
+          lastActive = i;
+          g.fillStyle = rgba(s.hue, .35);
+          g.beginPath(); g.arc(x2, y2, Math.min(3.5 * S, .7 * S + Math.sqrt(c) * .42 * S), 0, 7); g.fill();
+        }
+        x = Math.max(padL + 6 * S, Math.min(W - padR - 6 * S, x2)); y = y2; wPrev = w2;
+      }
+      // tip treatment: alive = foliage, died = snapped grey stub
+      if (tipDead || lastActive < n - 3) {
+        taperedLimb(g, [[x, y], [x + side * 7 * S, y - 5 * S]], wPrev * .7, .5 * S, PAL.dead, .5);
+        g.strokeStyle = rgba(PAL.dead, .6); g.lineWidth = .9 * S;
+        g.beginPath();
+        g.moveTo(x + side * 5 * S, y - 8 * S); g.lineTo(x + side * 9 * S, y - 3 * S); g.stroke();
+      } else {
+        for (let j = 0; j < 8; j++) {
+          g.fillStyle = rgba(s.hue, .14 + rnd() * .18);
+          g.beginPath();
+          g.ellipse(x + (rnd() - .5) * 13 * S, y + (rnd() - .5) * 7 * S,
+                    2.8 * S + rnd() * 2.6 * S, 1.4 * S + rnd() * 1.2 * S, 0, 0, 7);
+          g.fill();
+        }
+      }
+      const dead = tipDead || lastActive < n - 3;
+      label(g, s.label, x + side * (dead ? 11 : 8) * S, y - (dead ? 9 : 11) * S,
+            { size: 7 * S, col: dead ? PAL.dead : s.hue, align: side > 0 ? 'left' : 'right', alpha: .95 });
+    });
+    // NEVER GREW: two stubs at the very base — absence with a location
+    D.secStats.filter(s => !s.active).forEach((s, j) => {
+      const side = j ? 1 : -1;
+      const y = baseY - 3 * S - j * 5 * S;
+      taperedLimb(g, [[cx, y], [cx + side * 11 * S, y - 3 * S]], 2.8 * S, 1 * S, PAL.dead, .55);
+      label(g, s.label + ' (never)', cx + side * 13 * S, y - 4 * S,
+            { size: 7 * S, col: PAL.dead, align: side > 0 ? 'left' : 'right', alpha: .85 });
+    });
+    label(g, 'grey = dormant · ✂ = died back · never = zero events ever', W / 2, H - 8 * S, { size: 7.5 * S, align: 'center', alpha: .6 });
+  }
+});
+
+/* -- 04 -------------------------------------------------------------------
+   SYMPODIAL GROWTH
+   The leader dies each season; a lateral takes over. Real acacia habit,
+   produces a natural zigzag and an irregular, un-plotted silhouette.
+   ------------------------------------------------------------------------ */
+SKETCHES.push({
+  id: 'sympodial',
+  title: 'Sympodial growth',
+  bet: 'Real acacias grow by the leader dying and a lateral taking over. Each season the tallest sector inherits the trunk — the zigzag is a record of WHO led WHEN.',
+  weak: 'The takeover is only legible if you already know the rule; without the labels it looks like decorative wobble. And one sector leads most seasons, so the zigzag under-delivers.',
+  draw(g, W, H, D, rnd, S) {
+    clear(g, W, H);
+    const padT = 16 * S, padB = 22 * S, padL = 42 * S, padR = 12 * S;
+    const baseY = H - padB, topY = padT;
+    let x = padL + (W - padL - padR) * 0.5;
+    const n = D.rows.length;
+    const yOf = (i) => baseY - (i + .5) / n * (baseY - topY);
+    timeRuler(g, padL, topY, baseY, D.rows, yOf, S, { every: 4 });
+
+    // seasons = 3-month groups; the leader of each season carries the trunk
+    let y = baseY, w = 15 * S, prevLeader = null;
+    for (let i = 0; i < n; i += 3) {
+      const grp = D.rows.slice(i, i + 3);
+      const tot = {}; let gsum = 0;
+      for (const r of grp) for (const s of SECTORS) { tot[s.id] = (tot[s.id] || 0) + r.sec[s.id].commits; gsum += r.sec[s.id].commits; }
+      let leader = null, best = 0;
+      for (const s of SECTORS) if ((tot[s.id] || 0) > best) { best = tot[s.id]; leader = s; }
+      const yEnd = yOf(Math.min(n - 1, i + 2));
+      if (!leader) {                                   // a truly empty season
+        g.strokeStyle = 'rgba(255,143,122,.5)'; g.setLineDash([3 * S, 3 * S]); g.lineWidth = 1.2 * S;
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x, yEnd); g.stroke(); g.setLineDash([]);
+        y = yEnd; continue;
+      }
+      // the takeover: a lateral kink whose direction/size is the handover
+      const changed = prevLeader && prevLeader.id !== leader.id;
+      const dir = (leader.az > 180 ? -1 : 1);
+      const kink = (changed ? 1 : .3) * (10 + Math.sqrt(best) * 1.2) * S * dir;
+      const w2 = 3 * S + Math.sqrt(gsum) * 0.7 * S;
+      const mid = [x + kink * .55, (y + yEnd) / 2];
+      taperedLimb(g, [[x, y], mid, [x + kink, yEnd]], w, w2, leader.hue, .9);
+      // the dead leader stub — the bit that stopped
+      if (changed) {
+        taperedLimb(g, [[x, y], [x - kink * .35, y - 9 * S]], w * .5, .8 * S, PAL.dead, .55);
+      }
+      // the season's mix as a texture band across the joint
+      mixBar(g, x + kink - w2 / 2, yEnd - 1.5 * S, w2, 2.4 * S,
+             grp.reduce((a, r) => { for (const k of KINDS) a[k] = (a[k] || 0) + r.kinds[k]; return a; }, {}));
+      label(g, leader.label, x + kink + (dir > 0 ? 6 : -6) * S, yEnd, { size: 7.5 * S, col: leader.hue, align: dir > 0 ? 'left' : 'right', alpha: .95 });
+      x += kink; y = yEnd; w = w2; prevLeader = leader;
+    }
+    label(g, 'each kink = a new leading sector', W / 2, H - 8 * S, { size: 8 * S, align: 'center', alpha: .6 });
+  }
+});
+
+/* -- 05 -------------------------------------------------------------------
+   THICKNESS ACCUMULATES DOWNWARD
+   A branch's base thickness = the SUM of everything above it (da Vinci's rule).
+   The trunk becomes genuinely data-bearing — the fix for whorls' dead pole.
+   ------------------------------------------------------------------------ */
+SKETCHES.push({
+  id: 'accum',
+  title: 'Thickness accumulates downward',
+  bet: 'Da Vinci’s rule: a limb’s cross-section equals the sum of its children. The trunk then LITERALLY measures total work — the fix for whorls’ dead pole.',
+  weak: 'Correct and satisfying, but it makes the base enormous and squashes the recent months where the interesting change is; area, not width, is what reads, and area is hard to compare by eye.',
+  draw(g, W, H, D, rnd, S) {
+    clear(g, W, H);
+    const padT = 14 * S, padB = 20 * S, padL = 40 * S, padR = 10 * S;
+    const baseY = H - padB, topY = padT;
+    const cx = padL + (W - padL - padR) * 0.5;
+    const n = D.rows.length;
+    const yOf = (i) => baseY - (i + .5) / n * (baseY - topY);
+    timeRuler(g, padL, topY, baseY, D.rows, yOf, S, { every: 4 });
+
+    // cumulative commits from the TOP down: cum[i] = commits at i and above
+    const cum = new Array(n);
+    let acc = 0;
+    for (let i = n - 1; i >= 0; i--) { acc += D.rows[i].commits; cum[i] = acc; }
+    const wOf = (v) => 1.5 * S + Math.sqrt(v / D.totalCommits) * (W - padL - padR) * 0.30;
+
+    // trunk drawn as one accumulating column
+    const pts = [], wid = [];
+    for (let i = 0; i < n; i++) { pts.push([cx + Math.sin(i * .7 + 1) * 1.8 * S, yOf(i)]); wid.push(wOf(cum[i])); }
+    pts.unshift([cx, baseY + 10 * S]); wid.unshift(wOf(D.totalCommits));
+    for (let i = 0; i < pts.length - 1; i++) taperedLimb(g, [pts[i], pts[i + 1]], wid[i], wid[i + 1], PAL.bark, .95);
+    // grain: each month's own contribution as a lighter inner core
+    for (let i = 0; i < n; i++) {
+      const r = D.rows[i];
+      if (!r.commits) continue;
+      const w = wOf(r.commits) * .8;
+      g.fillStyle = rgba(PAL.glow, .18);
+      roundRect(g, pts[i + 1][0] - w / 2, yOf(i) - 1.6 * S, w, 3.2 * S, 1.4 * S); g.fill();
+    }
+    // sector branches leave the trunk, each carrying its own accumulated mass
+    D.secStats.filter(s => s.active).forEach((s, k) => {
+      const side = k % 2 ? 1 : -1;
+      const i = s.firstAnyIx;
+      const y = yOf(i);
+      const w0 = 1 * S + Math.sqrt(s.commits / D.totalCommits) * 22 * S;
+      const reach = (W - padL - padR) * (0.16 + 0.22 * Math.sqrt(s.commits / 500));
+      taperedLimb(g, [[cx, y], [cx + side * reach * .6, y - 5 * S], [cx + side * reach, y - 12 * S]], w0, .8 * S, s.hue, .85);
+      label(g, s.label, cx + side * (reach + 3 * S), y - 13 * S, { size: 7 * S, col: s.hue, align: side > 0 ? 'left' : 'right', alpha: .9 });
+    });
+    label(g, 'width² = commits at and above this height', W / 2, H - 7 * S, { size: 7.5 * S, align: 'center', alpha: .6 });
+  }
+});
+
+/* -- 06 -------------------------------------------------------------------
+   PERSISTENT BOUGHS
+   One bough per sector for life; months are increments ALONG it. Bough length
+   = cumulative work. Reads like a fan of timelines that happens to be a tree.
+   ------------------------------------------------------------------------ */
+SKETCHES.push({
+  id: 'boughs',
+  title: 'Persistent boughs',
+  bet: 'One bough per sector for its whole life; each month adds a segment along it. Bough LENGTH = cumulative work, so ranking sectors is a single glance at reach.',
+  weak: 'Length-as-total and height-as-time now fight each other: a bough’s tip is both “most work” and “latest month”, and for sectors with 1 event the bough is a dot with a label.',
+  draw(g, W, H, D, rnd, S) {
+    clear(g, W, H);
+    const padB = 24 * S, padT = 14 * S;
+    const baseY = H - padB, cx = W * 0.5;
+    const live = D.secStats.filter(s => s.active);
+    const maxCum = Math.max(...live.map(s => s.commits), 1);
+    const RMAX = Math.min(W * .44, (H - padT - padB) * .95);
+
+    // fan the boughs across the upper half, ordered by taxonomy azimuth
+    live.forEach((s, k) => {
+      const spread = Math.PI * 0.82;
+      const ang = -Math.PI / 2 + (k / Math.max(1, live.length - 1) - .5) * spread;
+      let r = 10 * S, px = cx + Math.cos(ang) * r, py = baseY + Math.sin(ang) * r;
+      let acc = 0;
+      const pts = [[cx, baseY], [px, py]];
+      D.rows.forEach((row, i) => {
+        const c = row.sec[s.id].commits;
+        acc += c;
+        const seg = (c / maxCum) * RMAX * 0.9;
+        if (seg <= 0.01) return;
+        r += seg;
+        const wob = (rnd() - .5) * 0.10;            // grown, not plotted
+        const a2 = ang + wob + (i / D.rows.length) * 0.12 * (k % 2 ? 1 : -1);
+        px = cx + Math.cos(a2) * r; py = baseY + Math.sin(a2) * r;
+        pts.push([px, py]);
+        // a node per active month: size = commits, ring = collaboration share
+        const kk = row.sec[s.id].kinds;
+        const collab = (kk.pr + kk.review + kk.issue) / Math.max(1, row.sec[s.id].total);
+        g.fillStyle = rgba(s.hue, .55);
+        g.beginPath(); g.arc(px, py, 1 + Math.sqrt(c) * .5 * S, 0, 7); g.fill();
+        if (collab > .15) {
+          g.strokeStyle = rgba(KIND_COL.review, .6); g.lineWidth = .9 * S;
+          g.beginPath(); g.arc(px, py, 2.2 * S + Math.sqrt(c) * .5 * S, 0, 7); g.stroke();
+        }
+      });
+      const w0 = 1.5 * S + Math.sqrt(s.commits / maxCum) * 9 * S;
+      taperedLimb(g, pts, w0, 1 * S, s.hue, .8);
+      const lx = cx + Math.cos(ang) * (r + 12 * S), ly = baseY + Math.sin(ang) * (r + 12 * S);
+      label(g, s.label + ' ' + s.commits, lx, ly,
+            { size: 7.5 * S, col: s.hue, align: lx > cx ? 'left' : 'right', alpha: .95 });
+    });
+    // dead sectors as ground stubs — absence still occupies space
+    D.secStats.filter(s => !s.active).forEach((s, k) => {
+      const x = cx + (k ? 1 : -1) * (18 + k * 4) * S;
+      taperedLimb(g, [[cx, baseY], [x, baseY - 7 * S]], 2.4 * S, 1 * S, PAL.dead, .45);
+      label(g, s.label, x + (k ? 5 : -5) * S, baseY - 8 * S, { size: 7 * S, col: PAL.dead, align: k ? 'left' : 'right', alpha: .75 });
+    });
+    taperedLimb(g, [[cx, H - 4 * S], [cx, baseY]], 16 * S, 9 * S, PAL.bark, .95);
+    label(g, 'bough length = cumulative commits', W / 2, H - 7 * S, { size: 7.5 * S, align: 'center', alpha: .6 });
+  }
+});
+
+/* -- 07 -------------------------------------------------------------------
+   RING / CROSS-SECTION HYBRID
+   Side view is the tree; an inset shows the top-down annual rings, so the
+   trunk's data is readable in two projections at once.
+   ------------------------------------------------------------------------ */
+SKETCHES.push({
+  id: 'rings',
+  title: 'Ring / cross-section hybrid',
+  bet: 'Side elevation for time, an inset cross-section for the same wood seen end-on — rings you can literally count, sectors as pie wedges inside each ring.',
+  weak: 'Two projections means two legends and a doubled cognitive load; and the cross-section is the honest answer to “how much”, which makes the tree next to it decorative.',
+  draw(g, W, H, D, rnd, S) {
+    clear(g, W, H);
+    const splitX = W * 0.46;
+    // --- left: side elevation ---
+    const padT = 14 * S, padB = 18 * S, padL = 34 * S;
+    const baseY = H - padB, topY = padT;
+    const cx = padL + (splitX - padL) * 0.55;
+    const n = D.rows.length;
+    const yOf = (i) => baseY - (i + .5) / n * (baseY - topY);
+    timeRuler(g, padL - 4 * S, topY, baseY, D.rows, yOf, S, { every: 5, gapLabel: false });
+    const cum = new Array(n); let acc = 0;
+    for (let i = n - 1; i >= 0; i--) { acc += D.rows[i].commits; cum[i] = acc; }
+    for (let i = 0; i < n - 1; i++) {
+      const w0 = 2 * S + Math.sqrt(cum[i] / D.totalCommits) * (splitX - padL) * .42;
+      const w1 = 2 * S + Math.sqrt(cum[i + 1] / D.totalCommits) * (splitX - padL) * .42;
+      taperedLimb(g, [[cx, yOf(i)], [cx, yOf(i + 1)]], w0, w1, PAL.bark, .9);
+      // horizontal cut marks where the inset is taken
+    }
+    // the cut plane
+    const cutIx = n - 1;
+    g.strokeStyle = rgba(PAL.glow, .6); g.setLineDash([3 * S, 2 * S]); g.lineWidth = 1 * S;
+    g.beginPath(); g.moveTo(padL - 6 * S, yOf(cutIx)); g.lineTo(splitX, yOf(cutIx)); g.stroke(); g.setLineDash([]);
+    label(g, 'cut', splitX - 2 * S, yOf(cutIx) - 6 * S, { size: 7.5 * S, col: PAL.glow, align: 'right', alpha: .8 });
+
+    // --- right: the cross-section (rings = months, wedges = sectors) ---
+    const ox = splitX + (W - splitX) * 0.5, oy = H * 0.5;
+    const R = Math.min((W - splitX) * .44, H * .42);
+    const live = D.secStats.filter(s => s.active);
+    // radius grows with cumulative commits so ring SPACING is the annual record
+    let rPrev = 3 * S, tot = 0;
+    D.rows.forEach((row, i) => {
+      tot += row.commits;
+      const r = 3 * S + Math.sqrt(tot / D.totalCommits) * (R - 3 * S);
+      if (!row.present) {   // the missing month is a visible dark ring
+        g.strokeStyle = 'rgba(255,143,122,.5)'; g.setLineDash([2 * S, 3 * S]); g.lineWidth = 1 * S;
+        g.beginPath(); g.arc(ox, oy, (r + rPrev) / 2, 0, 7); g.stroke(); g.setLineDash([]);
+        rPrev = r; return;
+      }
+      // wedges by sector share within the ring
+      let a0 = -Math.PI / 2;
+      const rowTot = live.reduce((a, s) => a + row.sec[s.id].commits, 0);
+      if (rowTot) {
+        for (const s of live) {
+          const c = row.sec[s.id].commits;
+          if (!c) continue;
+          const a1 = a0 + (c / rowTot) * Math.PI * 2;
+          g.beginPath();
+          g.arc(ox, oy, r, a0, a1); g.arc(ox, oy, rPrev, a1, a0, true); g.closePath();
+          g.fillStyle = rgba(s.hue, .6); g.fill();
+          a0 = a1;
+        }
+      }
+      g.strokeStyle = 'rgba(10,14,22,.75)'; g.lineWidth = .7 * S;
+      g.beginPath(); g.arc(ox, oy, r, 0, 7); g.stroke();
+      rPrev = r;
+    });
+    g.strokeStyle = rgba(PAL.glow, .5); g.lineWidth = 1.2 * S;
+    g.beginPath(); g.arc(ox, oy, R, 0, 7); g.stroke();
+    label(g, 'ring = month, wedge = sector', ox, oy + R + 10 * S, { size: 7.5 * S, align: 'center', alpha: .65 });
+    label(g, 'elevation', padL, H - 7 * S, { size: 7.5 * S, alpha: .55 });
+  }
+});
+
+/* -- 08 -------------------------------------------------------------------
+   DENSITY FIELD
+   No explicit branches. Every commit is a point; local density suggests form.
+   Emergent rather than drawn.
+   ------------------------------------------------------------------------ */
+SKETCHES.push({
+  id: 'density',
+  title: 'Density field',
+  bet: 'Draw no branches at all — one point per commit, placed by month (y) and sector azimuth (x). Form emerges from density instead of being asserted.',
+  weak: 'Emergence needs volume, and 1,749 commits is not enough: it reads as a scatter plot with atmosphere. Nothing about it says “tree” without the caption.',
+  draw(g, W, H, D, rnd, S) {
+    clear(g, W, H);
+    const padT = 16 * S, padB = 22 * S, padL = 40 * S, padR = 10 * S;
+    const baseY = H - padB, topY = padT;
+    const n = D.rows.length;
+    const yOf = (i) => baseY - (i + .5) / n * (baseY - topY);
+    const cx = padL + (W - padL - padR) * .5;
+    const spanX = (W - padL - padR) * .46;
+    timeRuler(g, padL, topY, baseY, D.rows, yOf, S, { every: 4 });
+
+    g.globalCompositeOperation = 'lighter';
+    const live = D.secStats.filter(s => s.active);
+    D.rows.forEach((row, i) => {
+      const y = yOf(i);
+      const bandH = (baseY - topY) / n;
+      live.forEach((s) => {
+        const c = row.sec[s.id].commits;
+        if (!c) return;
+        // x = sector azimuth mapped to a lateral offset; spread grows with count
+        const base = ((s.az / 360) * 2 - 1) * spanX * .85;
+        for (let j = 0; j < c; j++) {
+          // gaussian-ish jitter so clumps read as mass, not as a grid
+          const g1 = (rnd() + rnd() + rnd() - 1.5) / 1.5;
+          const g2 = (rnd() + rnd() + rnd() - 1.5) / 1.5;
+          const spread = (4 + Math.sqrt(c) * 1.4) * S;
+          const px = cx + base + g1 * spread;
+          const py = y + g2 * bandH * .5;
+          g.fillStyle = rgba(s.hue, .16);
+          g.beginPath(); g.arc(px, py, .8 * S + rnd() * .9 * S, 0, 7); g.fill();
+        }
+      });
+    });
+    g.globalCompositeOperation = 'source-over';
+    // an honest hull so the "form" claim can be judged: outer envelope per month
+    g.strokeStyle = 'rgba(207,216,227,.16)'; g.lineWidth = 1 * S;
+    g.beginPath();
+    D.rows.forEach((row, i) => {
+      const w = row.commits ? (6 + Math.sqrt(row.commits) * 3.2) * S : 0;
+      const p = [cx + w, yOf(i)];
+      i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]);
+    });
+    for (let i = n - 1; i >= 0; i--) {
+      const row = D.rows[i];
+      const w = row.commits ? (6 + Math.sqrt(row.commits) * 3.2) * S : 0;
+      g.lineTo(cx - w, yOf(i));
+    }
+    g.closePath(); g.stroke();
+    label(g, 'one dot = one commit · x = sector azimuth', W / 2, H - 7 * S, { size: 7.5 * S, align: 'center', alpha: .6 });
+  }
+});
+
+/* -- 09 -------------------------------------------------------------------
+   SILHOUETTE FROM ENVELOPE
+   Draw only the outer hull of monthly activity — a ridgeline wrapped around
+   the time axis. The tree as a single closed curve.
+   ------------------------------------------------------------------------ */
+SKETCHES.push({
+  id: 'envelope',
+  title: 'Silhouette from envelope',
+  bet: 'Only the outline. A closed curve whose half-width at each month is that month’s commits — one shape, instantly comparable, memorable as a logo.',
+  weak: 'Two failures. The interior is thrown away — sector, mix, projects, all gone. And because activity genuinely peaks NOW, the honest silhouette is a funnel: <b>fat at the top, thin at the base</b> — exactly the inversion that sank trunk-rings. On this dataset “outline = commits” and “looks like a tree” are incompatible.',
+  dead: 'Any encoding that puts monthly volume directly on width will invert the tree, because the data’s mass is at the recent end. Rules out width-from-monthly-volume for the whole board — only <i>cumulative</i> width (05, 11) keeps a tree-shaped base.',
+  draw(g, W, H, D, rnd, S) {
+    clear(g, W, H);
+    const padT = 18 * S, padB = 24 * S, padL = 40 * S, padR = 14 * S;
+    const baseY = H - padB, topY = padT;
+    const n = D.rows.length;
+    const cx = padL + (W - padL - padR) * .5;
+    const maxW = (W - padL - padR) * .46;
+    const yOf = (i) => baseY - (i) / (n - 1) * (baseY - topY);
+    timeRuler(g, padL, topY, baseY, D.rows, yOf, S, { every: 4, gapLabel: false });
+
+    const wOf = (i) => {
+      const r = D.rows[i];
+      return r.commits ? 2 * S + Math.sqrt(r.commits / D.maxCommits) * maxW : 1.2 * S;
+    };
+    // smoothed hull, but the gap month is NOT smoothed over: it pinches to nil
+    const draw = (sign, alpha, fill) => {
+      g.beginPath();
+      for (let i = 0; i < n; i++) {
+        const w = D.rows[i].present ? wOf(i) : 0.8 * S;
+        const x = cx + sign * w, y = yOf(i);
+        if (!i) g.moveTo(x, y);
+        else {
+          const pw = D.rows[i - 1].present ? wOf(i - 1) : 0.8 * S;
+          const px = cx + sign * pw, py = yOf(i - 1);
+          g.bezierCurveTo(px, (py + y) / 2, x, (py + y) / 2, x, y);
+        }
+      }
+      if (fill) { g.lineTo(cx, topY); g.lineTo(cx, baseY); g.closePath(); }
+      return g;
+    };
+    const grd = g.createLinearGradient(0, baseY, 0, topY);
+    grd.addColorStop(0, rgba(PAL.bark, .85)); grd.addColorStop(.55, rgba(PAL.haze, .5)); grd.addColorStop(1, rgba(PAL.glow, .55));
+    draw(1, 1, true); g.fillStyle = grd; g.fill();
+    draw(-1, 1, true); g.fillStyle = grd; g.fill();
+    g.strokeStyle = rgba(PAL.star, .5); g.lineWidth = 1.2 * S;
+    draw(1, 1, false); g.stroke(); draw(-1, 1, false); g.stroke();
+
+    // the honest pinch: label the missing month on the silhouette itself
+    D.rows.forEach((r, i) => {
+      if (r.present) return;
+      g.strokeStyle = 'rgba(255,143,122,.85)'; g.lineWidth = 1.2 * S;
+      g.beginPath(); g.moveTo(cx - 14 * S, yOf(i)); g.lineTo(cx + 14 * S, yOf(i)); g.stroke();
+      label(g, 'no data · ' + monLabel(r.key), cx + 17 * S, yOf(i), { size: 7.5 * S, col: '#ff8f7a', alpha: .95 });
+    });
+    // the one-commit month, also called out — it is the other honesty test
+    const oneIx = D.rows.findIndex(r => r.commits === 1);
+    if (oneIx >= 0) label(g, '1 commit', cx + 12 * S, yOf(oneIx), { size: 7.5 * S, col: PAL.glow, alpha: .9 });
+    label(g, 'half-width = commits · no interior detail', W / 2, H - 8 * S, { size: 7.5 * S, align: 'center', alpha: .6 });
+  }
+});
+
+/* -- 10 -------------------------------------------------------------------
+   ESPALIER / TRAINED FORM
+   Deliberately flat and 2D-readable, like a trained fruit tree or a subway
+   map. Maximum legibility, zero 3D ambiguity. Given "legible data object",
+   this direction deserves the most serious attempt on the board.
+   ------------------------------------------------------------------------ */
+SKETCHES.push({
+  id: 'espalier',
+  title: 'Espalier (trained form)',
+  bet: 'A tree deliberately trained flat against a wall. Every sector is a horizontal cordon at a fixed lane; every month a node. Nothing occludes anything — this is the maximum-legibility end of the space.',
+  weak: 'It is honest about being a chart. If “tree” has to survive as a metaphor rather than a diagram convention, this is the sketch that gives it up first.',
+  draw(g, W, H, D, rnd, S) {
+    clear(g, W, H);
+    const padT = 14 * S, padB = 26 * S, padL = 52 * S, padR = 12 * S;
+    const baseY = H - padB, topY = padT;
+    const n = D.rows.length;
+    const yOf = (i) => baseY - (i + .5) / n * (baseY - topY);
+    const live = D.secStats.filter(s => s.active);
+    const lane = (W - padL - padR) / (live.length + 0.4);
+    const laneX = (k) => padL + lane * (k + .7);
+
+    // the trained wall: faint vertical wires, one per sector lane
+    live.forEach((s, k) => {
+      g.strokeStyle = rgba(s.hue, .12); g.lineWidth = 1 * S;
+      g.beginPath(); g.moveTo(laneX(k), topY); g.lineTo(laneX(k), baseY); g.stroke();
+      label(g, s.label, laneX(k), baseY + 9 * S, { size: 7.5 * S, col: s.hue, align: 'center', alpha: .9 });
+    });
+    timeRuler(g, padL - 8 * S, topY, baseY, D.rows, yOf, S, { every: 2 });
+
+    // the central stem, thickened by total commits, and cordons stepping out
+    D.rows.forEach((row, i) => {
+      const y = yOf(i);
+      if (!row.present) {
+        g.strokeStyle = 'rgba(255,143,122,.35)'; g.setLineDash([2 * S, 3 * S]); g.lineWidth = 1 * S;
+        g.beginPath(); g.moveTo(padL - 6 * S, y); g.lineTo(W - padR, y); g.stroke(); g.setLineDash([]);
+        return;
+      }
+      live.forEach((s, k) => {
+        const c = row.sec[s.id].commits;
+        const t = row.sec[s.id].total;
+        if (!t) return;
+        const x = laneX(k);
+        // radius capped to just under the row pitch so adjacent months stay
+        // countable — overlapping blobs were unreadable in the busy 2026 rows
+        const pitch = (baseY - topY) / n;
+        const rr = Math.min(pitch * .62, c ? 1.4 * S + Math.sqrt(c) * .95 * S : 1.3 * S);
+        // node fill = commits; ring = collaboration events that month
+        g.fillStyle = rgba(s.hue, c ? .8 : .25);
+        g.beginPath(); g.arc(x, y, rr, 0, 7); g.fill();
+        const kk = row.sec[s.id].kinds;
+        const co = kk.pr + kk.review + kk.issue;
+        if (co) {
+          g.strokeStyle = rgba(KIND_COL.review, .75); g.lineWidth = Math.min(2.2 * S, .6 * S + Math.sqrt(co) * .35 * S);
+          g.beginPath(); g.arc(x, y, Math.min(lane * .46, rr + 2.4 * S), 0, 7); g.stroke();
+        }
+      });
+      // continuity cordon: link consecutive active months in a lane
+    });
+    live.forEach((s, k) => {
+      const x = laneX(k);
+      let prev = null;
+      D.rows.forEach((row, i) => {
+        if (!row.sec[s.id].total) return;
+        if (prev !== null) {
+          const dormant = (i - prev) > 1;
+          g.strokeStyle = dormant ? rgba(PAL.dead, .45) : rgba(s.hue, .45);
+          g.lineWidth = 1.2 * S;
+          if (dormant) g.setLineDash([2 * S, 2.5 * S]);
+          g.beginPath(); g.moveTo(x, yOf(prev)); g.lineTo(x, yOf(i)); g.stroke();
+          g.setLineDash([]);
+        }
+        prev = i;
+      });
+      if (prev === null) {
+        label(g, 'never', x, (topY + baseY) / 2, { size: 7 * S, col: PAL.dead, align: 'center', alpha: .6 });
+      }
+    });
+    // dead sectors get their own greyed lanes at the right edge — absence has a place
+    label(g, 'node = commits · ring = pr+review+issue · dashed = dormant',
+          W / 2, H - 7 * S, { size: 7.5 * S, align: 'center', alpha: .6 });
+  }
+});
+
+/* -- 11 -------------------------------------------------------------------
+   BARK TEXTURE AS THE MIX
+   The commit/pr/review/issue mix drives SURFACE PATTERN, not stacked stripes:
+   smooth young bark for commit-only eras, ridged and knotted where
+   collaboration is high.
+   ------------------------------------------------------------------------ */
+SKETCHES.push({
+  id: 'bark',
+  title: 'Bark texture as the mix',
+  bet: 'The mix stops being stacked stripes and becomes SURFACE: smooth young bark in the solo-commit years, deep fissures and knots where PRs and reviews arrive. Texture reads before any legend does.',
+  weak: 'Texture is ordinal at best — you can see “rougher” but never read “55% collaboration”. It sells the phase change beautifully and quantifies nothing.',
+  draw(g, W, H, D, rnd, S) {
+    clear(g, W, H);
+    const padT = 14 * S, padB = 20 * S, padL = 44 * S, padR = 14 * S;
+    const baseY = H - padB, topY = padT;
+    const n = D.rows.length;
+    const cx = padL + (W - padL - padR) * .5;
+    const yOf = (i) => baseY - (i) / (n - 1) * (baseY - topY);
+    timeRuler(g, padL, topY, baseY, D.rows, yOf, S, { every: 3 });
+
+    const cum = new Array(n); let acc = 0;
+    for (let i = n - 1; i >= 0; i--) { acc += D.rows[i].commits; cum[i] = acc; }
+    const halfW = (i) => 3 * S + Math.sqrt(cum[i] / D.totalCommits) * (W - padL - padR) * .22;
+
+    // trunk body
+    g.beginPath();
+    for (let i = 0; i < n; i++) { const x = cx + halfW(i), y = yOf(i); i ? g.lineTo(x, y) : g.moveTo(x, y); }
+    for (let i = n - 1; i >= 0; i--) g.lineTo(cx - halfW(i), yOf(i));
+    g.closePath();
+    const grd = g.createLinearGradient(cx - 40 * S, 0, cx + 40 * S, 0);
+    grd.addColorStop(0, rgba(PAL.bark2, .95)); grd.addColorStop(.42, rgba(PAL.bark, .95)); grd.addColorStop(1, rgba(PAL.bark2, .95));
+    g.fillStyle = grd; g.fill();
+    g.save(); g.clip();
+
+    // per-month texture driven by collaboration share
+    D.rows.forEach((row, i) => {
+      const y = yOf(i);
+      const y2 = yOf(Math.min(n - 1, i + 1));
+      const co = D.collab[i];
+      const hw = halfW(i);
+      if (!row.present) {
+        g.fillStyle = 'rgba(255,143,122,.18)';
+        g.fillRect(cx - hw, Math.min(y, y2), hw * 2, Math.abs(y - y2));
+        return;
+      }
+      // fissures: count and depth scale with collaboration. Deliberately
+      // over-driven so the smooth/rough contrast survives at thumbnail size —
+      // this sketch is ABOUT whether texture can carry an ordinal reading.
+      const nf = Math.round(1 + co * 46);
+      for (let f = 0; f < nf; f++) {
+        const fx = cx + (rnd() - .5) * hw * 1.95;
+        const dep = .18 + co * 1.05;
+        g.strokeStyle = `rgba(6,9,15,${Math.min(.9, .10 + dep * .78).toFixed(3)})`;
+        g.lineWidth = (.35 + co * 3.1) * S;
+        g.beginPath();
+        g.moveTo(fx, y);
+        g.bezierCurveTo(fx + (rnd() - .5) * 5 * S, (y + y2) / 2, fx + (rnd() - .5) * 5 * S, (y + y2) / 2, fx + (rnd() - .5) * 4 * S, y2);
+        g.stroke();
+      }
+      // knots where reviews spike — a review is someone else touching the wood
+      const rev = row.kinds.review;
+      if (rev > 20) {
+        const kx = cx + (rnd() - .5) * hw * 1.3;
+        const kr = Math.min(hw * .8, (2 + Math.sqrt(rev) * .55) * S);
+        for (let q = 3; q >= 1; q--) {
+          g.strokeStyle = rgba(KIND_COL.review, .16 * q);
+          g.lineWidth = 1 * S;
+          g.beginPath(); g.ellipse(kx, (y + y2) / 2, kr * q / 3, kr * q / 3 * .7, .4, 0, 7); g.stroke();
+        }
+      }
+      // lichen of hue: dominant sector tints the surface faintly
+      let best = null, bn = 0;
+      for (const s of SECTORS) { const c = row.sec[s.id].commits; if (c > bn) { bn = c; best = s; } }
+      if (best) {
+        g.fillStyle = rgba(best.hue, .07 + co * .05);
+        g.fillRect(cx - hw, Math.min(y, y2), hw * 2, Math.abs(y - y2));
+      }
+    });
+    g.restore();
+    // outline
+    g.strokeStyle = 'rgba(207,216,227,.2)'; g.lineWidth = 1 * S;
+    g.beginPath();
+    for (let i = 0; i < n; i++) { const x = cx + halfW(i), y = yOf(i); i ? g.lineTo(x, y) : g.moveTo(x, y); }
+    g.stroke();
+    g.beginPath();
+    for (let i = 0; i < n; i++) { const x = cx - halfW(i), y = yOf(i); i ? g.lineTo(x, y) : g.moveTo(x, y); }
+    g.stroke();
+    label(g, 'smooth = solo commits · fissured = collaboration', W / 2, H - 7 * S, { size: 7.5 * S, align: 'center', alpha: .6 });
+  }
+});
+
+/* -- 12 -------------------------------------------------------------------
+   MY OWN: THE PHOTOTROPIC COLUMN ("light budget")
+   The idea none of the seeds cover: give the tree a RESOURCE and let the form
+   fall out of allocation. Each month has a fixed light budget; sectors bid for
+   it with their commits. A sector that wins light grows toward the light
+   source and thickens; a sector that loses is SHADED by the winner and grows
+   sideways and pale. The silhouette is then the record of an allocation
+   contest, and it is fully invertible: you can read the share back off the
+   angle. Competition (02) but with a conserved quantity, which is what makes
+   a real canopy shape.
+   ------------------------------------------------------------------------ */
+SKETCHES.push({
+  id: 'photo',
+  title: 'Phototropic column (light budget)',
+  bet: 'Give the tree a CONSERVED resource: each month has one unit of light, sectors bid with commits. Winners bend toward the light and thicken, losers are shaded and splay flat. Angle is invertible — you can read a sector’s share back off its lean.',
+  weak: 'A conserved budget means shares, so absolute volume vanishes: a month with 1 commit and a month with 390 can produce the SAME shape. It needs the column width (drawn here) as a second channel, which is one channel more than elegant.',
+  dead: 'And it did not survive rendering. Because losers must splay to keep the canopy opening upward, the shaded sectors run off the canvas as straight diagonals and the “conserved light” metaphor stops being visible at all. Rules out per-month <i>share</i> as the primary geometric driver: with one sector usually taking >50%, shares carry too little signal to shape 19 months of growth.',
+  draw(g, W, H, D, rnd, S) {
+    clear(g, W, H);
+    const padT = 16 * S, padB = 22 * S, padL = 44 * S, padR = 12 * S;
+    const baseY = H - padB, topY = padT;
+    const n = D.rows.length;
+    const cx = padL + (W - padL - padR) * .5;
+    const yOf = (i) => baseY - (i + .5) / n * (baseY - topY);
+    const step = (baseY - topY) / n;
+    timeRuler(g, padL, topY, baseY, D.rows, yOf, S, { every: 3 });
+
+    // the light source: a warm glow at the top — everything leans toward it
+    const glow = g.createRadialGradient(cx, topY - 6 * S, 2 * S, cx, topY - 6 * S, (W - padL) * .7);
+    glow.addColorStop(0, rgba(PAL.glow, .16)); glow.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = glow; g.fillRect(0, 0, W, H);
+
+    // column width = absolute commits (the second channel the caption admits to)
+    const colW = (i) => D.rows[i].commits ? 2 * S + Math.sqrt(D.rows[i].commits / D.maxCommits) * (W - padL - padR) * .17 : 1 * S;
+    g.beginPath();
+    for (let i = 0; i < n; i++) { const y = yOf(i); i ? g.lineTo(cx + colW(i), y) : g.moveTo(cx + colW(i), y); }
+    for (let i = n - 1; i >= 0; i--) g.lineTo(cx - colW(i), yOf(i));
+    g.closePath(); g.fillStyle = rgba(PAL.bark, .55); g.fill();
+
+    const live = D.secStats.filter(s => s.active);
+    // each sector carries a tip; the shading rule bends it. Tips START spread
+    // along the base (a real canopy diverges from a wide root plate, it does
+    // not funnel out of a single point — that funnel was trunk-rings' flaw).
+    const spread0 = (W - padL - padR) * .30;
+    const tips = live.map((s, k) => ({
+      s, x: cx + (k / Math.max(1, live.length - 1) - .5) * spread0, y: baseY,
+      lean: (k / Math.max(1, live.length - 1) - .5) * 1.1, w: 1.4 * S,
+    }));
+    D.rows.forEach((row, i) => {
+      const y = yOf(i);
+      const tot = live.reduce((a, s) => a + row.sec[s.id].commits, 0);
+      // rank this month's bids: rank 0 gets the light, the rest are shaded
+      const order = live.map((s, k) => ({ k, c: row.sec[s.id].commits })).sort((a, b) => b.c - a.c);
+      const rankOf = {}; order.forEach((o, r) => rankOf[o.k] = r);
+      live.forEach((s, k) => {
+        const t = tips[k];
+        const c = row.sec[s.id].commits;
+        const share = tot ? c / tot : 0;
+        const rank = rankOf[k];
+        // won light -> lean toward vertical (climbs straight up); shaded ->
+        // splay OUTWARD away from the winner. The outward push is deliberately
+        // stronger than the inward pull so the canopy widens with height —
+        // a tree opens upward, it must never funnel closed.
+        const side = t.x >= cx ? 1 : -1;
+        const target = c === 0 ? t.lean * .55 + side * .34
+                     : (rank === 0 ? t.lean * 0.30
+                                   : t.lean * .70 + side * (0.30 + (1 - share) * .55 + rank * .07));
+        t.lean += (target - t.lean) * .5;
+        const nx = t.x + t.lean * step * .95 + (rnd() - .5) * 1.6 * S;
+        const ny = y;
+        const w1 = c ? 1 * S + Math.sqrt(c) * .8 * S : .7 * S;
+        taperedLimb(g, [[t.x, t.y], [nx, ny]], Math.max(.7 * S, t.w || 1 * S), w1, c ? s.hue : PAL.dead, c ? .85 : .3);
+        if (rank === 0 && c > 0) {              // the winner gets a light pip
+          g.fillStyle = rgba(PAL.glow, .5);
+          g.beginPath(); g.arc(nx, ny, 1.6 * S + Math.sqrt(c) * .28 * S, 0, 7); g.fill();
+        }
+        t.x = Math.max(padL + 3 * S, Math.min(W - padR - 3 * S, nx)); t.y = ny; t.w = w1;
+      });
+      if (!row.present) label(g, 'no data', cx, y, { size: 7.5 * S, col: '#ff8f7a', align: 'center', alpha: .85 });
+    });
+    // label the tips
+    tips.forEach(t => label(g, t.s.label, t.x + (t.x > cx ? 4 : -4) * S, t.y - 5 * S,
+      { size: 7 * S, col: t.s.hue, align: t.x > cx ? 'left' : 'right', alpha: .9 }));
+    label(g, 'lean = share of the month’s light', W / 2, H - 7 * S, { size: 7.5 * S, align: 'center', alpha: .6 });
+  }
+});
+</script>
+
+<script>
+/* ==========================================================================
+   5 · board driver — grid, hi-dpi canvases, modal, seed, errors
+   ========================================================================== */
+const THUMB_W = 340, THUMB_H = 300;    // logical size; devicePixelRatio applied
+const BIG_W   = 1100, BIG_H = 720;
+
+function paint(canvas, sk, logicalW, logicalH) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width  = Math.round(logicalW * dpr);
+  canvas.height = Math.round(logicalH * dpr);
+  const g = canvas.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // S scales strokes/text with the drawing so the big view is not just stretched
+  const S = Math.max(1, logicalW / THUMB_W);
+  const rnd = rngFor(sk.id);
+  try {
+    sk.draw(g, logicalW, logicalH, D, rnd, S);
+  } catch (e) {
+    console.error('[sketch ' + sk.id + ']', e);
+    clear(g, logicalW, logicalH);
+    label(g, 'sketch failed: ' + e.message, 12, logicalH / 2, { size: 11, col: '#ff8f7a' });
+  }
+}
+
+function capHTML(sk) {
+  return `<span class="bet">${sk.bet}</span>` +
+         (sk.dead ? `<span class="dead">${sk.dead}</span>` : '') +
+         `<span class="weak">${sk.weak}</span>`;
+}
+
+let cards = [];
+function buildGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  cards = SKETCHES.map((sk, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    card.innerHTML =
+      `<h2><span class="n">${String(i + 1).padStart(2, '0')}</span><span>${sk.title}</span></h2>` +
+      `<canvas></canvas><div class="cap">${capHTML(sk)}</div>`;
+    const cv = card.querySelector('canvas');
+    cv.style.aspectRatio = THUMB_W + ' / ' + THUMB_H;
+    grid.appendChild(card);
+    const open = () => openModal(i);
+    card.addEventListener('click', open);
+    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+    return { card, cv, sk };
+  });
+  repaintAll();
+}
+function repaintAll() {
+  for (const c of cards) {
+    const w = c.cv.clientWidth || THUMB_W;
+    paint(c.cv, c.sk, Math.round(w), Math.round(w * THUMB_H / THUMB_W));
+  }
+  if (modalIx >= 0) paintModal();
+}
+
+/* ---- modal ---- */
+let modalIx = -1;
+const modal = document.getElementById('modal');
+function paintModal() {
+  const sk = SKETCHES[modalIx];
+  const cv = document.getElementById('mCanvas');
+  const w = Math.round(cv.clientWidth || BIG_W);
+  cv.style.aspectRatio = BIG_W + ' / ' + BIG_H;
+  paint(cv, sk, w, Math.round(w * BIG_H / BIG_W));
+}
+function openModal(i) {
+  modalIx = i;
+  const sk = SKETCHES[i];
+  document.getElementById('mTitle').innerHTML = `${String(i + 1).padStart(2, '0')} · ${sk.title}`;
+  document.getElementById('mCap').innerHTML = capHTML(sk);
+  modal.classList.add('on');
+  requestAnimationFrame(paintModal);
+}
+function closeModal() { modal.classList.remove('on'); modalIx = -1; }
+document.getElementById('mClose').addEventListener('click', closeModal);
+document.getElementById('mPrev').addEventListener('click', (e) => { e.stopPropagation(); openModal((modalIx - 1 + SKETCHES.length) % SKETCHES.length); });
+document.getElementById('mNext').addEventListener('click', (e) => { e.stopPropagation(); openModal((modalIx + 1) % SKETCHES.length); });
+modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+window.addEventListener('keydown', (e) => {
+  if (modalIx < 0) return;
+  if (e.key === 'Escape') closeModal();
+  else if (e.key === 'ArrowLeft')  openModal((modalIx - 1 + SKETCHES.length) % SKETCHES.length);
+  else if (e.key === 'ArrowRight') openModal((modalIx + 1) % SKETCHES.length);
+});
+
+/* ---- seed ---- */
+function showSeed() { document.getElementById('seedTag').textContent = 'seed ' + SEED; }
+document.getElementById('reseed').addEventListener('click', () => {
+  SEED = Math.random().toString(36).slice(2, 9);
+  const u = new URL(location.href); u.searchParams.set('seed', SEED);
+  history.replaceState(null, '', u);
+  showSeed(); repaintAll();
+});
+
+let rt = null;
+window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(repaintAll, 140); });
+
+/* ---- boot ---- */
+(async function boot() {
+  showSeed();
+  try {
+    D = await loadData();
+  } catch (e) {
+    console.error(e);
+    document.getElementById('err').classList.add('on');
+    document.getElementById('errDetail').textContent = String(e && e.message ? e.message : e);
+    document.getElementById('grid').style.display = 'none';
+    return;
+  }
+  const active = D.secStats.filter(s => s.active).length;
+  document.getElementById('dataTag').innerHTML =
+    `${D.nEvents} events · ${D.totalCommits} commits · ${D.rows.length} months ` +
+    `(${D.gaps.length} with no data: ${D.gaps.join(', ') || 'none'}) · ` +
+    `${active}/${SECTORS.length} sectors ever active · ${D.projects} projects`;
+  buildGrid();
+  // one-line console proof the buckets match the numbers in the README
+  console.log('%cmonthly commits', 'color:#7ce65a',
+    D.rows.map(r => r.key + ':' + r.commits).join('  '));
+})();
+</script>
+</body>
+</html>
