@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Time axis — Trunk Rings (concept board variant B)</title>
+
+<!--
+  ============================================================================
+  VARIANT B — "Trunk = time, crown = now"
+  ============================================================================
+
+  WHAT THIS IS
+    A concept-board sketch for the vertical-axis pivot: height stops meaning
+    PROFICIENCY and starts meaning TIME, cut into quarters. Milestones are gone
+    as the height gate (all 5 were authored in one week while certifying commits
+    spanning 19 months — an unreliable gate).
+
+    The trunk is the ARCHIVE. One growth-ring band per quarter, stacked bottom
+    (2024Q4, oldest) to top (2026Q3, newest). Band RADIUS = that quarter's
+    COMMIT count. Each band is divided into four proportional horizontal
+    sub-layers — commit / pr / review / issue — a stacked bar wrapped into a
+    ring, so the behavioural MIX is legible from every azimuth.
+
+    The STUMP on the ground is the same eight quarters as concentric annuli
+    (oldest at the pith, newest at the bark) with the mix split radially inside
+    each ring — the dendrochronology read, for the overhead view.
+
+    The crown is the PRESENT. A sector compass of the last two quarters'
+    activity, using the real taxonomy azimuths and hues.
+
+  WHAT IT'S TRYING TO PROVE
+    1. That "thickness = commits, composition = mix" is readable at a glance —
+       specifically that the 2026Q2 collaboration jump (10% -> 55%) is
+       unmistakable without reading a single number.
+    2. That an archive-below / live-above split can still read as ONE organism.
+    3. That the tree-ring metaphor pays off from directly overhead (press X for
+       the cross-section view) the way real dendrochronology does.
+
+  HONEST WEAKNESSES (read these before you fall in love with it)
+    - THE BAR-CHART-IN-A-HAT RISK IS REAL. From a mid-height orbit the trunk
+      reads as a stacked cylinder chart and the crown reads as decoration. It
+      only fuses into a tree when (a) the sector ribs visibly emerge from the
+      top band's wood and (b) you look from low down. I've bound them as hard
+      as I honestly can — the ribs are seeded at the top band's rim at the
+      band's own radius, and the crown's sector azimuths are echoed as faint
+      spokes down the whole trunk — but the seam is still findable.
+    - 2024Q4 (3 commits) is a hairline. That is TRUE and I have not faked a
+      minimum. I do apply a small readable floor (0.06 world units) so the label
+      has something to point at; the honest alternative — literally nothing —
+      is one keypress away (press F to toggle the floor off and watch the
+      bottom band vanish).
+    - The mix sub-layers are height-proportional, so a kind at 2% of a quarter's
+      mix is a 2%-of-a-band sliver you will squint at. 2025Q4's 32 issues (8%)
+      are a thin pink line; that is honest but not readable without the table.
+    - Radius would make AREA grow as the square of the value, so I map commits
+      through sqrt() — ring area, not ring radius, tracks the count. This is the
+      right perceptual call but it does mean the silhouette UNDERSTATES how much
+      bigger 2026 is than 2025 in raw commit terms. The numbers panel is there
+      because no encoding of this survives being the only source of truth.
+    - "Quarter" is a coarse bucket. 2026Q2's 477 commits and its 304 reviews
+      happened in a specific order inside those 90 days and this chart cannot
+      say anything about that.
+
+  DATA: ../../data/growth-log.jsonl — real, 2909 events. Nothing synthesised.
+  RUN:  from the repo root -> python -m http.server 8123
+        then /prototypes/time-axis-board/trunk-rings.html
+  PARAMS: ?seed=<n> (foliage/mote scatter) · ?dpr=<n> · ?view=top · ?floor=0
+  ============================================================================
+-->
+
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #05070d; font-family: "Segoe UI", system-ui, sans-serif; }
+  #app { position: fixed; inset: 0; }
+  .panel {
+    position: fixed; color: #cfd8e3; background: rgba(10, 16, 28, 0.55);
+    border: 1px solid rgba(140, 170, 210, 0.18); border-radius: 12px;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    padding: 14px 16px; font-size: 13px; line-height: 1.5; user-select: none;
+  }
+  #hud { top: 16px; left: 16px; max-width: 322px; }
+  #hud h1 { font-size: 15px; margin: 0 0 2px; font-weight: 600; color: #eef4fb; letter-spacing: 0.02em; }
+  #hud .sub { color: #8fa3ba; font-size: 11.5px; margin-bottom: 10px; }
+  #hud .say { color: #9db0c6; font-size: 11.5px; margin: 0 0 10px; line-height: 1.55; }
+  #hud .say b { color: #dce8f6; font-weight: 600; }
+  #controls { display: flex; gap: 7px; margin-top: 11px; flex-wrap: wrap; }
+  button {
+    all: unset; cursor: pointer; padding: 6px 12px; border-radius: 8px; font-size: 12.5px;
+    color: #eaf2fb; background: rgba(90, 140, 220, 0.22); border: 1px solid rgba(140, 180, 240, 0.35);
+    transition: background 0.2s;
+  }
+  button:hover { background: rgba(110, 160, 240, 0.38); }
+  button:focus-visible { outline: 2px solid rgba(150, 190, 250, 0.75); outline-offset: 2px; }
+  button[aria-pressed="true"] { background: rgba(120, 170, 240, 0.42); color: #fff; border-color: rgba(160, 195, 250, 0.6); }
+
+  /* --- kind legend (the mix) --- */
+  #legendKind { top: 16px; right: 16px; width: 232px; font-size: 12px; }
+  #legendKind b { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 8px; font-size: 12px; }
+  .kd { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .kd .sw { width: 26px; height: 9px; border-radius: 2px; box-shadow: 0 0 9px currentColor; flex: none; }
+  .kd .nm { color: #d3e0ee; }
+  .kd .ct { margin-left: auto; color: #8298b0; font-variant-numeric: tabular-nums; font-size: 11px; }
+  #legendKind .foot { margin-top: 9px; padding-top: 8px; border-top: 1px solid rgba(140,170,210,0.16);
+    color: #7f93aa; font-size: 10.8px; line-height: 1.5; }
+
+  /* --- sector legend --- */
+  #legendSectors { bottom: 14px; left: 16px; font-size: 11px; padding: 10px 12px; color: #9fb2c8; max-width: 252px; }
+  #legendSectors b { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 6px; }
+  #legendSectors .secGrid { display: grid; grid-template-columns: repeat(3, auto); gap: 3px 8px; }
+  #legendSectors .sec { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+  #legendSectors .dot { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 8px currentColor; flex: none; }
+
+  /* --- the ring table: honest numbers, always on screen --- */
+  #rings { bottom: 14px; right: 16px; padding: 10px 12px; font-size: 11px; }
+  #rings b { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 6px; font-size: 11.5px; }
+  #rings table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  #rings th { color: #7f93aa; font-weight: 500; text-align: right; padding: 1px 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  #rings th:first-child { text-align: left; }
+  #rings td { padding: 1px 6px; text-align: right; color: #a8bbd0; }
+  #rings td:first-child { text-align: left; color: #cbd9e8; }
+  #rings tr.hot td { color: #ffd9a8; }
+  #rings tr.hot td:first-child { color: #ffc880; }
+  #rings td.zero { color: #4d5c6e; }
+
+  #note { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); font-size: 11px;
+    color: #7f93aa; padding: 7px 14px; }
+  @media (max-width: 1250px) { #note { display: none; } }
+  @media (max-width: 1000px) { #rings, #legendSectors { display: none; } }
+
+  #err {
+    position: fixed; inset: 0; display: none; place-items: center; z-index: 50;
+    background: rgba(5, 7, 13, 0.94); color: #cfd8e3; text-align: center; padding: 24px;
+  }
+  #err.on { display: grid; }
+  #err .box { max-width: 540px; }
+  #err h2 { color: #ff9d9d; font-size: 18px; margin: 0 0 10px; }
+  #err p { font-size: 13.5px; line-height: 1.6; color: #aab8c9; }
+  #err code { background: rgba(120, 160, 230, 0.16); padding: 2px 6px; border-radius: 5px; color: #eaf2fb; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div class="panel" id="hud">
+  <h1>Trunk rings — time in the wood</h1>
+  <div class="sub">time-axis concept board · variant B</div>
+  <p class="say">
+    Height is <b>when</b>. One band per quarter, oldest at the roots.
+    Band <b>radius = commits</b> that quarter. Band <b>stripes = the mix</b>
+    (commit / pr / review / issue) — the behavioural maturity signal that
+    used to live in milestones. The crown above is <b>now</b>: the sector
+    compass of the last two quarters.
+  </p>
+  <div id="controls">
+    <button id="viewBtn" type="button" aria-pressed="false" title="Look straight down the trunk — the dendrochronology read (X)">⊙ Cross-section</button>
+    <button id="spinBtn" type="button" aria-pressed="true" title="Auto-orbit (O)">⏸ Orbit</button>
+    <button id="floorBtn" type="button" aria-pressed="true" title="A 0.06u readable floor keeps 2024Q4's 3 commits pointable. Off = the brutally honest radius (F)">⌁ Floor</button>
+    <button id="mixBtn" type="button" aria-pressed="true" title="Hide the stripes to see thickness alone (M)">▤ Mix</button>
+  </div>
+</div>
+
+<div class="panel" id="legendKind">
+  <b>The mix — stripe width in each ring</b>
+  <div id="kindRows"></div>
+  <div class="foot">
+    Ring thickness is <b style="color:#c3d4e6">commits only</b> — never total
+    events. A PR's own commits are already in the log, so raw-event thickness
+    would overstate 2026 by ~3× as a workflow artifact. Thickness carries
+    volume; composition carries the mix.
+  </div>
+</div>
+
+<div class="panel" id="legendSectors">
+  <b>Sectors — crown compass (taxonomy default-v1)</b>
+  <div class="secGrid" id="secGrid"></div>
+</div>
+
+<div class="panel" id="rings">
+  <b>Every ring, by the numbers</b>
+  <table id="ringTable"></table>
+</div>
+
+<div class="panel" id="note">drag to orbit · scroll to zoom · <b>X</b> cross-section · <b>O</b> orbit · <b>F</b> floor · <b>M</b> mix</div>
+
+<div id="err"><div class="box">
+  <h2>Couldn't load the growth log</h2>
+  <p id="errMsg"></p>
+  <p>This page fetches <code>../../data/growth-log.jsonl</code>, so it must be served
+  over http(s) <b>from the repo root</b>. Opening the file directly
+  (<code>file://</code>) blocks the fetch. Run
+  <code>python -m http.server 8123</code> in the repo root and visit
+  <code>/prototypes/time-axis-board/trunk-rings.html</code>.</p>
+</div></div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.181/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.181/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const deg = d => (d * Math.PI) / 180;
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+// ---------- seeded PRNG (?seed=) — every scatter in this sketch is reproducible ----------
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const PARAMS = new URLSearchParams(location.search);
+const SEED = (() => { const s = parseInt(PARAMS.get('seed'), 10); return Number.isFinite(s) ? s : 1337; })();
+const rng = mulberry32(SEED);
+
+function fatal(msg) {
+  document.getElementById('errMsg').textContent = String(msg);
+  document.getElementById('err').classList.add('on');
+}
+
+// ---------- taxonomy (mirrored from generator/taxonomy.mjs — generator-only config, so
+// a standalone sketch has to carry a copy; az/hue/label are verbatim) ----------
+const SECTORS = [
+  { id: 'create.copy',        label: 'copy',      limb: 'CREATE',     az: 15,  hue: 0xffb454 },
+  { id: 'create.images',      label: 'images',    limb: 'CREATE',     az: 55,  hue: 0xff6ec7 },
+  { id: 'create.video',       label: 'video',     limb: 'CREATE',     az: 95,  hue: 0xff5d73 },
+  { id: 'create.3d',          label: '3d',        limb: 'CREATE',     az: 115, hue: 0xff8f4d },
+  { id: 'automate.workflows', label: 'workflows', limb: 'AUTOMATE',   az: 140, hue: 0x7ce65a },
+  { id: 'distribute.seo',     label: 'seo',       limb: 'DISTRIBUTE', az: 185, hue: 0x35d0ba },
+  { id: 'distribute.geo',     label: 'geo',       limb: 'DISTRIBUTE', az: 225, hue: 0x4aa8ff },
+  { id: 'build.no-code',      label: 'no-code',   limb: 'BUILD',      az: 270, hue: 0xb59aff },
+  { id: 'build.low-code',     label: 'low-code',  limb: 'BUILD',      az: 310, hue: 0x8f7bff },
+  { id: 'build.pro-code',     label: 'pro-code',  limb: 'BUILD',      az: 350, hue: 0x6a8dff },
+];
+const SEC_BY_ID = new Map(SECTORS.map(s => [s.id, s]));
+
+// ---------- the mix palette. Deliberately NOT sector hues: the ring stripes answer
+// "what kind of work", the crown answers "what field". Two questions, two colour
+// families, so they never fight for the same read. ----------
+// Order is load-bearing: the COLLABORATIVE kinds stack at the BOTTOM of each band,
+// directly above the seam that opens the quarter, and commit wood fills upward. That
+// puts every quarter's collaboration signal immediately above its own ring boundary
+// instead of floating at the top where it visually attaches to the NEXT quarter.
+const KINDS = [
+  { key: 'review', name: 'review',       col: 0x86b7ff, note: 'reading others’ work' },
+  { key: 'pr',     name: 'pull request', col: 0x4fd8c4, note: 'proposing' },
+  { key: 'issue',  name: 'issue',        col: 0xff8fb0, note: 'naming a problem' },
+  { key: 'commit', name: 'commit',       col: 0xd9b26a, note: 'the wood itself' },
+];
+// legend order stays human (commit first) even though the geometry stacks collab-first
+const KINDS_LEGEND = ['commit', 'pr', 'review', 'issue'].map(k => KINDS.find(x => x.key === k));
+const KIND_KEYS = KINDS.map(k => k.key);
+
+// ============================================================================
+// LOAD + BUCKET
+// ============================================================================
+let RAW;
+try {
+  const res = await fetch('../../data/growth-log.jsonl', { cache: 'no-cache' });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching ../../data/growth-log.jsonl');
+  RAW = await res.text();
+} catch (e) {
+  fatal(e.message || e);
+  throw e;
+}
+
+const EVENTS = [];
+for (const line of RAW.split(/\r?\n/)) {
+  const s = line.trim();
+  if (!s) continue;
+  try { EVENTS.push(JSON.parse(s)); } catch { /* skip a torn line rather than kill the page */ }
+}
+if (!EVENTS.length) { fatal('growth-log.jsonl parsed to zero events'); throw new Error('empty log'); }
+
+const qKeyOf = (ts) => { const d = new Date(ts); return d.getUTCFullYear() + 'Q' + (Math.floor(d.getUTCMonth() / 3) + 1); };
+const qSort = (k) => parseInt(k.slice(0, 4), 10) * 4 + parseInt(k.slice(5), 10);
+
+const qMap = new Map();
+for (const e of EVENTS) {
+  const k = qKeyOf(e.ts);
+  let b = qMap.get(k);
+  if (!b) { b = { key: k, commit: 0, pr: 0, review: 0, issue: 0, milestone: 0, total: 0, sectors: new Map() }; qMap.set(k, b); }
+  if (b[e.kind] === undefined) b[e.kind] = 0;
+  b[e.kind]++;
+  if (KIND_KEYS.includes(e.kind)) b.total++;     // milestones are NOT part of the mix — they're the gate we dropped
+  b.sectors.set(e.sector, (b.sectors.get(e.sector) || 0) + 1);
+}
+// fill any empty quarter inside the span so the trunk has no chronological gap
+const QUARTERS = (() => {
+  const keys = [...qMap.keys()].sort((a, b) => qSort(a) - qSort(b));
+  const out = [];
+  for (let n = qSort(keys[0]); n <= qSort(keys[keys.length - 1]); n++) {
+    const k = Math.floor((n - 1) / 4) + 'Q' + (((n - 1) % 4) + 1);
+    out.push(qMap.get(k) || { key: k, commit: 0, pr: 0, review: 0, issue: 0, milestone: 0, total: 0, sectors: new Map() });
+  }
+  return out;
+})();
+for (const q of QUARTERS) {
+  q.collab = q.total ? (q.pr + q.review + q.issue) / q.total : 0;
+  q.year = parseInt(q.key.slice(0, 4), 10);
+}
+const MAX_COMMITS = Math.max(...QUARTERS.map(q => q.commit));
+
+// crown = the present: last two quarters' sector activity
+const CROWN_QS = QUARTERS.slice(-2);
+const crownSectors = new Map();
+for (const q of CROWN_QS) for (const [sid, n] of q.sectors) crownSectors.set(sid, (crownSectors.get(sid) || 0) + n);
+const CROWN_MAX = Math.max(1, ...crownSectors.values());
+
+// ============================================================================
+// GEOMETRY CONSTANTS
+// ============================================================================
+const BAND_H       = 1.05;                 // world height of one quarter — TIME IS UNIFORM, always
+const GAP          = 0.10;                 // the dark "latewood" seam between quarters
+const R_MAX        = 2.55;                 // radius of the fattest ring (2026Q2, 477 commits)
+const R_FLOOR      = 0.07;                 // readable floor — see the header comment; F toggles it
+const TRUNK_Y0     = 0.0;
+const TRUNK_TOP    = TRUNK_Y0 + QUARTERS.length * BAND_H;
+// Crown pads sit only just above the trunk's last band. A big airgap here is the
+// single biggest driver of the "bar chart wearing a hat" read — close it and the
+// ribs are short enough to look like the trunk forking, not a separate object.
+const CROWN_Y      = TRUNK_TOP + 0.55;
+const SEG          = 160;                  // circumference resolution — fine enough for a 7-degree sliver
+
+let floorOn = PARAMS.get('floor') !== '0';
+// sqrt so that ring AREA (not radius) tracks the commit count — the perceptual fix for
+// "radius squares the value". A tree ring's visual weight is its area; this makes 2026Q2
+// look ~1.3x 2025Q4 rather than ~1.9x, which is the honest ratio of 477:368.
+const radiusOf = (q) => (floorOn ? R_FLOOR : 0) + (R_MAX - (floorOn ? R_FLOOR : 0)) * Math.sqrt(q.commit / MAX_COMMITS);
+const bandY0 = (i) => TRUNK_Y0 + i * BAND_H;
+
+// ---------- the STUMP: cumulative concentric annuli, the dendrochronology read ----------
+// Seen from above, a real cut trunk shows every year at once as nested rings. The banded
+// column can't do that (each band hides the one below), so the cross-section view gets its
+// own object: a flat disc at the trunk's foot where quarter i owns the annulus between
+// cumulative radii. Ring WIDTH there = that quarter's commits, same encoding, and the
+// four kind-wedges are split inside each annulus. Oldest at the CORE, newest at the BARK —
+// which is exactly how wood works, and it means the two views encode identically.
+const STUMP_R = 6.4;
+const stumpBands = (() => {
+  const widths = QUARTERS.map(q => Math.max(0.06, q.commit)); // raw commit widths, min sliver
+  const sum = widths.reduce((a, b) => a + b, 0);
+  let acc = 0.5; // a small pith at the centre
+  return QUARTERS.map((q, i) => {
+    const r0 = acc;
+    acc += (widths[i] / sum) * (STUMP_R - 0.5);
+    return { q, i, r0, r1: acc };
+  });
+})();
+
+// ============================================================================
+// SCENE
+// ============================================================================
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x05070d);
+scene.fog = new THREE.FogExp2(0x05070d, 0.0135);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 400);
+// Frame the WHOLE organism: trunk foot (y=0) to the highest crown pad. Crown tips sit
+// at CROWN_Y + lift (lift maxes at 1.8) and pads add ~0.5, so TOP_EXTENT bounds it.
+// Half-height must also cover the label rail out at R_MAX+2.9, hence the width check.
+const TOP_EXTENT = CROWN_Y + 2.4;
+const HALF_W = R_MAX + 4.4;                              // widest thing: the label rail
+const FRAME_Y = TOP_EXTENT * 0.5;
+const vFit = (TOP_EXTENT * 0.5 * 1.25) / Math.tan(deg(22.5));
+const hFit = (HALF_W * 1.12) / (Math.tan(deg(22.5)) * (innerWidth / innerHeight));
+const FRAME_D = Math.max(vFit, hFit);
+camera.position.set(FRAME_D * 0.70, FRAME_Y + TOP_EXTENT * 0.22, FRAME_D * 0.70);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+const dprParsed = parseFloat(PARAMS.get('dpr'));
+const dprExplicit = Number.isFinite(dprParsed) && dprParsed > 0;
+renderer.setPixelRatio(Math.min(devicePixelRatio, dprExplicit ? dprParsed : 2));
+document.getElementById('app').appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, FRAME_Y, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.4;
+controls.minDistance = 5;
+controls.maxDistance = 70;
+controls.maxPolarAngle = deg(120);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+// strength kept low and threshold high: the crown is ADDITIVE point sprites, and a
+// generous bloom turns overlapping motes into a white blob within two frames
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.42, 0.75, 0.82);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+const U = { uTime: { value: 0 }, uMix: { value: 1 }, uTop: { value: 0 } }; // uTop eases 0->1 in cross-section
+
+// ---------- savanna night sky (same recipe as acacia-sketch, so the variants match) ----------
+{
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(160, 48, 32),
+    new THREE.ShaderMaterial({
+      side: THREE.BackSide, depthWrite: false,
+      vertexShader: `varying vec3 vDir;
+        void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: `varying vec3 vDir;
+        void main() {
+          float e = vDir.y;
+          vec3 col = mix(vec3(0.055,0.07,0.115), vec3(0.02,0.028,0.062), smoothstep(0.05,0.7,e));
+          col += vec3(0.07,0.135,0.085) * exp(-max(e,0.0)*16.0) * step(0.0,e);
+          col += vec3(0.05,0.16,0.14) * 0.4 * exp(-pow((e-0.075)*9.0, 2.0));
+          col += vec3(0.55,0.42,0.16) * 0.3 * exp(-pow((e-0.16)*17.0, 2.0));
+          if (e < 0.0) col = mix(vec3(0.026,0.036,0.05), vec3(0.02,0.027,0.05), -e);
+          gl_FragColor = vec4(pow(col, vec3(2.2)), 1.0);
+        }`,
+    })
+  );
+  scene.add(sky);
+
+  const SN = 620, sp = new Float32Array(SN * 3), sph = new Float32Array(SN), ssz = new Float32Array(SN);
+  for (let i = 0; i < SN; i++) {
+    const el = 0.20 + Math.pow(rng(), 0.8) * 1.25, az = rng() * TAU, RS = 150;
+    sp.set([Math.cos(az) * Math.cos(el) * RS, Math.sin(el) * RS, Math.sin(az) * Math.cos(el) * RS], i * 3);
+    sph[i] = rng() * TAU; ssz[i] = 0.5 + rng() * 1.4;
+  }
+  const sg = new THREE.BufferGeometry();
+  sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+  sg.setAttribute('aPhase', new THREE.BufferAttribute(sph, 1));
+  sg.setAttribute('aSize', new THREE.BufferAttribute(ssz, 1));
+  const stars = new THREE.Points(sg, new THREE.ShaderMaterial({
+    uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `attribute float aPhase, aSize; uniform float uTime; varying float vA;
+      void main() { vA = 0.35 + 0.3 * sin(uTime * 0.7 + aPhase * 5.0); gl_PointSize = aSize * 2.2;
+        gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `varying float vA;
+      void main() { float d = length(gl_PointCoord - 0.5);
+        gl_FragColor = vec4(vec3(0.82,0.88,1.0), smoothstep(0.5,0.1,d) * vA); }`,
+  }));
+  stars.frustumCulled = false;
+  scene.add(stars);
+
+  // the plain
+  const pcv = document.createElement('canvas'); pcv.width = pcv.height = 256;
+  const pctx = pcv.getContext('2d');
+  const pg = pctx.createRadialGradient(128, 128, 20, 128, 128, 128);
+  pg.addColorStop(0, '#0b120d'); pg.addColorStop(0.5, '#080e0a'); pg.addColorStop(1, '#05070d');
+  pctx.fillStyle = pg; pctx.fillRect(0, 0, 256, 256);
+  const ptex = new THREE.CanvasTexture(pcv); ptex.colorSpace = THREE.SRGBColorSpace;
+  const plain = new THREE.Mesh(new THREE.CircleGeometry(120, 64), new THREE.MeshBasicMaterial({ map: ptex }));
+  plain.rotation.x = -Math.PI / 2; plain.position.y = -0.07;
+  scene.add(plain);
+}
+
+// ---------- ground compass rose: sector names + hue arcs, PLUS radius reference rings.
+// The reference rings are the antidote to the radius-encodes-count perceptual lie:
+// they let you check "is 2026Q2 really 1.9x 2025Q4's radius" against a scale. ----------
+{
+  const S = 1024, cv = document.createElement('canvas'); cv.width = cv.height = S;
+  const ctx = cv.getContext('2d');
+  const cx = S / 2, rMax = S / 2 - 12;
+  const grd = ctx.createRadialGradient(cx, cx, 30, cx, cx, rMax);
+  grd.addColorStop(0, '#101a17'); grd.addColorStop(0.65, '#0a1210'); grd.addColorStop(1, '#05070d');
+  ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(cx, cx, rMax, 0, TAU); ctx.fill();
+
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+  for (const s of SECTORS) {
+    const a = deg(s.az);
+    // faint spoke from the trunk out to the rim — the crown's azimuths, printed on the floor.
+    // This is one of the two devices binding crown to trunk (the other is the rib seeding).
+    const g2 = ctx.createLinearGradient(cx, cx, cx + Math.cos(a) * rMax, cx + Math.sin(a) * rMax);
+    const rgb = [(s.hue >> 16) & 255, (s.hue >> 8) & 255, s.hue & 255].join(',');
+    g2.addColorStop(0, `rgba(${rgb},0.0)`); g2.addColorStop(0.55, `rgba(${rgb},0.11)`); g2.addColorStop(1, `rgba(${rgb},0.02)`);
+    ctx.strokeStyle = g2; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(cx, cx); ctx.lineTo(cx + Math.cos(a) * rMax, cx + Math.sin(a) * rMax); ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx + Math.cos(a) * (rMax - 78), cx + Math.sin(a) * (rMax - 78));
+    ctx.rotate(a + Math.PI / 2);
+    ctx.font = '500 28px "Segoe UI", sans-serif';
+    ctx.fillStyle = `rgba(${rgb},0.55)`;
+    ctx.fillText(s.label, 0, 0);
+    ctx.restore();
+    ctx.strokeStyle = `rgba(${rgb},0.28)`; ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.arc(cx, cx, rMax - 30, a - deg(13), a + deg(13)); ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  // wide enough that the stump disc (STUMP_R) sits comfortably inside the compass rose
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(11.5, 96),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.9, depthWrite: false }));
+  ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02;
+  scene.add(ground);
+}
+
+// ============================================================================
+// THE TRUNK — one continuous swelling solid whose surface is banded by quarter,
+// and whose MIX is carried as horizontal sub-layers WITHIN each band.
+//
+// WHY SUB-LAYERS AND NOT ARC WEDGES: v1 split each band's CIRCUMFERENCE into
+// four proportional arcs. It looked great in cross-section and failed completely
+// in side view — a cylinder only ever shows you half its circumference, so
+// 2026Q2's 304 reviews were reliably hidden round the back and the trunk read as
+// solid gold with one teal patch. The 55% jump has to be unmissable, so the mix
+// now stacks VERTICALLY inside the band: four full rings of proportional height,
+// visible from every azimuth. That is also literally "a stacked bar wrapped into
+// a ring". The circumferential split survives where it works — on the stump.
+//
+// WHY A SWELLING SOLID AND NOT STACKED DISCS: I built both. Discrete discs read
+// instantly as a wedding cake — each disc is its own closed silhouette and the
+// eye counts objects, not a shape. So the wall radius is SMOOTHED across band
+// boundaries (a Catmull-ish blend of neighbouring quarter radii over the last
+// ~22% of each band) giving one continuous tapering surface. The quarters stay
+// perfectly countable via the latewood darkening and the seam hoops, but the
+// object is a trunk first and a chart second — the trade this variant is betting
+// on. Bark ridges (a cheap sin() on the normal) finish the wood read.
+//
+// One merged BufferGeometry per kind (<=4 draws for 8 quarters) — trivially 60fps.
+// ============================================================================
+const trunkGroup = new THREE.Group();
+scene.add(trunkGroup);
+
+const bandMeta = []; // { q, y0, y1, r0, r1, i }
+
+function buildTrunk() {
+  while (trunkGroup.children.length) {
+    const c = trunkGroup.children.pop();
+    c.geometry?.dispose?.();
+    c.material?.dispose?.();
+    trunkGroup.remove(c);
+  }
+  bandMeta.length = 0;
+
+  const R = QUARTERS.map(radiusOf);
+  // radius as a continuous function of height: each quarter holds its own radius for
+  // most of its band, then eases into the next over the final BLEND fraction. This is
+  // what turns "stack of tins" back into "trunk".
+  const BLEND = 0.22;
+  const radiusAtBand = (i, t) => {
+    const rHere = R[i];
+    const rNext = i + 1 < R.length ? R[i + 1] : R[i] * 0.94;
+    const rPrevQ = i > 0 ? R[i - 1] : R[i] * 1.06;
+    if (t < BLEND) {           // ease UP from the previous quarter
+      const u = t / BLEND, s = u * u * (3 - 2 * u);
+      return rPrevQ + (rHere - rPrevQ) * (0.5 + 0.5 * s);
+    }
+    if (t > 1 - BLEND) {       // ease OUT toward the next
+      const u = (t - (1 - BLEND)) / BLEND, s = u * u * (3 - 2 * u);
+      return rHere + (rNext - rHere) * (0.5 * s);
+    }
+    return rHere;
+  };
+
+  const pool = KINDS.map(() => ({ pos: [], nrm: [], aux: [], idx: [] })); // aux = (t within band, band index)
+  const VSTEP = 5; // vertical subdivisions per sub-layer — enough for a smooth taper
+
+  for (let i = 0; i < QUARTERS.length; i++) {
+    const q = QUARTERS[i];
+    const y0 = bandY0(i), y1 = y0 + BAND_H - GAP;
+    bandMeta.push({ q, i, y0, y1, r0: radiusAtBand(i, 0), r1: radiusAtBand(i, 1) });
+
+    // vertical sub-layer split by kind proportion. A quarter with zero of a kind gets
+    // zero height — 2025Q1/Q2 are pure commit wood, and that emptiness is the point.
+    const tot = q.total || 1;
+    let acc = 0;
+    const layers = KINDS.map((k) => {
+      const frac = q.total ? q[k.key] / tot : (k.key === 'commit' ? 1 : 0);
+      const seg = { t0: acc, t1: acc + frac, frac };
+      acc += frac;
+      return seg;
+    });
+
+    for (let ki = 0; ki < KINDS.length; ki++) {
+      const { t0, t1, frac } = layers[ki];
+      if (frac <= 0) continue;
+      const P = pool[ki];
+      const rows = Math.max(2, Math.ceil(VSTEP * Math.max(frac, 0.12)));
+      const base = P.pos.length / 3;
+      for (let r = 0; r <= rows; r++) {
+        const t = t0 + (t1 - t0) * (r / rows);
+        const y = y0 + (y1 - y0) * t;
+        const rad = radiusAtBand(i, t);
+        for (let s = 0; s <= SEG; s++) {
+          const ang = (s / SEG) * TAU;
+          const cx = Math.cos(ang), sz = Math.sin(ang);
+          P.pos.push(cx * rad, y, sz * rad);
+          P.nrm.push(cx, 0.1, sz);
+          P.aux.push(t, i);
+        }
+      }
+      for (let r = 0; r < rows; r++) {
+        for (let s = 0; s < SEG; s++) {
+          const a0 = base + r * (SEG + 1) + s, b0 = a0 + 1;
+          const a1 = a0 + (SEG + 1), b1 = a1 + 1;
+          P.idx.push(a0, a1, b0, b0, a1, b1);
+        }
+      }
+    }
+
+    // top cap of the band (commit pool — it's structural wood, not a mix reading)
+    {
+      const P = pool[KINDS.findIndex(k => k.key === 'commit')];
+      const rad = radiusAtBand(i, 1);
+      const base = P.pos.length / 3;
+      P.pos.push(0, y1 + 0.002, 0); P.nrm.push(0, 1, 0); P.aux.push(1, i);
+      for (let s = 0; s <= SEG; s++) {
+        const ang = (s / SEG) * TAU;
+        P.pos.push(Math.cos(ang) * rad, y1 + 0.002, Math.sin(ang) * rad);
+        P.nrm.push(0, 1, 0); P.aux.push(1, i);
+      }
+      for (let s = 0; s < SEG; s++) P.idx.push(base, base + 1 + s + 1, base + 1 + s);
+    }
+  }
+
+  for (let ki = 0; ki < KINDS.length; ki++) {
+    const P = pool[ki];
+    if (!P.idx.length) continue;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(P.pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(P.nrm, 3));
+    g.setAttribute('aAux', new THREE.Float32BufferAttribute(P.aux, 2));
+    g.setIndex(P.idx);
+    const k = KINDS[ki];
+    const mat = new THREE.ShaderMaterial({
+      side: THREE.DoubleSide,
+      uniforms: {
+        ...U,
+        uCol: { value: new THREE.Color(k.col) },
+        uIsCommit: { value: k.key === 'commit' ? 1 : 0 },
+      },
+      vertexShader: `
+        attribute vec2 aAux; varying vec2 vAux; varying vec3 vN; varying vec3 vW;
+        void main() {
+          vAux = aAux; vN = normalize(normalMatrix * normal);
+          vec4 wp = modelMatrix * vec4(position, 1.0); vW = wp.xyz;
+          gl_Position = projectionMatrix * viewMatrix * wp;
+        }`,
+      fragmentShader: `
+        uniform vec3 uCol; uniform float uMix, uTime, uIsCommit, uTop;
+        varying vec2 vAux; varying vec3 vN; varying vec3 vW;
+        void main() {
+          // uMix=0 -> every sub-layer collapses to the commit wood tone (thickness alone)
+          vec3 wood = vec3(0.52, 0.38, 0.23);
+          vec3 c = mix(wood, uCol, uMix * (1.0 - uIsCommit) + uIsCommit);
+
+          vec3 nn = normalize(vN);
+          vec3 vd = normalize(cameraPosition - vW);
+          // rim light: the classic "glowing wood" read, and it makes the taper legible
+          float rim = pow(1.0 - abs(dot(nn, vd)), 2.2);
+          float key = 0.36 + 0.44 * max(nn.y, 0.0) + 0.26 * max(dot(nn, normalize(vec3(0.4,0.7,0.55))), 0.0);
+
+          // bark: fine vertical ridges around the circumference. Cheap (no texture) and
+          // it is the single strongest cue that this is WOOD and not extruded plastic.
+          float az = atan(vW.z, vW.x);
+          float bark = 0.90 + 0.10 * sin(az * 46.0) * (0.6 + 0.4 * sin(vW.y * 3.1));
+
+          // latewood: a dark seam at the FOOT of each quarter band. This is what makes
+          // the band boundary read as a growth-ring boundary rather than a paint stripe.
+          float late = smoothstep(0.0, 0.13, vAux.x) * smoothstep(0.0, 0.06, 1.0 - vAux.x);
+          float shade = mix(0.34, 1.0, late);
+
+          vec3 col = c * key * shade * bark + c * rim * 0.8;
+          // faint breathing glow so the wood feels alive rather than printed
+          col += c * 0.045 * (0.5 + 0.5 * sin(uTime * 0.6 + vAux.y));
+          // cross-section view: the standing trunk dissolves to a ghost so the stump's
+          // concentric rings below are readable. Same wood, sliced open.
+          gl_FragColor = vec4(col, mix(1.0, 0.10, uTop));
+        }`,
+      transparent: true,
+    });
+    trunkGroup.add(new THREE.Mesh(g, mat));
+  }
+}
+buildTrunk();
+
+// flat (non-billboard) text plane — for labels that must LIE ON the stump disc
+const stumpLabels = [];
+function labelSpriteFlat(text, color) {
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
+  const ctx = cv.getContext('2d');
+  ctx.font = '600 40px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = color;
+  ctx.fillText(text, 128, 32);
+  const tex = new THREE.CanvasTexture(cv);
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.98, 0.245),
+    new THREE.ShaderMaterial({
+      uniforms: { ...U, uMap: { value: tex } },
+      transparent: true, depthWrite: false, depthTest: false, side: THREE.DoubleSide,
+      vertexShader: `varying vec2 vUv;
+        void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+      fragmentShader: `uniform sampler2D uMap; uniform float uTop; varying vec2 vUv;
+        void main(){ vec4 t = texture2D(uMap, vUv); gl_FragColor = vec4(t.rgb, t.a * uTop * 0.95); }`,
+    })
+  );
+  return m;
+}
+
+// ============================================================================
+// THE STUMP — the same eight quarters as concentric annuli on the ground, oldest
+// at the pith, newest at the bark. This is the dendrochronology read: from
+// directly overhead you see the WHOLE history at once, every quarter's mix split
+// inside its own ring. Fades in with the cross-section view (uTop) and fades out
+// when you come back down to the side view, so it never fights the trunk.
+// ============================================================================
+{
+  const pos = [], col = [], aux = []; // aux = (ringIndex, kindIndex)
+  for (const b of stumpBands) {
+    const q = b.q;
+    const tot = q.total || 1;
+    let a = deg(-90);
+    for (let ki = 0; ki < KINDS.length; ki++) {
+      const frac = q.total ? q[KINDS[ki].key] / tot : (KINDS[ki].key === 'commit' ? 1 : 0);
+      if (frac <= 0) continue;
+      const a0 = a, a1 = a + frac * TAU; a = a1;
+      const steps = Math.max(2, Math.round(SEG * frac) + 2);
+      const c = new THREE.Color(KINDS[ki].col);
+      for (let s = 0; s < steps; s++) {
+        const t0 = a0 + (a1 - a0) * (s / steps), t1 = a0 + (a1 - a0) * ((s + 1) / steps);
+        const quad = [
+          [Math.cos(t0) * b.r0, Math.sin(t0) * b.r0], [Math.cos(t0) * b.r1, Math.sin(t0) * b.r1],
+          [Math.cos(t1) * b.r1, Math.sin(t1) * b.r1], [Math.cos(t1) * b.r0, Math.sin(t1) * b.r0],
+        ];
+        for (const [ia, ib, ic] of [[0, 1, 2], [0, 2, 3]]) {
+          for (const vi of [ia, ib, ic]) {
+            pos.push(quad[vi][0], 0, quad[vi][1]);
+            col.push(c.r, c.g, c.b);
+            aux.push(b.i, ki);
+          }
+        }
+      }
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('aCol', new THREE.Float32BufferAttribute(col, 3));
+  g.setAttribute('aAux', new THREE.Float32BufferAttribute(aux, 2));
+  const stump = new THREE.Mesh(g, new THREE.ShaderMaterial({
+    uniforms: { ...U, uWood: { value: new THREE.Color(0x8c6634) } },
+    transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    vertexShader: `attribute vec3 aCol; attribute vec2 aAux;
+      varying vec3 vC; varying vec2 vAux; varying float vR;
+      void main() { vC = aCol; vAux = aAux; vR = length(position.xz);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `uniform float uTop, uMix, uTime; uniform vec3 uWood;
+      varying vec3 vC; varying vec2 vAux; varying float vR;
+      void main() {
+        vec3 c = mix(uWood, vC, uMix * step(0.5, vAux.y) + (1.0 - step(0.5, vAux.y)));
+        // faint radial grain inside each ring so it reads as wood, not a pie chart
+        float grain = 0.86 + 0.14 * sin(vR * 68.0);
+        gl_FragColor = vec4(c * grain * 0.95, uTop * 0.92);
+      }`,
+  }));
+  stump.rotation.x = 0; stump.position.y = 0.015;
+  stump.renderOrder = 4;
+  scene.add(stump);
+
+  // ring boundary hoops + a year tick, so you can count the quarters on the stump
+  for (const b of stumpBands) {
+    const pts = [];
+    for (let s = 0; s <= SEG; s++) { const a = (s / SEG) * TAU; pts.push(Math.cos(a) * b.r1, 0.02, Math.sin(a) * b.r1); }
+    const lg = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { ...U, uC: { value: new THREE.Color(b.q.collab > 0.4 ? 0xffe0b0 : 0x9ec4e8) } },
+      transparent: true, depthWrite: false,
+      vertexShader: `void main(){ gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+      fragmentShader: `uniform float uTop; uniform vec3 uC;
+        void main(){ gl_FragColor = vec4(uC, uTop * 0.5); }`,
+    });
+    const line = new THREE.Line(lg, mat);
+    line.renderOrder = 5;
+    scene.add(line);
+
+    // quarter label lying on the stump, along the +X radius
+    const sp = labelSpriteFlat(b.q.key, b.q.collab > 0.4 ? '#ffd9a8' : '#cfe0f2');
+    sp.position.set((b.r0 + b.r1) / 2, 0.03, 0);
+    sp.rotation.x = -Math.PI / 2;
+    sp.renderOrder = 6;
+    scene.add(sp);
+    stumpLabels.push(sp);
+  }
+}
+
+// ---------- seam rings: a thin bright hoop at the top of every band. These are the
+// literal "you can count them" affordance, and they're what a real ring boundary is. ----------
+const seamGroup = new THREE.Group();
+scene.add(seamGroup);
+function buildSeams() {
+  while (seamGroup.children.length) { const c = seamGroup.children.pop(); c.geometry?.dispose?.(); seamGroup.remove(c); }
+  for (const b of bandMeta) {
+    const g = new THREE.BufferGeometry();
+    const pts = [];
+    for (let s = 0; s <= SEG; s++) {
+      const a = (s / SEG) * TAU;
+      pts.push(Math.cos(a) * (b.r1 + 0.012), b.y1 + 0.004, Math.sin(a) * (b.r1 + 0.012));
+    }
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    const isLast = b.i === bandMeta.length - 1;
+    const line = new THREE.Line(g, new THREE.ShaderMaterial({
+      uniforms: { ...U, uC: { value: new THREE.Color(isLast ? 0xffe6b8 : 0x9ec4e8) }, uO: { value: isLast ? 0.8 : 0.36 } },
+      transparent: true, depthWrite: false,
+      vertexShader: `void main(){ gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+      fragmentShader: `uniform vec3 uC; uniform float uO, uTop;
+        void main(){ gl_FragColor = vec4(uC, uO * (1.0 - uTop * 0.8)); }`,
+    }));
+    seamGroup.add(line);
+  }
+}
+buildSeams();
+
+// ============================================================================
+// THE BINDING — sector ribs. These are the whole argument against "two bolted
+// objects". Each rib STARTS inside the top band's wood, at that band's own
+// radius, on its sector azimuth, and curves out and up into the crown pad.
+// If you delete these the page instantly becomes a bar chart in a hat.
+// ============================================================================
+const activeSectors = SECTORS.filter(s => (crownSectors.get(s.id) || 0) > 0);
+const ribGroup = new THREE.Group();
+scene.add(ribGroup);
+{
+  const topR = radiusOf(QUARTERS[QUARTERS.length - 1]);
+  for (const s of activeSectors) {
+    const n = crownSectors.get(s.id) || 0;
+    const w = Math.pow(n / CROWN_MAX, 0.42);          // perceptual compression: geo (795) vs seo (2)
+    const a = deg(s.az);
+    // Reach is deliberately modest — an acacia's crown is WIDER than its trunk but it is
+    // still one canopy sitting ON the trunk. v2 let reach hit 4.9 and the pads sprawled
+    // into separate floating clouds, which is exactly the "two objects" failure.
+    const reach = 1.0 + 2.1 * w;
+    const lift = 0.8 + 1.0 * w;
+    // start BELOW the top of the trunk — the rib is rooted in the last two bands' wood,
+    // not perched on the lid. This overlap is deliberate and load-bearing.
+    const y0 = TRUNK_TOP - BAND_H * 1.35;
+    const p0 = new THREE.Vector3(Math.cos(a) * topR * 0.35, y0, Math.sin(a) * topR * 0.35);
+    const p1 = new THREE.Vector3(Math.cos(a) * (topR + reach * 0.35), TRUNK_TOP + lift * 0.5, Math.sin(a) * (topR + reach * 0.35));
+    const p2 = new THREE.Vector3(Math.cos(a) * (topR + reach), CROWN_Y + lift, Math.sin(a) * (topR + reach));
+    const curve = new THREE.QuadraticBezierCurve3(p0, p1, p2);
+    const tube = new THREE.Mesh(
+      new THREE.TubeGeometry(curve, 26, 0.028 + 0.075 * w, 8, false),
+      new THREE.ShaderMaterial({
+        uniforms: { ...U, uCol: { value: new THREE.Color(s.hue).multiplyScalar(0.6) } },
+        transparent: true,
+        vertexShader: `varying vec3 vN;
+          void main(){ vN = normalize(normalMatrix * normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+        fragmentShader: `uniform vec3 uCol; uniform float uTop; varying vec3 vN;
+          void main(){ float k = 0.65 + 0.45 * max(vN.y, 0.0);
+            gl_FragColor = vec4(uCol * k, mix(1.0, 0.18, uTop)); }`,
+      })
+    );
+    ribGroup.add(tube);
+    s._tip = p2; s._w = w; s._n = n;
+  }
+}
+
+// ============================================================================
+// THE CROWN — flat pad lenses (acacia language) on each rib tip, sized by that
+// sector's share of the last two quarters, plus a scatter of leaf motes.
+// ============================================================================
+{
+  // pad lens texture (soft ellipse), same trick the acacia sketch uses
+  const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+  const c = cv.getContext('2d');
+  const g = c.createRadialGradient(64, 64, 2, 64, 64, 62);
+  g.addColorStop(0, 'rgba(255,255,255,0.95)'); g.addColorStop(0.45, 'rgba(255,255,255,0.42)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = g; c.beginPath(); c.arc(64, 64, 62, 0, TAU); c.fill();
+  const padTex = new THREE.CanvasTexture(cv);
+
+  const pos = [], col = [], siz = [], pha = [];
+  for (const s of activeSectors) {
+    const tip = s._tip, w = s._w;
+    const hue = new THREE.Color(s.hue);
+    const R = 0.45 + 1.05 * w;                      // pad radius
+    const N = Math.round(26 + 190 * w);             // motes in this pad
+    for (let i = 0; i < N; i++) {
+      // flat disc scatter with a little vertical lens curvature — acacia pad, not a ball
+      const t = Math.sqrt(rng()), aa = rng() * TAU;
+      const rr = t * R;
+      const x = tip.x + Math.cos(aa) * rr;
+      const z = tip.z + Math.sin(aa) * rr;
+      const y = tip.y + (1 - t * t) * 0.32 + (rng() - 0.5) * 0.16;
+      pos.push(x, y, z);
+      // darken toward the pad centre where overlap is worst — keeps additive blending
+      // from saturating to white and preserves the SECTOR HUE, which is the whole point
+      const cc = hue.clone().offsetHSL(0, 0, -0.10 + (rng() - 0.5) * 0.10);
+      const dim = 0.30 + 0.70 * t;          // t = normalised distance from pad centre
+      col.push(cc.r * dim, cc.g * dim, cc.b * dim);
+      siz.push(5 + rng() * 9);
+      pha.push(rng() * TAU);
+    }
+  }
+  const g2 = new THREE.BufferGeometry();
+  g2.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g2.setAttribute('aCol', new THREE.Float32BufferAttribute(col, 3));
+  g2.setAttribute('aSize', new THREE.Float32BufferAttribute(siz, 1));
+  g2.setAttribute('aPhase', new THREE.Float32BufferAttribute(pha, 1));
+  const crown = new THREE.Points(g2, new THREE.ShaderMaterial({
+    uniforms: { ...U, uMap: { value: padTex } },
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `
+      attribute vec3 aCol; attribute float aSize, aPhase;
+      uniform float uTime; varying vec3 vC; varying float vA;
+      void main() {
+        vC = aCol; vA = 0.55 + 0.45 * sin(uTime * 0.9 + aPhase);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = aSize * (26.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      uniform sampler2D uMap; uniform float uTop; varying vec3 vC; varying float vA;
+      void main() {
+        vec4 t = texture2D(uMap, gl_PointCoord);
+        // the crown thins (but never vanishes) overhead — you still see WHICH sectors
+        // are live while reading the rings, which is half the point of the view
+        gl_FragColor = vec4(vC * (0.55 + 0.35 * vA), t.a * mix(0.32, 0.12, uTop));
+      }`,
+  }));
+  crown.frustumCulled = false;
+  scene.add(crown);
+}
+
+// ============================================================================
+// LABELS — billboarded quarter sprites at each band, + a crown caption.
+// ============================================================================
+function labelSprite(text, color, sub, scale = 1) {
+  const W = 512, H = 160;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.textBaseline = 'middle';
+  ctx.font = '600 52px "Segoe UI", sans-serif';
+  ctx.fillStyle = color; ctx.globalAlpha = 0.95;
+  ctx.fillText(text, 8, 52);
+  if (sub) {
+    ctx.font = '400 32px "Segoe UI", sans-serif';
+    ctx.fillStyle = 'rgba(150,175,200,0.9)'; ctx.globalAlpha = 0.85;
+    ctx.fillText(sub, 8, 105);
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.85, depthWrite: false, depthTest: false }));
+  sp.scale.set(3.5 * scale, 1.09 * scale, 1);
+  sp.renderOrder = 10;
+  return sp;
+}
+
+const qLabels = [];
+{
+  for (const b of bandMeta) {
+    const q = b.q;
+    const hot = q.collab > 0.4;
+    const sp = labelSprite(
+      q.key,
+      hot ? '#ffd9a8' : '#dbe6f2',
+      `${q.commit} commits · ${Math.round(q.collab * 100)}% collab`
+    );
+    // parked out at a fixed rail so labels form a clean vertical ladder rather than
+    // wobbling in and out with band radius — the ladder IS the time axis
+    sp.position.set(R_MAX + 2.9, (b.y0 + b.y1) / 2, 0);
+    scene.add(sp);
+    qLabels.push({ sp, b });
+
+    // leader line from the label rail to the band's actual rim
+    const lg = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(
+      [b.r1, (b.y0 + b.y1) / 2, 0, R_MAX + 2.75, (b.y0 + b.y1) / 2, 0], 3));
+    scene.add(new THREE.Line(lg, new THREE.LineBasicMaterial({
+      color: hot ? 0xffd0a0 : 0x88a2bc, transparent: true, opacity: 0.22 })));
+  }
+  const cap = labelSprite('NOW', '#eaf4ff', `crown · ${CROWN_QS.map(q => q.key).join(' + ')}`, 1.05);
+  cap.position.set(R_MAX + 2.9, CROWN_Y + 1.9, 0);
+  scene.add(cap);
+  qLabels.push({ sp: cap, b: null });
+
+  // the vertical rail itself: TIME, drawn as a line, so the ladder has a spine
+  const rg = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(
+    [R_MAX + 2.78, TRUNK_Y0, 0, R_MAX + 2.78, CROWN_Y + 2.0, 0], 3));
+  scene.add(new THREE.Line(rg, new THREE.LineBasicMaterial({ color: 0x7fa0c0, transparent: true, opacity: 0.2 })));
+}
+
+// ============================================================================
+// HUD POPULATION
+// ============================================================================
+{
+  const totals = { commit: 0, pr: 0, review: 0, issue: 0 };
+  for (const q of QUARTERS) for (const k of KIND_KEYS) totals[k] += q[k];
+  document.getElementById('kindRows').innerHTML = KINDS_LEGEND.map(k => {
+    const hex = '#' + k.col.toString(16).padStart(6, '0');
+    return `<div class="kd"><span class="sw" style="color:${hex}; background:${hex}"></span>
+      <span class="nm">${k.name}</span><span class="ct">${totals[k.key]}</span></div>`;
+  }).join('');
+
+  document.getElementById('secGrid').innerHTML = SECTORS.map(s => {
+    const hex = '#' + s.hue.toString(16).padStart(6, '0');
+    const n = crownSectors.get(s.id) || 0;
+    return `<span class="sec" style="${n ? '' : 'opacity:.38'}" title="${s.id} · az ${s.az}° · ${n} events in the crown window">
+      <span class="dot" style="color:${hex}; background:${hex}"></span>${s.label}</span>`;
+  }).join('');
+
+  document.getElementById('ringTable').innerHTML =
+    '<tr><th>qtr</th><th>com</th><th>pr</th><th>rev</th><th>iss</th><th>collab</th></tr>' +
+    QUARTERS.slice().reverse().map(q => {
+      const z = (v) => v === 0 ? ' class="zero"' : '';
+      return `<tr${q.collab > 0.4 ? ' class="hot"' : ''}><td>${q.key}</td>` +
+        `<td${z(q.commit)}>${q.commit}</td><td${z(q.pr)}>${q.pr}</td>` +
+        `<td${z(q.review)}>${q.review}</td><td${z(q.issue)}>${q.issue}</td>` +
+        `<td>${Math.round(q.collab * 100)}%</td></tr>`;
+    }).join('');
+}
+
+// ============================================================================
+// VIEWS + CONTROLS
+// ============================================================================
+const viewBtn = document.getElementById('viewBtn');
+const spinBtn = document.getElementById('spinBtn');
+const floorBtn = document.getElementById('floorBtn');
+const mixBtn = document.getElementById('mixBtn');
+
+let topView = PARAMS.get('view') === 'top';
+let camAnim = null; // { fromPos, toPos, fromTgt, toTgt, t0, dur }
+
+const ORBIT_POS = camera.position.clone();
+const ORBIT_TGT = new THREE.Vector3(0, FRAME_Y, 0);
+// cross-section: straight down the axis, framed on the STUMP (the concentric rings),
+// not on the trunk top — the stump is what this view exists to show.
+const TOP_POS = new THREE.Vector3(0.001, 15.5, 0.001);
+const TOP_TGT = new THREE.Vector3(0, 0, 0);
+
+function flyTo(pos, tgt, dur = 1100) {
+  camAnim = { fromPos: camera.position.clone(), toPos: pos.clone(), fromTgt: controls.target.clone(), toTgt: tgt.clone(), t0: performance.now(), dur };
+}
+function setTopView(on) {
+  topView = on;
+  viewBtn.setAttribute('aria-pressed', String(on));
+  viewBtn.textContent = on ? '⊙ Side view' : '⊙ Cross-section';
+  controls.autoRotate = !on && spinOn;
+  flyTo(on ? TOP_POS : ORBIT_POS, on ? TOP_TGT : ORBIT_TGT);
+}
+let spinOn = true;
+function setSpin(on) {
+  spinOn = on;
+  controls.autoRotate = on && !topView;
+  spinBtn.setAttribute('aria-pressed', String(on));
+  spinBtn.textContent = on ? '⏸ Orbit' : '▶ Orbit';
+}
+function setFloor(on) {
+  floorOn = on;
+  floorBtn.setAttribute('aria-pressed', String(on));
+  buildTrunk(); buildSeams();
+  // labels' leader lines are static; the rail keeps them honest either way
+}
+let mixOn = true;
+function setMix(on) {
+  mixOn = on;
+  mixBtn.setAttribute('aria-pressed', String(on));
+}
+
+viewBtn.onclick = () => setTopView(!topView);
+spinBtn.onclick = () => setSpin(!spinOn);
+floorBtn.onclick = () => setFloor(!floorOn);
+mixBtn.onclick = () => setMix(!mixOn);
+if (topView) setTopView(true);
+if (!floorOn) floorBtn.setAttribute('aria-pressed', 'false');
+
+addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === 'x') { setTopView(!topView); e.preventDefault(); }
+  else if (k === 'o') { setSpin(!spinOn); e.preventDefault(); }
+  else if (k === 'f') { setFloor(!floorOn); e.preventDefault(); }
+  else if (k === 'm') { setMix(!mixOn); e.preventDefault(); }
+});
+// any manual drag cancels a fly-to so the camera never fights the user
+renderer.domElement.addEventListener('pointerdown', () => { camAnim = null; });
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+});
+
+// ============================================================================
+// LOOP
+// ============================================================================
+const clock = new THREE.Clock();
+let fpsAcc = 0, fpsN = 0, dprStepped = false;
+
+function tick() {
+  requestAnimationFrame(tick);
+  const dt = Math.min(0.05, clock.getDelta());
+  U.uTime.value += dt;
+  U.uMix.value += (( mixOn ? 1 : 0) - U.uMix.value) * Math.min(1, dt * 6);
+  U.uTop.value += ((topView ? 1 : 0) - U.uTop.value) * Math.min(1, dt * 4);
+
+  if (camAnim) {
+    const p = clamp((performance.now() - camAnim.t0) / camAnim.dur, 0, 1);
+    const e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; // easeInOutCubic
+    camera.position.lerpVectors(camAnim.fromPos, camAnim.toPos, e);
+    controls.target.lerpVectors(camAnim.fromTgt, camAnim.toTgt, e);
+    if (p >= 1) camAnim = null;
+  }
+
+  // quarter labels fade out in cross-section (they'd be edge-on confetti from above)
+  const lo = 1 - U.uTop.value * 0.85;
+  for (const l of qLabels) l.sp.material.opacity = 0.85 * lo;
+
+  controls.update();
+  composer.render();
+
+  // adaptive quality guard (opt out with an explicit ?dpr=)
+  if (!dprExplicit && !dprStepped) {
+    fpsAcc += dt; fpsN++;
+    if (fpsAcc > 3) {
+      if (fpsN / fpsAcc < 28) { renderer.setPixelRatio(Math.max(1, renderer.getPixelRatio() * 0.75)); dprStepped = true; }
+      fpsAcc = 0; fpsN = 0;
+    }
+  }
+}
+tick();
+
+// ---------- verifier hooks (parity with the other sketches' __dbg convention) ----------
+window.__dbg = {
+  quarters: QUARTERS.map(q => ({ key: q.key, commit: q.commit, pr: q.pr, review: q.review, issue: q.issue, collab: q.collab })),
+  crown: [...crownSectors].map(([id, n]) => ({ id, n, az: SEC_BY_ID.get(id)?.az, hue: SEC_BY_ID.get(id)?.hue })),
+  events: EVENTS.length,
+  seed: SEED,
+  setTopView, setSpin, setFloor, setMix,
+  state: () => ({ topView, spinOn, floorOn, mixOn, dpr: renderer.getPixelRatio() }),
+  // screen-space bounds of everything that matters, for framing checks
+  fit: () => {
+    const box = new THREE.Box3();
+    scene.traverse(o => {
+      if (!o.isMesh && !o.isPoints && !o.isSprite) return;
+      if (o.geometry?.boundingSphere === null) o.geometry.computeBoundingSphere();
+      const bs = o.geometry?.boundingSphere;
+      if (!bs || bs.radius > 50) return;             // skip sky / plain / ground
+      box.expandByObject(o);
+    });
+    const pts = [];
+    for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
+      const v = new THREE.Vector3(x, y, z).project(camera);
+      pts.push([v.x, v.y]);
+    }
+    return {
+      world: { min: box.min.toArray().map(n => +n.toFixed(2)), max: box.max.toArray().map(n => +n.toFixed(2)) },
+      ndcX: [Math.min(...pts.map(p => p[0])).toFixed(2), Math.max(...pts.map(p => p[0])).toFixed(2)],
+      ndcY: [Math.min(...pts.map(p => p[1])).toFixed(2), Math.max(...pts.map(p => p[1])).toFixed(2)],
+      cam: camera.position.toArray().map(n => +n.toFixed(2)), tgt: controls.target.toArray().map(n => +n.toFixed(2)),
+    };
+  },
+};
+</script>
+</body>
+</html>

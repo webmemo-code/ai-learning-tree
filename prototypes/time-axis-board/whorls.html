@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Time axis board — Quarterly whorls</title>
+
+<!--
+  ============================================================================
+  QUARTERLY WHORLS — time-axis concept board, variant 1 of 3
+  ============================================================================
+
+  WHAT THIS VARIANT IS
+  One central trunk spanning the whole timeline bottom -> top. Height is TIME,
+  cut into quarters. At each quarter's height a WHORL of branches radiates out
+  in the sector compass directions (the real `az` from generator/taxonomy.mjs) —
+  that quarter's work, one branch per sector that actually committed something.
+  Busy quarters make wide whorls, quiet ones narrow. Conifer / monkey-puzzle
+  habit: unmistakably a tree, unmistakably chronological.
+
+    branch AZIMUTH   = its sector
+    branch LENGTH    = sqrt(that sector's COMMITS that quarter)
+    branch THICKNESS = that sector's COMMITS that quarter (commits only — a PR's
+                       own commits are already in the log, so raw-event thickness
+                       would overstate 2026 ~3x as a workflow artifact)
+    trunk COLLAR     = a stacked ring at each whorl height, split by arc into
+                       commit / pr / review / issue proportions. Composition
+                       carries the MIX (maturity); thickness carries volume.
+    no work          = no branch. The whorls are ragged, not decorative rosettes.
+
+  WHAT IT'S TRYING TO PROVE
+  1. That a single time axis reads as a tree at all — that "when" can be the
+     vertical without the thing turning into a bar chart with bark on it.
+  2. That the maturity mix survives being demoted from height to texture: the
+     collar rings should make 2026Q2's 10% -> 55% collaboration jump visible
+     from across the room, before you read a single label.
+  3. That the honest raggedness (2025Q1/Q2 have ZERO collaboration; six of ten
+     sectors never appear at all) is a feature of the silhouette, not damage.
+
+  HONEST WEAKNESSES
+  - The trunk is a fiction. Nothing in the data says "trunk"; it's scaffolding
+    that exists so the whorls have something to hang on. A purist would call it
+    decoration.
+  - Even quarter spacing lies about density: 2024Q4 (4 events) gets the same
+    vertical real estate as 2026Q2 (1070). Honest about ORDER, not about mass.
+  - Only 8 of 10 sectors ever fire, and per quarter it's 2-5. So the whorls are
+    partial fans, not rings — closer to antlers than to a monkey-puzzle. That IS
+    the data, but it means the conifer reading in the ASCII sketch above is
+    stronger than what the log can currently deliver. Give it more sectors with
+    real activity and it converges on the sketch; give it fewer and it becomes a
+    flagpole with flags.
+  - Because branch azimuth is fixed by taxonomy, the same sector always points
+    the same way — beautiful for reading the compass, but it means the silhouette
+    barely changes as you orbit, and one viewing angle (down the geo/copy axis)
+    foreshortens most of the tree into the trunk.
+  - Collar rings are small at the trunk. They read at mid-distance; at hero
+    distance you see the branch fan, not the mix, and the per-whorl HTML mix bar
+    is doing the real work. Making them bigger makes them the subject instead of
+    the caption — that trade was tried and reverted.
+  - The whole thing tops out at ~14 units of height for 8 quarters. Three more
+    years of log and the labels start colliding; this layout does not scale to
+    a 30-quarter career without switching to a scrolling/LOD camera.
+
+  Serve from the REPO ROOT (this page fetches ../../data/growth-log.jsonl):
+    python -m http.server 8123
+    http://localhost:8123/prototypes/time-axis-board/whorls.html
+  Params: ?seed=<any>  ?dpr=1  ?labels=0
+  ============================================================================
+-->
+
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #05070d; font-family: "Segoe UI", system-ui, sans-serif; }
+  #app { position: fixed; inset: 0; }
+  .panel {
+    position: fixed; color: #cfd8e3; background: rgba(10, 16, 28, 0.55);
+    border: 1px solid rgba(140, 170, 210, 0.18); border-radius: 12px;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    padding: 14px 16px; font-size: 13px; line-height: 1.5; user-select: none;
+  }
+  #hud { top: 16px; left: 16px; max-width: 288px; }
+  #hud h1 { font-size: 15px; margin: 0 0 2px; font-weight: 600; color: #eef4fb; letter-spacing: 0.02em; }
+  #hud .sub { color: #8fa3ba; font-size: 11.5px; margin-bottom: 10px; }
+  #hud p { margin: 8px 0 0; font-size: 11.5px; color: #93a7bd; line-height: 1.5; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 8px currentColor; display: inline-block; }
+  #kinds { margin-top: 4px; }
+  #kinds .k { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-size: 12px; }
+  #kinds .k .bar { width: 26px; height: 9px; border-radius: 2px; box-shadow: 0 0 9px currentColor; }
+  #kinds .k i { color: #8fa3ba; font-style: normal; margin-left: auto; font-variant-numeric: tabular-nums; font-size: 11px; }
+
+  #legendSectors { bottom: 14px; left: 16px; font-size: 11px; padding: 10px 12px; color: #9fb2c8; max-width: 250px; }
+  #legendSectors b { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 6px; font-size: 11.5px; }
+  #legendSectors .secGrid { display: grid; grid-template-columns: repeat(2, auto); gap: 3px 10px; }
+  #legendSectors .sec { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+  #legendSectors .sec .dot { width: 8px; height: 8px; }
+  #legendSectors .sec.off { opacity: 0.34; }
+  #legendSectors .hint { margin-top: 7px; color: #6f8299; font-size: 10.5px; line-height: 1.45; }
+
+  #note { bottom: 14px; right: 16px; font-size: 11px; color: #7f93aa; padding: 8px 12px; max-width: 300px; }
+
+  /* per-whorl HTML overlay: quarter name + the stacked mix bar, projected each frame */
+  #labels { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+  .qlab {
+    position: absolute; transform: translate(0, -50%); white-space: nowrap; user-select: none;
+    font-size: 11.5px; letter-spacing: 0.06em; color: #d6e2f0;
+    text-shadow: 0 0 14px rgba(5, 10, 20, 0.95), 0 0 4px rgba(5, 10, 20, 1);
+  }
+  .qlab .q { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .qlab .n { color: #8fa3ba; font-size: 10.5px; margin-left: 6px; font-variant-numeric: tabular-nums; }
+  .qlab .mix { display: block; margin-top: 3px; height: 4px; width: 92px; border-radius: 2px; overflow: hidden; display: flex; }
+  .qlab .mix span { height: 100%; display: block; }
+  body.nolabels #labels { display: none; }
+
+  #err {
+    position: fixed; inset: 0; display: none; place-items: center; z-index: 50;
+    background: rgba(5, 7, 13, 0.94); color: #cfd8e3; text-align: center; padding: 24px;
+  }
+  #err.on { display: grid; }
+  #err .box { max-width: 540px; }
+  #err h2 { color: #ff9d9d; font-size: 18px; margin: 0 0 10px; }
+  #err p { font-size: 13.5px; line-height: 1.6; color: #aab8c9; }
+  #err code { background: rgba(120, 160, 230, 0.16); padding: 2px 6px; border-radius: 5px; color: #eaf2fb; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="labels"></div>
+
+<div class="panel" id="hud">
+  <h1>Quarterly whorls</h1>
+  <div class="sub">time-axis board · height = <b>when</b>, texture = <b>how</b></div>
+  <div id="kinds"></div>
+  <p>One whorl per quarter up a single trunk. Branch direction = sector,
+  length &amp; thickness = that sector's <b>commits</b> that quarter. The collar
+  ring at each whorl is the quarter's <b>kind mix</b> — watch it turn from
+  solid amber to four-way striped at 2026Q2.</p>
+</div>
+
+<div class="panel" id="legendSectors">
+  <b>Sectors — azimuth &amp; hue</b>
+  <div class="secGrid" id="secGrid"></div>
+  <div class="hint" id="secHint"></div>
+</div>
+
+<div class="panel" id="note">quarterly whorls · variant 1 of 3 · commits size the branch, the collar carries the mix</div>
+
+<div id="err"><div class="box">
+  <h2>Couldn't load the growth log</h2>
+  <p id="errMsg"></p>
+  <p>This page fetches <code>../../data/growth-log.jsonl</code>, so it must be served over
+  http(s) <b>from the repo root</b>. Opening the file directly (<code>file://</code>)
+  blocks the fetch, and serving from this folder puts the data out of reach.
+  From the repo root run <code>python -m http.server 8123</code> and visit
+  <code>/prototypes/time-axis-board/whorls.html</code>.</p>
+</div></div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.181/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.181/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const deg = d => (d * Math.PI) / 180;
+const V3 = (...a) => new THREE.Vector3(...a);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+// ---------- seeded PRNG — every wobble/jitter/star in this sketch comes from here ----------
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function strHash(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+}
+
+const PARAMS = new URLSearchParams(location.search);
+const SEED = PARAMS.get('seed') || 'whorls-001';
+if (PARAMS.get('labels') === '0') document.body.classList.add('nolabels');
+
+function fatal(msg) {
+  document.getElementById('errMsg').textContent = String(msg);
+  document.getElementById('err').classList.add('on');
+}
+
+// ---------- taxonomy (mirrors generator/taxonomy.mjs — az + hue are load-bearing here) ----------
+const SECTORS = [
+  { id: 'create.copy',        label: 'copy',      limb: 'CREATE',     az: 15,  hue: 0xffb454 },
+  { id: 'create.images',      label: 'images',    limb: 'CREATE',     az: 55,  hue: 0xff6ec7 },
+  { id: 'create.video',       label: 'video',     limb: 'CREATE',     az: 95,  hue: 0xff5d73 },
+  { id: 'automate.workflows', label: 'workflows', limb: 'AUTOMATE',   az: 140, hue: 0x7ce65a },
+  { id: 'distribute.seo',     label: 'seo',       limb: 'DISTRIBUTE', az: 185, hue: 0x35d0ba },
+  { id: 'distribute.geo',     label: 'geo',       limb: 'DISTRIBUTE', az: 225, hue: 0x4aa8ff },
+  { id: 'build.no-code',      label: 'no-code',   limb: 'BUILD',      az: 270, hue: 0xb59aff },
+  { id: 'build.low-code',     label: 'low-code',  limb: 'BUILD',      az: 310, hue: 0x8f7bff },
+  { id: 'build.pro-code',     label: 'pro-code',  limb: 'BUILD',      az: 350, hue: 0x6a8dff },
+  { id: 'create.3d',          label: '3d',        limb: 'CREATE',     az: 115, hue: 0xff8f4d },
+];
+const SEC_BY_ID = new Map(SECTORS.map((s, i) => [s.id, { ...s, index: i }]));
+const NSEC = SECTORS.length;
+
+// kinds: order is the stacking order in every ring and every mix bar.
+// commit is the warm "output" colour; pr/review/issue are the cool "collaboration" trio,
+// deliberately close in hue so the eye reads them as ONE band growing against the amber.
+const KINDS = [
+  { id: 'commit',    label: 'commit',    hue: 0xffb454, collab: false },
+  { id: 'pr',        label: 'PR',        hue: 0x4fd8c4, collab: true  },
+  { id: 'review',    label: 'review',    hue: 0x86b7ff, collab: true  },
+  { id: 'issue',     label: 'issue',     hue: 0xc79bff, collab: true  },
+  { id: 'milestone', label: 'milestone', hue: 0xfff0b0, collab: false },
+];
+const KIND_IDX = new Map(KINDS.map((k, i) => [k.id, i]));
+const hex = h => '#' + h.toString(16).padStart(6, '0');
+
+// ---------- load the raw growth log ----------
+let EVENTS;
+try {
+  const res = await fetch('../../data/growth-log.jsonl', { cache: 'no-cache' });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching ../../data/growth-log.jsonl');
+  const text = await res.text();
+  EVENTS = text.split('\n').map(l => l.trim()).filter(Boolean).map((l, i) => {
+    try { return JSON.parse(l); } catch (e) { throw new Error(`bad JSON on line ${i + 1}: ${e.message}`); }
+  });
+  if (!EVENTS.length) throw new Error('growth-log.jsonl is empty');
+} catch (e) {
+  fatal(e.message || e);
+  throw e;
+}
+
+// ---------- bucket by quarter (UTC) x sector x kind ----------
+const qKey = (ms) => { const d = new Date(ms); return d.getUTCFullYear() + 'Q' + (Math.floor(d.getUTCMonth() / 3) + 1); };
+const qOrder = (k) => parseInt(k.slice(0, 4), 10) * 4 + parseInt(k.slice(5), 10);
+
+const qmap = new Map();
+for (const e of EVENTS) {
+  const ms = Date.parse(e.ts);
+  if (!Number.isFinite(ms)) continue;
+  const key = qKey(ms);
+  let q = qmap.get(key);
+  if (!q) {
+    q = { key, kinds: new Array(KINDS.length).fill(0), total: 0, commits: 0, sectors: new Map() };
+    qmap.set(key, q);
+  }
+  const ki = KIND_IDX.get(e.kind);
+  if (ki !== undefined) { q.kinds[ki]++; q.total++; }
+  if (e.kind === 'commit') {
+    q.commits++;
+    const s = SEC_BY_ID.get(e.sector);
+    if (s) q.sectors.set(s.index, (q.sectors.get(s.index) || 0) + 1);
+  }
+}
+// fill any gap quarters so the trunk never skips a beat (a silent quarter is data too)
+const keys = [...qmap.keys()].sort((a, b) => qOrder(a) - qOrder(b));
+const lo = qOrder(keys[0]), hi = qOrder(keys[keys.length - 1]);
+const QUARTERS = [];
+for (let o = lo; o <= hi; o++) {
+  const y = Math.floor((o - 1) / 4), qn = ((o - 1) % 4) + 1;
+  const key = y + 'Q' + qn;
+  QUARTERS.push(qmap.get(key) || { key, kinds: new Array(KINDS.length).fill(0), total: 0, commits: 0, sectors: new Map() });
+}
+const NQ = QUARTERS.length;
+const collabShare = (q) => q.total ? KINDS.reduce((a, k, i) => a + (k.collab ? q.kinds[i] : 0), 0) / q.total : 0;
+
+// console receipt — this is the table the concept brief asks us to reproduce
+console.log('%cquarterly whorls — bucketed growth log', 'color:#7ce65a');
+console.table(QUARTERS.map(q => ({
+  quarter: q.key, commit: q.kinds[0], pr: q.kinds[1], review: q.kinds[2], issue: q.kinds[3],
+  milestone: q.kinds[4], total: q.total, 'collab%': Math.round(collabShare(q) * 100),
+})));
+
+// ---------- vertical scale: even bands, time is ORDER not mass ----------
+// The band height is deliberately SHORT relative to the branch reach: a conifer's
+// whorls overlap, and if the bands are taller than the branches are long the thing
+// stops being a tree and becomes a totem pole with rings on it.
+const BAND = 2.05;                 // metres per quarter
+const Y0 = 1.3;                    // the lowest whorl sits above the flare of the bole
+const yOf = (i) => Y0 + i * BAND;
+const TOP_Y = yOf(NQ - 1);
+const TRUNK_TOP = TOP_Y + 1.7;     // a short leader above the last whorl — the tree is still growing
+
+// branch scaling. sqrt keeps 3 commits visible next to 192 without a log's flatness.
+// Max reach is tuned against BAND: a limb that out-reaches ~2.5 bands stops reading as
+// part of a whorl and starts reading as its own tree.
+const MAXC = Math.max(1, ...QUARTERS.flatMap(q => [...q.sectors.values()]));
+const MAXLEN = BAND * 2.5;
+const LEN = c => MAXLEN * (0.24 + 0.76 * Math.sqrt(c / MAXC));   // 1.2 .. 5.1
+const RAD = c => 0.026 + 0.098 * Math.sqrt(c / MAXC);            // thickness = commits, only
+
+// ---------- scene ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x05070d);
+scene.fog = new THREE.FogExp2(0x05070d, 0.0125);
+
+// the trunk profile, shared by the skeleton builder, the whorl attachment points and
+// the collar rings — one definition so nothing drifts apart
+const trunkR = (y) => 0.40 * Math.pow(1 - clamp((y + 0.2) / (TRUNK_TOP + 0.2), 0, 1), 1.25) + 0.075;
+
+// frame the whole tree: the widest whorl reaches ~LEN(MAXC), so pull back enough that
+// both the full height and the full spread sit inside the frustum with breathing room
+const MID_Y = TRUNK_TOP * 0.5;
+const REACH = MAXLEN;                                       // LEN(MAXC), the widest branch
+const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 400);
+// half-height and half-width of the bounding box, converted to the distance each
+// needs at this fov/aspect, then take the larger — with margin for the labels
+const HALF_H = TRUNK_TOP * 0.55, HALF_W = REACH * 1.05;
+const FIT = 1.42 * Math.max(HALF_H / Math.tan(deg(21)), (HALF_W / Math.tan(deg(21))) * 0.62);
+// a low three-quarter angle: high enough that the whorls read as rings rather than a
+// flat comb, low enough that the top whorl still silhouettes against sky
+camera.position.set(-FIT * 0.72, MID_Y + TRUNK_TOP * 0.16, FIT * 0.70);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+const dprParsed = parseFloat(PARAMS.get('dpr'));
+const dprExplicit = Number.isFinite(dprParsed) && dprParsed > 0;
+renderer.setPixelRatio(Math.min(devicePixelRatio, dprExplicit ? dprParsed : 2));
+document.getElementById('app').appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, MID_Y, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.32;
+controls.minDistance = 7;
+controls.maxDistance = 90;
+controls.maxPolarAngle = deg(104);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+// threshold pushed up vs the acacia sketch: this scene is far more additive-heavy
+// (dense needle sprays), and a low threshold turns every whorl into a white smear
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.62, 0.55, 0.78);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+const U = { uTime: { value: 0 } };
+
+// ---------- savanna night: sky bands + stars + the open plain (borrowed from acacia-sketch) ----------
+{
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(160, 48, 32),
+    new THREE.ShaderMaterial({
+      side: THREE.BackSide, depthWrite: false,
+      vertexShader: /* glsl */`
+        varying vec3 vDir;
+        void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+      fragmentShader: /* glsl */`
+        varying vec3 vDir;
+        void main() {
+          float e = vDir.y;
+          vec3 col = mix(vec3(0.055, 0.07, 0.115), vec3(0.02, 0.028, 0.062), smoothstep(0.05, 0.7, e));
+          col += vec3(0.07, 0.135, 0.085) * exp(-max(e, 0.0) * 16.0) * step(0.0, e);   // ground haze
+          col += vec3(0.05, 0.16, 0.14) * 0.4 * exp(-pow((e - 0.075) * 9.0, 2.0));     // dusk teal
+          col += vec3(0.55, 0.42, 0.16) * 0.3 * exp(-pow((e - 0.16) * 17.0, 2.0));     // gold afterglow
+          if (e < 0.0) col = mix(vec3(0.026, 0.036, 0.05), vec3(0.02, 0.027, 0.05), -e);
+          gl_FragColor = vec4(pow(col, vec3(2.2)), 1.0);
+        }`,
+    })
+  );
+  scene.add(sky);
+
+  const SN = 700, sp = new Float32Array(SN * 3), sph = new Float32Array(SN), ssz = new Float32Array(SN);
+  const srng = mulberry32(strHash(SEED + '|stars'));
+  for (let i = 0; i < SN; i++) {
+    const el = 0.2 + Math.pow(srng(), 0.8) * 1.25, azs = srng() * Math.PI * 2, RS = 150;
+    sp.set([Math.cos(azs) * Math.cos(el) * RS, Math.sin(el) * RS, Math.sin(azs) * Math.cos(el) * RS], i * 3);
+    sph[i] = srng() * Math.PI * 2; ssz[i] = 0.5 + srng() * 1.5;
+  }
+  const sg = new THREE.BufferGeometry();
+  sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+  sg.setAttribute('aPhase', new THREE.BufferAttribute(sph, 1));
+  sg.setAttribute('aSize', new THREE.BufferAttribute(ssz, 1));
+  const stars = new THREE.Points(sg, new THREE.ShaderMaterial({
+    uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: /* glsl */`
+      attribute float aPhase, aSize; uniform float uTime; varying float vA;
+      void main() {
+        vA = 0.35 + 0.3 * sin(uTime * 0.7 + aPhase * 5.0);
+        gl_PointSize = aSize * 2.2;
+        gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: /* glsl */`
+      varying float vA;
+      void main() {
+        float d = length(gl_PointCoord - 0.5);
+        gl_FragColor = vec4(vec3(0.82, 0.88, 1.0), smoothstep(0.5, 0.1, d) * vA);
+      }`,
+  }));
+  stars.frustumCulled = false;
+  scene.add(stars);
+
+  const pcv = document.createElement('canvas'); pcv.width = pcv.height = 256;
+  const pctx = pcv.getContext('2d');
+  const pg = pctx.createRadialGradient(128, 128, 18, 128, 128, 128);
+  pg.addColorStop(0, '#0b120d'); pg.addColorStop(0.5, '#080e0a'); pg.addColorStop(1, '#05070d');
+  pctx.fillStyle = pg; pctx.fillRect(0, 0, 256, 256);
+  const ptex = new THREE.CanvasTexture(pcv);
+  ptex.colorSpace = THREE.SRGBColorSpace;
+  const plain = new THREE.Mesh(new THREE.CircleGeometry(130, 64), new THREE.MeshBasicMaterial({ map: ptex }));
+  plain.rotation.x = -Math.PI / 2; plain.position.y = -0.02;
+  scene.add(plain);
+
+  // faint compass rose etched in the plain — the radial axis, so a branch's direction is legible
+  const rose = new THREE.Group();
+  const roseMat = new THREE.LineBasicMaterial({ color: 0x2c4258, transparent: true, opacity: 0.55 });
+  // sized to the actual branch reach, so a limb's shadow lines up with its spoke
+  const ROSE_R = REACH * 1.15;
+  for (const s of SECTORS) {
+    const a = deg(90 - s.az), r0 = 0.8, r1 = ROSE_R;
+    const g = new THREE.BufferGeometry().setFromPoints([
+      V3(Math.cos(a) * r0, 0, -Math.sin(a) * r0), V3(Math.cos(a) * r1, 0, -Math.sin(a) * r1)]);
+    rose.add(new THREE.Line(g, roseMat));
+  }
+  for (const r of [ROSE_R * 0.36, ROSE_R * 0.68, ROSE_R]) {
+    const pts = [];
+    for (let i = 0; i <= 96; i++) { const a = (i / 96) * Math.PI * 2; pts.push(V3(Math.cos(a) * r, 0, Math.sin(a) * r)); }
+    rose.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), roseMat));
+  }
+  rose.position.y = 0.015;
+  scene.add(rose);
+}
+
+// ============================================================================
+// THE TREE
+// ============================================================================
+// Everything woody (trunk sections + every branch of every whorl) goes into ONE
+// InstancedMesh of tapered cylinders — 2 draw calls for the whole skeleton, so
+// the frame cost is flat regardless of how busy the log gets.
+// ============================================================================
+
+const rng = mulberry32(strHash(SEED + '|tree'));
+const branchRecs = [];   // { sector, quarter, commits, tipPos, dir, len, hue }
+
+{
+  const woody = [];      // { pos, quat, scale(rx,len,rz), color, glow, dist }
+  const up = V3(0, 1, 0);
+  const q4 = new THREE.Quaternion();
+  const bark = new THREE.Color(0x1d1913);
+
+  // ---- the bole + leader: many short sections so the taper reads smooth, not stepped ----
+  // The instanced cylinder is a 0.55-of-top-radius taper, so consecutive sections whose
+  // radii are close butt together seamlessly; 60 sections over ~14m keeps the joins invisible.
+  const TSEG = 60;
+  for (let i = 0; i < TSEG; i++) {
+    const y0 = (i / TSEG) * TRUNK_TOP, y1 = ((i + 1) / TSEG) * TRUNK_TOP;
+    const c = new THREE.Color(0x352b20).lerp(new THREE.Color(0x8b7a5f), (i / TSEG) * 0.8);
+    woody.push({
+      pos: V3(0, y0, 0), quat: new THREE.Quaternion(),
+      // scale.x is the section's BOTTOM radius; the geometry's own 0.55 taper is undone
+      // by scaling so the top matches the next section's bottom exactly
+      scale: V3(trunkR(y0), y1 - y0, trunkR(y0)),
+      taper: trunkR(y1) / trunkR(y0),   // exact butt-join with the next section
+      color: c, glow: new THREE.Color(0x3f6a52), dist: 0.02 + 0.34 * (i / TSEG),
+    });
+  }
+
+  // ---- one whorl per quarter ----
+  QUARTERS.forEach((q, qi) => {
+    const y = yOf(qi);
+    const entries = [...q.sectors.entries()].sort((a, b) => b[1] - a[1]);   // biggest first (draw order only)
+    for (const [si, commits] of entries) {
+      const sec = SECTORS[si];
+      const len = LEN(commits), rad = RAD(commits);
+      // azimuth is the sector's compass bearing; a small seeded jitter keeps the whorls
+      // from reading as a machine-drawn rosette, never enough to cross into a neighbour
+      const jit = (rng() - 0.5) * deg(4.5);
+      const a = deg(90 - sec.az) + jit;
+      // A whorl branch leaves the trunk almost HORIZONTAL and only lifts a little
+      // toward the tip. Heavier branches (more commits) droop a touch further out
+      // before turning up, the way a loaded conifer limb does. Keeping the total
+      // sweep under ~30 deg is what makes the whorl read as a ring rather than a
+      // fountain — the earlier steeper version collapsed into the trunk.
+      const start = deg(-4 - 5 * Math.sqrt(commits / MAXC)) + (rng() - 0.5) * deg(3);  // slight initial droop
+      const end = deg(20 + 12 * Math.sqrt(commits / MAXC)) + (rng() - 0.5) * deg(4);   // tip lift
+      const hue = new THREE.Color(sec.hue);
+
+      // each branch is 4 tapered segments that curve upward — the elbowed conifer feel
+      const NS = 4;
+      const base = V3(Math.cos(a) * trunkR(y) * 0.85, y, -Math.sin(a) * trunkR(y) * 0.85);
+      const spine = [base.clone()];      // the joint positions, for scattering foliage along the limb
+      let p = base.clone();
+      for (let k = 0; k < NS; k++) {
+        const segLen = len / NS;
+        const t = (k + 0.5) / NS;
+        const riseNow = start + (end - start) * (t * t);   // flat out of the trunk, upturned at the tip
+        const dir = V3(Math.cos(a) * Math.cos(riseNow), Math.sin(riseNow), -Math.sin(a) * Math.cos(riseNow)).normalize();
+        q4.setFromUnitVectors(up, dir);
+        const t0 = k / NS, t1 = (k + 1) / NS;
+        const r0 = rad * (1 - t0 * 0.88), r1 = rad * (1 - t1 * 0.88);   // taper hard toward the tip
+        const c = hue.clone().lerp(bark, 0.70 - 0.62 * t1);   // dark at the trunk, saturated at the tip
+        woody.push({
+          pos: p.clone(), quat: q4.clone(), scale: V3(r0, segLen, r0),
+          color: c, glow: hue.clone().multiplyScalar(0.25 + 0.75 * t1),
+          dist: 0.15 + 0.85 * t1, taper: r1 / r0,
+        });
+        p = p.clone().addScaledVector(dir, segLen);
+        spine.push(p.clone());
+      }
+      branchRecs.push({ sector: si, qi, commits, base, spine, tip: p.clone(), hue, len, rad, az: a });
+    }
+  });
+
+  // ---- upload: one InstancedMesh, per-instance colour / glow / distance / TAPER ----
+  // The base geometry is a straight tube; the per-instance aTaper attribute squeezes it
+  // toward the top in the vertex shader. That keeps taper a free parameter, so trunk
+  // sections can butt together exactly (each section's top radius == the next one's
+  // bottom radius) while branch segments still narrow toward the tip.
+  const n = woody.length;
+  const geo = new THREE.CylinderGeometry(1, 1, 1, 7, 1, true);
+  geo.translate(0, 0.5, 0);   // base at origin: instance scale.y is the section length
+  const mesh = new THREE.InstancedMesh(geo, null, n);
+  const aColor = new Float32Array(n * 3), aGlow = new Float32Array(n * 3);
+  const aDist = new Float32Array(n), aTaper = new Float32Array(n);
+  const m = new THREE.Matrix4();
+  woody.forEach((w, i) => {
+    m.compose(w.pos, w.quat, w.scale);
+    mesh.setMatrixAt(i, m);
+    aColor.set([w.color.r, w.color.g, w.color.b], i * 3);
+    aGlow.set([w.glow.r, w.glow.g, w.glow.b], i * 3);
+    aDist[i] = w.dist;
+    aTaper[i] = w.taper;
+  });
+  geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(aColor, 3));
+  geo.setAttribute('aGlow', new THREE.InstancedBufferAttribute(aGlow, 3));
+  geo.setAttribute('aDist', new THREE.InstancedBufferAttribute(aDist, 1));
+  geo.setAttribute('aTaper', new THREE.InstancedBufferAttribute(aTaper, 1));
+  mesh.material = new THREE.ShaderMaterial({
+    uniforms: U,
+    vertexShader: /* glsl */`
+      attribute vec3 aColor, aGlow; attribute float aDist, aTaper;
+      varying vec3 vColor, vGlow; varying float vDist;
+      void main() {
+        vColor = aColor; vGlow = aGlow; vDist = aDist;
+        // position.y runs 0..1 up the section; squeeze xz toward aTaper at the top
+        vec3 p = position;
+        p.xz *= mix(1.0, aTaper, position.y);
+        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.0);
+      }`,
+    fragmentShader: /* glsl */`
+      varying vec3 vColor, vGlow; varying float vDist;
+      uniform float uTime;
+      void main() {
+        // sap-light: a slow luminous pulse climbing trunk -> tips
+        float front = fract(uTime * 0.075);
+        float sap = exp(-pow((vDist - front) * 6.5, 2.0)) * 0.55;
+        vec3 col = vColor * 0.82 + vGlow * sap + vec3(0.85, 0.95, 0.8) * sap * 0.2;
+        gl_FragColor = vec4(col, 1.0);
+      }`,
+  });
+  mesh.frustumCulled = false;
+  scene.add(mesh);
+}
+
+// ---------- foliage: a needle spray at each branch tip, one instanced quad batch ----------
+// Density = commits (a 190-commit branch carries a real spray; a 3-commit branch a wisp),
+// so the whorls read as foliage at distance and the tip colour stays the sector's hue.
+{
+  const frng = mulberry32(strHash(SEED + '|foliage'));
+  const specs = [];
+  const tmp = new THREE.Vector3();
+  for (const b of branchRecs) {
+    // needle count scales with commits — a 190-commit limb carries a real spray,
+    // a 3-commit twig a wisp. Capped so one huge quarter can't dominate the frame.
+    const nleaf = clamp(Math.round(18 + 210 * Math.sqrt(b.commits / MAXC)), 16, 240);
+    const spread = 0.20 + 0.36 * Math.sqrt(b.commits / MAXC);
+    // a horizontal ribbon of needles hugging the limb — flattened in y so the whorl
+    // reads as a plate of foliage rather than a ball at the end of a stick
+    const side = V3(-Math.sin(b.az), 0, -Math.cos(b.az));
+    for (let i = 0; i < nleaf; i++) {
+      // bias toward the outer half of the limb (where a conifer actually carries needles)
+      const t = 0.30 + 0.70 * Math.pow(frng(), 0.55);
+      const seg = t * (b.spine.length - 1);
+      const s0 = b.spine[Math.floor(seg)], s1 = b.spine[Math.min(b.spine.length - 1, Math.floor(seg) + 1)];
+      tmp.copy(s0).lerp(s1, seg - Math.floor(seg));
+      const lat = (frng() - 0.5) * 2 * spread * (0.45 + t);   // wider spray toward the tip
+      const p = V3(
+        tmp.x + side.x * lat + (frng() - 0.5) * spread * 0.5,
+        tmp.y + (frng() - 0.5) * spread * 0.62,
+        tmp.z + side.z * lat + (frng() - 0.5) * spread * 0.5,
+      );
+      specs.push({ p, hue: b.hue, size: 0.2 + frng() * 0.26, phase: frng() * 6.283, t });
+    }
+  }
+  const n = specs.length;
+  const geo = new THREE.PlaneGeometry(1, 1);
+  const mesh = new THREE.InstancedMesh(geo, null, n);
+  const aColor = new Float32Array(n * 3), aPhase = new Float32Array(n), aSize = new Float32Array(n);
+  const m = new THREE.Matrix4(), qI = new THREE.Quaternion(), one = V3(1, 1, 1);
+  specs.forEach((s, i) => {
+    m.compose(s.p, qI, one);
+    mesh.setMatrixAt(i, m);
+    aColor.set([s.hue.r, s.hue.g, s.hue.b], i * 3);
+    aPhase[i] = s.phase; aSize[i] = s.size;
+  });
+  geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(aColor, 3));
+  geo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(aPhase, 1));
+  geo.setAttribute('aSize', new THREE.InstancedBufferAttribute(aSize, 1));
+  mesh.material = new THREE.ShaderMaterial({
+    uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: /* glsl */`
+      attribute vec3 aColor; attribute float aPhase, aSize;
+      uniform float uTime; varying vec3 vColor; varying vec2 vUv; varying float vTw;
+      void main() {
+        vColor = aColor; vUv = uv;
+        vTw = 0.62 + 0.38 * sin(uTime * 1.1 + aPhase);
+        vec4 wc = instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+        // wind: a slow seeded sway, amplitude scaled by height so upper whorls move more
+        wc.x += sin(uTime * 0.55 + aPhase) * 0.035 * (0.4 + wc.y * 0.05);
+        vec4 mv = modelViewMatrix * wc;
+        mv.xy += (uv - 0.5) * aSize;    // billboard in view space
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */`
+      varying vec3 vColor; varying vec2 vUv; varying float vTw;
+      void main() {
+        float d = length(vUv - 0.5);
+        // low per-needle alpha: the spray is dense, so brightness must come from
+        // accumulation, not from any one quad. Anything higher blows out under bloom
+        // and the sector hue washes to white — which would destroy the colour key.
+        float a = smoothstep(0.5, 0.08, d) * 0.115 * vTw;
+        gl_FragColor = vec4(vColor * (0.55 + 0.35 * vTw), a);
+      }`,
+  });
+  mesh.frustumCulled = false;
+  scene.add(mesh);
+  console.log('[whorls] foliage quads:', n, '· branches:', branchRecs.length);
+}
+
+// ============================================================================
+// THE COLLAR RINGS — the mix encoding
+// ============================================================================
+// One ring per quarter, hugging the trunk at that whorl's height. The ring is a
+// stacked bar wrapped into a circle: each kind owns an arc proportional to its
+// share of that quarter's EVENTS (not commits — this is where the mix lives).
+// Ring THICKNESS is deliberately constant: volume is already carried by the
+// branches, so the collar is pure composition and nothing else.
+// ============================================================================
+const collarGroups = [];
+{
+  const RIN = 0.16, ROUT = 0.66;   // radial extent of the collar, added to the local trunk radius
+  QUARTERS.forEach((q, qi) => {
+    const y = yOf(qi);
+    const g = new THREE.Group();
+    g.position.y = y;
+    const rBase = trunkR(y);
+    if (!q.total) {
+      // a silent quarter still gets a mark — a hairline ghost ring, so the trunk's
+      // rhythm never skips and "nothing happened here" is visibly a fact, not a gap
+      const gg = new THREE.RingGeometry(rBase + RIN, rBase + RIN + 0.05, 64);
+      gg.rotateX(-Math.PI / 2);
+      g.add(new THREE.Mesh(gg, new THREE.MeshBasicMaterial({
+        color: 0x35435a, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false })));
+      scene.add(g); collarGroups.push(g); return;
+    }
+    let acc = 0;
+    KINDS.forEach((k, ki) => {
+      const share = q.kinds[ki] / q.total;
+      if (share <= 0) return;
+      const a0 = acc * Math.PI * 2, sweep = share * Math.PI * 2;
+      acc += share;
+      // a hair of padding between wedges so the boundaries stay crisp under bloom
+      const pad = Math.min(sweep * 0.06, deg(1.6));
+      const gg = new THREE.RingGeometry(rBase + RIN, rBase + ROUT, Math.max(6, Math.ceil(sweep / deg(3))), 1,
+        a0 + pad * 0.5, sweep - pad);
+      gg.rotateX(-Math.PI / 2);
+      const mat = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(k.hue), side: THREE.DoubleSide,
+        transparent: true, opacity: 0.72, depthWrite: false,
+      });
+      g.add(new THREE.Mesh(gg, mat));
+      // a thin vertical skirt gives the ring presence from a low camera angle,
+      // where a flat disc would vanish edge-on. Kept dim: the collar is a caption,
+      // not the subject — the branches are the subject.
+      const cg = new THREE.CylinderGeometry(rBase + ROUT, rBase + ROUT, 0.075,
+        Math.max(6, Math.ceil(sweep / deg(3))), 1, true, a0 + pad * 0.5, sweep - pad);
+      const skirt = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({
+        color: new THREE.Color(k.hue), side: THREE.DoubleSide,
+        transparent: true, opacity: 0.38, depthWrite: false }));
+      skirt.position.y = -0.032;
+      g.add(skirt);
+    });
+    scene.add(g);
+    collarGroups.push(g);
+  });
+}
+
+// ---------- fireflies: the most recent quarter's activity drifts around the top whorl ----------
+{
+  const last = QUARTERS[NQ - 1];
+  const N = clamp(Math.round(last.total * 0.22), 24, 260);
+  const frng = mulberry32(strHash(SEED + '|flies'));
+  const pos = new Float32Array(N * 3), col = new Float32Array(N * 3), ph = new Float32Array(N);
+  const tips = branchRecs.filter(b => b.qi === NQ - 1);
+  for (let i = 0; i < N; i++) {
+    const b = tips.length ? tips[Math.floor(frng() * tips.length)] : null;
+    const base = b ? b.tip : V3(0, TOP_Y, 0);
+    pos.set([base.x + (frng() - 0.5) * 3.2, base.y + (frng() - 0.5) * 2.0, base.z + (frng() - 0.5) * 3.2], i * 3);
+    const c = b ? b.hue : new THREE.Color(0xfff0b0);
+    col.set([c.r, c.g, c.b], i * 3);
+    ph[i] = frng() * 6.283;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+  g.setAttribute('aPhase', new THREE.BufferAttribute(ph, 1));
+  const pts = new THREE.Points(g, new THREE.ShaderMaterial({
+    uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: /* glsl */`
+      attribute vec3 aColor; attribute float aPhase; uniform float uTime;
+      varying vec3 vC; varying float vA;
+      void main() {
+        vC = aColor;
+        vA = 0.25 + 0.7 * pow(0.5 + 0.5 * sin(uTime * 1.7 + aPhase * 3.1), 2.0);
+        vec3 p = position + vec3(sin(uTime * 0.4 + aPhase) * 0.35, sin(uTime * 0.29 + aPhase * 2.0) * 0.28, cos(uTime * 0.36 + aPhase) * 0.35);
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_PointSize = 5.5 * (14.0 / -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */`
+      varying vec3 vC; varying float vA;
+      void main() {
+        float d = length(gl_PointCoord - 0.5);
+        gl_FragColor = vec4(vC, smoothstep(0.5, 0.05, d) * vA);
+      }`,
+  }));
+  pts.frustumCulled = false;
+  scene.add(pts);
+}
+
+// ============================================================================
+// HTML OVERLAYS — quarter labels (projected) + legends
+// ============================================================================
+const labelHost = document.getElementById('labels');
+const labelEls = QUARTERS.map(q => {
+  const el = document.createElement('div');
+  el.className = 'qlab';
+  const mix = q.total
+    ? KINDS.map((k, i) => q.kinds[i] ? `<span style="width:${(q.kinds[i] / q.total * 100).toFixed(2)}%;background:${hex(k.hue)}"></span>` : '').join('')
+    : '<span style="width:100%;background:#26313f"></span>';
+  el.innerHTML = `<span class="q">${q.key}</span><span class="n">${q.total ? q.commits + ' commits · ' + Math.round(collabShare(q) * 100) + '% collab' : 'silent'}</span>`
+    + `<span class="mix">${mix}</span>`;
+  labelHost.appendChild(el);
+  return el;
+});
+
+// kind legend
+document.getElementById('kinds').innerHTML = KINDS.map(k => {
+  const total = QUARTERS.reduce((a, q) => a + q.kinds[KIND_IDX.get(k.id)], 0);
+  return `<div class="k"><span class="bar" style="color:${hex(k.hue)};background:${hex(k.hue)}"></span>${k.label}<i>${total}</i></div>`;
+}).join('');
+
+// sector legend — sectors that never commit are dimmed, honestly
+const secTotals = new Map();
+for (const b of branchRecs) secTotals.set(b.sector, (secTotals.get(b.sector) || 0) + b.commits);
+document.getElementById('secGrid').innerHTML = SECTORS.map((s, i) => {
+  const t = secTotals.get(i) || 0;
+  return `<div class="sec${t ? '' : ' off'}"><span class="dot" style="color:${hex(s.hue)};background:${hex(s.hue)}"></span>${s.label}<i style="margin-left:auto;color:#7f93aa;font-style:normal;font-variant-numeric:tabular-nums">&nbsp;${t || '—'}</i></div>`;
+}).join('');
+const silent = SECTORS.filter((s, i) => !secTotals.get(i)).map(s => s.label);
+document.getElementById('secHint').textContent =
+  `${SECTORS.length - silent.length} of ${SECTORS.length} sectors ever branch` +
+  (silent.length ? ` — ${silent.join(', ')} never appear in the log.` : '.');
+
+// ---------- project the quarter labels each frame ----------
+const proj = new THREE.Vector3();
+function placeLabels() {
+  const w = innerWidth, h = innerHeight;
+  for (let i = 0; i < NQ; i++) {
+    // park the label just outside the collar, on the side of the trunk facing the camera's right
+    const rightWorld = V3().setFromMatrixColumn(camera.matrixWorld, 0).setY(0).normalize();
+    // park it just past the widest branch so the label never lands on the foliage
+    proj.set(rightWorld.x * (REACH + 0.9), yOf(i), rightWorld.z * (REACH + 0.9)).project(camera);
+    const el = labelEls[i];
+    if (proj.z > 1) { el.style.display = 'none'; continue; }
+    el.style.display = '';
+    el.style.left = ((proj.x * 0.5 + 0.5) * w + 10).toFixed(1) + 'px';
+    el.style.top = ((-proj.y * 0.5 + 0.5) * h).toFixed(1) + 'px';
+    el.style.opacity = String(clamp(1.25 - Math.abs(proj.x) * 0.9, 0.25, 1));
+  }
+}
+
+// ---------- resize + tick ----------
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+});
+
+const clock = new THREE.Clock();
+let frames = 0, fpsT = 0, fps = 60;
+function tick() {
+  requestAnimationFrame(tick);
+  const dt = clock.getDelta();
+  U.uTime.value += dt;
+  frames++; fpsT += dt;
+  if (fpsT > 1) { fps = frames / fpsT; frames = 0; fpsT = 0; }
+  controls.update();
+  placeLabels();
+  composer.render();
+}
+tick();
+
+// verifier hooks — the parent brief asks for the quarter table to be checkable
+window.__dbg = {
+  quarters: QUARTERS.map(q => ({ key: q.key, kinds: Object.fromEntries(KINDS.map((k, i) => [k.id, q.kinds[i]])), total: q.total, commits: q.commits, collab: collabShare(q) })),
+  branches: branchRecs.length,
+  events: EVENTS.length,
+  seed: SEED,
+  fps: () => fps,
+  camera, controls, scene,
+};
+console.log('[whorls] ready ·', EVENTS.length, 'events ·', NQ, 'quarters ·', branchRecs.length, 'branches · seed', SEED);
+</script>
+</body>
+</html>
