@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+  AI Learning Tree — RADIAL ENVELOPE (3D)
+  prototypes/time-axis-board/radial-envelope.html
+================================================================================
+
+WHAT THIS IS
+  One idea, tested properly: the monthly activity envelope as a 3D SURFACE
+  instead of a 2D outline. Time is vertical (19 monthly rings, Dec 2024 ->
+  Jul 2026). At each ring, the radius in a given compass direction is that
+  SECTOR's commit count for that month. Lofting the 19 rings gives a solid
+  whose cross-section at any height is that month's rosette of activity.
+
+WHERE THE IDEA CAME FROM
+  Moodboard sketch 09 ("Silhouette from envelope") was marked a DEAD END. It
+  drew ONE closed outline whose half-width per month = that month's total
+  commits. Two failures: it threw away all interior detail (sector, mix,
+  project), and because this dataset's mass is at the recent end, the honest
+  outline was a FUNNEL — fat at the top, thin at the base. That is the same
+  inversion that sank trunk-rings ("a bar chart in a hat").
+
+  Walter's reframe: "The silhouette from envelope would radially fan out
+  depending on the rubric?" That is what rescues it. Give every sector its own
+  azimuth and the outline stops being a width and becomes a SURFACE. The
+  funnel problem is attacked directly, because the shape now changes
+  CHARACTER as it rises, not merely scale:
+
+    - base  = SPIKY and LOPSIDED (one sector at a time, all mass in one
+              direction)
+    - top   = ROUNDER and fuller (many sectors at once)
+
+  That is a second maturity signal, structurally independent of the
+  commit/pr/review/issue mix: a shift from working on one thing at a time to
+  working on many in parallel.
+
+THE MEASUREMENT BEHIND IT (the headline finding)
+  Per-month angular asymmetry = |sum(count * unit_vector(azimuth))| / sum(count).
+  0 = mass spread evenly around the compass; 1 = all mass in one direction.
+  Computed live in this page from the log; the trend is downward:
+
+    2024-12 1.00   2025-09 1.00   2026-03 0.48
+    2025-01 1.00   2025-10 0.59   2026-04 0.45
+    2025-03 0.92   2025-11 0.62   2026-05 0.49
+    2025-04 0.70   2025-12 0.53   2026-06 0.30
+    2025-06 0.89   2026-01 0.80   2026-07 0.22
+    2025-08 0.97   2026-02 0.67
+
+  HONESTY: the trend is real but NOT monotonic, and this page says so on
+  screen. 2025-08 spikes back to 0.97, 2026-05 ticks up to 0.49. Tiny months
+  are asymmetric for trivial reasons, not structural ones — 2025-05 has ONE
+  commit and therefore scores a perfect 1.00 while meaning nothing at all.
+  Months with < 10 commits are drawn hollow in the sparkline for that reason.
+
+ENCODING (what each channel carries)
+  radius   = COMMITS ONLY, per sector per month, sqrt-scaled. A PR's own
+             commits are already in the log, so sizing on raw events would
+             overstate 2026 by roughly 3x.
+  azimuth  = the sector's compass bearing from generator/taxonomy.mjs.
+  height   = month (uniform spacing; every month gets equal vertical room so
+             the shape is read as a sequence, not a duration).
+  skin     = the MIX (commit/pr/review/issue) as colour temperature and
+             banding, never as size. Review-heavy months read cooler and more
+             banded; pure-commit months read warmer and smoother.
+
+HOW THE THREE HARD PROBLEMS WERE SOLVED
+  1. RING INTERPOLATION. Linear between azimuths gives a faceted star with
+     hard creases. This uses a PERIODIC CATMULL-ROM through all 10 sector
+     control points, resampled to 96 points per ring, so the surface is
+     smooth but still peaks at the true sector bearings. Control points are
+     unevenly spaced in angle (15..350 deg), so the spline is parameterised
+     by ANGLE, not by index — otherwise the wide 225->270->350 gap would
+     distort.
+  2. ZEROS. A sector with 0 commits must not pull the surface to r=0 (a pinch
+     singularity, and visually a spike-in reading as a data event). It also
+     must not be floored so high it looks active. Solution: an explicit
+     CORE RADIUS the surface never goes below, rendered as a visible solid
+     core cylinder. Everything at the core is "no data", and you can see
+     exactly where the core surfaces through the skin. The core is drawn, and
+     labelled, so the floor is never mistaken for signal. Toggle it.
+  3. VERTICAL INTERPOLATION. 19 rings lofted directly show steps. This does
+     a Catmull-Rom in the vertical direction too (8 substeps per month band).
+     BUT 2025-02 is a genuine hole in the log, so it is inserted as a REAL
+     ring pinched to the core radius, and the vertical spline is BROKEN there
+     (segments do not interpolate across the gap). The result is a true waist
+     you can see through, not a smoothed-over dip.
+  4. SCALING. Per-cell range is 0..155 commits. sqrt(count) keeps the 1- and
+     3-commit months visible without letting 2026-07's 155 swallow the page.
+     Stated on-screen in the panel.
+
+HONEST WEAKNESSES
+  - Two of the ten taxonomy sectors (build.no-code, build.low-code) have ZERO
+    events EVER. The surface is permanently flat across roughly 100 degrees of
+    compass. That is truthful, and the page labels those bearings "no events
+    ever" rather than hiding them — but it does mean a big smooth dead zone
+    dominates one flank and unbalances the object.
+  - The sector x month grid is only 29% filled. Even with smoothing, most
+    rings are a couple of lobes on a core, so a lot of the surface is floor
+    rather than data.
+  - Catmull-Rom overshoots. Between a 155 and a 0 the spline can bulge
+    slightly beyond the true peak or dip under the core. Radii are clamped to
+    the core, but a lobe's flank is interpolation, not measurement. Only the
+    96 resampled points at true sector bearings are data; everything between
+    is inference. The cut view exists partly so you can check the real values.
+  - Uniform month spacing means a 1-commit month gets the same vertical room
+    as a 390-event month. That is deliberate (sequence, not duration) but it
+    does flatter the quiet stretch of mid-2025.
+  - The object is a solid of revolution-ish form, and solids of that kind read
+    as "vase" almost automatically. Whether the spiky base survives that
+    association is exactly what this prototype is for.
+
+USAGE
+  Must be SERVED (it fetches ../../data/growth-log.jsonl). From the repo root:
+    python -m http.server 8123
+  then open /prototypes/time-axis-board/radial-envelope.html
+  Params: ?seed=<n> jitters the organic surface noise deterministically.
+          ?cut=<0..18> opens on that month's cross-section.
+================================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Learning Tree — Radial envelope</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #05070d; font-family: "Segoe UI", system-ui, sans-serif; }
+  #app { position: fixed; inset: 0; }
+
+  .panel {
+    position: fixed; color: #cfd8e3; background: rgba(10, 16, 28, 0.62);
+    border: 1px solid rgba(120, 160, 230, 0.18); border-radius: 10px;
+    backdrop-filter: blur(7px); padding: 12px 14px; z-index: 10;
+  }
+
+  #hud { top: 14px; left: 16px; max-width: 330px; }
+  #hud h1 { font-size: 15px; margin: 0 0 2px; font-weight: 600; color: #eef4fb; letter-spacing: 0.02em; }
+  #hud .sub { color: #8fa3ba; font-size: 11.5px; margin-bottom: 9px; line-height: 1.5; }
+  #hud .enc { font-size: 11px; color: #9fb2c8; line-height: 1.65; margin-bottom: 9px; }
+  #hud .enc b { color: #cfe0f2; font-weight: 600; }
+  #hud .warn { color: #ffb08a; }
+
+  .btnrow { display: flex; flex-wrap: wrap; gap: 6px; }
+  button {
+    font: inherit; font-size: 11.5px; padding: 4px 9px; border-radius: 7px; cursor: pointer;
+    color: #eaf2fb; background: rgba(90, 140, 220, 0.22); border: 1px solid rgba(140, 180, 240, 0.35);
+  }
+  button:hover { background: rgba(120, 170, 245, 0.34); }
+  button[aria-pressed="true"] { background: rgba(120, 200, 245, 0.4); border-color: rgba(170, 220, 255, 0.65); }
+
+  /* ---- cut slider ---- */
+  #cutbar { bottom: 14px; left: 50%; transform: translateX(-50%); width: min(560px, calc(100vw - 32px)); }
+  #cutbar .row { display: flex; align-items: center; gap: 10px; }
+  #cutbar label { font-size: 11px; color: #9fb2c8; white-space: nowrap; }
+  #cutMonth { font-size: 12.5px; color: #eef4fb; min-width: 74px; font-variant-numeric: tabular-nums; }
+  #cutRange { flex: 1; accent-color: #4fd8c4; }
+  #cutInfo { font-size: 11px; color: #8fa3ba; margin-top: 6px; min-height: 15px; line-height: 1.45; }
+  #cutInfo b { color: #cfe0f2; }
+  #cutInfo .gap { color: #ff9d9d; }
+
+  /* ---- side panel: the numbers ---- */
+  #numbers {
+    top: 14px; right: 16px; width: 306px; max-height: calc(100vh - 28px);
+    overflow-y: auto; font-size: 11px;
+  }
+  #numbers b.hd { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 7px; font-size: 11.5px; }
+  #numbers table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  #numbers th { color: #7f93aa; font-weight: 500; text-align: right; padding: 0 0 4px 3px; font-size: 9.5px; }
+  #numbers th.l { text-align: left; }
+  #numbers td { text-align: right; padding: 1px 0 1px 3px; color: #9fb2c8; }
+  #numbers td.l { text-align: left; color: #cfd8e3; cursor: pointer; }
+  #numbers td.l:hover { color: #eaf2fb; text-decoration: underline; }
+  #numbers tr.on td { background: rgba(120, 200, 245, 0.16); color: #eaf2fb; }
+  #numbers tr.gap td { color: #ff9d9d; }
+  #numbers td.z { color: #3d4757; }
+  #numbers .foot { color: #7f93aa; margin-top: 9px; line-height: 1.55; font-size: 10.5px; }
+  #numbers .foot b { color: #a8bccf; }
+
+  /* ---- asymmetry sparkline ---- */
+  #asym { margin-top: 11px; border-top: 1px solid rgba(120, 160, 230, 0.16); padding-top: 9px; }
+  #asym canvas { width: 100%; height: 62px; display: block; }
+  #asym .cap { color: #7f93aa; font-size: 10.5px; line-height: 1.5; margin-top: 5px; }
+  #asym .cap b { color: #a8bccf; }
+
+  #err {
+    position: fixed; inset: 0; display: none; place-items: center; z-index: 50;
+    background: rgba(5, 7, 13, 0.94); color: #cfd8e3; text-align: center; padding: 24px;
+  }
+  #err.on { display: grid; }
+  #err .box { max-width: 540px; }
+  #err h2 { color: #ff9d9d; font-size: 18px; margin: 0 0 10px; }
+  #err p { font-size: 13.5px; line-height: 1.65; color: #aab8c9; }
+  #err code { background: rgba(120, 160, 230, 0.16); padding: 2px 6px; border-radius: 5px; color: #eaf2fb; }
+
+  @media (max-width: 900px) {
+    /* Walter liked the trunk-rings side panels; on mobile they must shrink, not vanish */
+    #numbers { width: 190px; font-size: 10px; padding: 9px 10px; max-height: 46vh; }
+    #numbers .foot, #asym .cap { display: none; }
+    #hud { max-width: 210px; }
+    #hud .enc { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div class="panel" id="hud">
+  <h1>Radial envelope</h1>
+  <div class="sub">Monthly activity as a lofted 3D surface. Radius at (month, bearing) = that sector's commits that month.</div>
+  <div class="enc">
+    <b>radius</b> commits only, sqrt-scaled &middot; <b>bearing</b> sector &middot; <b>height</b> month<br>
+    <b>skin</b> commit/pr/review/issue mix (colour + banding, never size)<br>
+    <span class="warn">base spiky &amp; lopsided &rarr; top rounder</span> = the finding
+  </div>
+  <div class="btnrow">
+    <button id="bCut" type="button" aria-pressed="false" title="Slice the solid at one month to read its rosette">&#9986; Cut view</button>
+    <button id="bCore" type="button" aria-pressed="true" title="Show the baseline core radius that zero-commit sectors rest on">&#9711; Core</button>
+    <button id="bSpin" type="button" aria-pressed="true">&#9199; Orbit</button>
+    <button id="bWire" type="button" aria-pressed="false" title="Show the 96-point rings the surface is lofted through">&#9638; Rings</button>
+    <button id="bFrame" type="button" title="Reset the camera to frame the whole solid">&#8982; Fit</button>
+  </div>
+</div>
+
+<div class="panel" id="numbers">
+  <b class="hd">Commits per sector per month</b>
+  <table id="tbl"></table>
+  <div id="asym">
+    <canvas id="asymCv" width="560" height="124"></canvas>
+    <div class="cap">
+      <b>Angular asymmetry</b> — 1.00 = all commits in one compass direction,
+      0 = spread evenly. Hollow dots are months with &lt;10 commits, where the
+      number is arithmetic noise rather than a habit.
+    </div>
+  </div>
+  <div class="foot">
+    <b>sqrt scale</b> on radius: 155 commits is ~12x the radius of 1, not 155x.<br>
+    <b>Core radius</b> is a drawn floor, not data — every zero rests on it.<br>
+    <b>2025-02</b> is missing from the log entirely: a real pinch, never interpolated.<br>
+    <b>no-code / low-code</b> have zero events ever — permanently flat flank.
+  </div>
+</div>
+
+<div class="panel" id="cutbar">
+  <div class="row">
+    <label for="cutRange">Cut plane</label>
+    <span id="cutMonth">—</span>
+    <input id="cutRange" type="range" min="0" max="18" step="1" value="18">
+  </div>
+  <div id="cutInfo"></div>
+</div>
+
+<div id="err"><div class="box">
+  <h2>Couldn't load the growth log</h2>
+  <p id="errMsg"></p>
+  <p>This page fetches <code>../../data/growth-log.jsonl</code>, so it must be served over
+  http(s). Opening the file directly (<code>file://</code>) blocks the fetch.
+  From the repo root run <code>python -m http.server 8123</code> and visit
+  <code>/prototypes/time-axis-board/radial-envelope.html</code>.</p>
+</div></div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.181/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.181/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ==========================================================================
+   0 · constants, params, palette
+   ========================================================================== */
+const PARAMS = new URLSearchParams(location.search);
+const SEED = (() => { const v = parseInt(PARAMS.get('seed'), 10); return Number.isFinite(v) ? v : 7; })();
+
+// savanna-night palette, lifted from prototypes/acacia-sketch/index.html
+const PAL = {
+  sky:  0x05070d, haze: 0x5aa66a, dusk: 0x4fd8c4, glow: 0xffcf6e,
+  star: 0xe8ecff, bark: 0x6b5a48, dead: 0x5c6672, ink: 0xcfd8e3, dim: 0x7f93aa,
+};
+
+// taxonomy default-v1, mirrored from generator/taxonomy.mjs (renderers don't import it).
+// All TEN sectors are here on purpose: no-code and low-code are permanently empty and
+// must stay as real control points so their flank reads as deliberately flat, not absent.
+const SECTORS = [
+  { id: 'create.copy',        label: 'copy',      az: 15,  hue: 0xffb454 },
+  { id: 'create.images',      label: 'images',    az: 55,  hue: 0xff6ec7 },
+  { id: 'create.video',       label: 'video',     az: 95,  hue: 0xff5d73 },
+  { id: 'create.3d',          label: '3d',        az: 115, hue: 0xff8f4d },
+  { id: 'automate.workflows', label: 'workflows', az: 140, hue: 0x7ce65a },
+  { id: 'distribute.seo',     label: 'seo',       az: 185, hue: 0x35d0ba },
+  { id: 'distribute.geo',     label: 'geo',       az: 225, hue: 0x4aa8ff },
+  { id: 'build.no-code',      label: 'no-code',   az: 270, hue: 0xb59aff },
+  { id: 'build.low-code',     label: 'low-code',  az: 310, hue: 0x8f7bff },
+  { id: 'build.pro-code',     label: 'pro-code',  az: 350, hue: 0x6a8dff },
+].sort((a, b) => a.az - b.az);   // spline needs them in angular order
+
+const RING_N   = 96;    // resampled points per ring
+const SUB_V    = 8;     // vertical substeps per month band
+const CORE_R   = 0.30;  // baseline radius zeros rest on — DRAWN, never silent
+const MAX_R    = 4.2;   // radius of the largest cell (2026-07 geo, 155 commits)
+const BAND_H   = 1.05;  // vertical room per month
+
+const deg = (d) => d * Math.PI / 180;
+
+// deterministic noise so ?seed= is reproducible
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const fatal = (msg) => {
+  document.getElementById('errMsg').textContent = msg;
+  document.getElementById('err').classList.add('on');
+};
+
+/* ==========================================================================
+   1 · data — load the real log, bucket monthly, invent nothing
+   ========================================================================== */
+const LOG_PATH = '../../data/growth-log.jsonl';
+let RAW = [];
+try {
+  const res = await fetch(LOG_PATH, { cache: 'no-cache' });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching ' + LOG_PATH);
+  const text = await res.text();
+  RAW = text.split(/\r?\n/).filter(Boolean).map((l, i) => {
+    try { return JSON.parse(l); }
+    catch { throw new Error('malformed JSON on line ' + (i + 1) + ' of growth-log.jsonl'); }
+  });
+  if (!RAW.length) throw new Error('growth-log.jsonl is empty');
+} catch (e) {
+  fatal(e.message || String(e));
+  throw e;
+}
+
+// --- month axis: walk calendar months from first to last so a MISSING month
+// --- (2025-02) appears as a real row rather than being skipped over.
+function monthKey(ts) { return ts.slice(0, 7); }
+function addMonth(key) {
+  let [y, m] = key.split('-').map(Number);
+  m += 1; if (m > 12) { m = 1; y += 1; }
+  return y + '-' + String(m).padStart(2, '0');
+}
+const seenMonths = new Set(RAW.map((e) => monthKey(e.ts)));
+const sortedSeen = [...seenMonths].sort();
+const MONTHS = [];
+for (let k = sortedSeen[0]; ; k = addMonth(k)) {
+  MONTHS.push(k);
+  if (k === sortedSeen[sortedSeen.length - 1]) break;
+}
+
+const MI = new Map(MONTHS.map((k, i) => [k, i]));
+const SI = new Map(SECTORS.map((s, i) => [s.id, i]));
+
+// rows[monthIndex] = { key, present, commits[sectorIndex], total, kinds{}, asym }
+const rows = MONTHS.map((key) => ({
+  key, present: seenMonths.has(key),
+  commits: new Array(SECTORS.length).fill(0),
+  total: 0, kinds: {}, events: 0, asym: 0,
+}));
+
+for (const e of RAW) {
+  const r = rows[MI.get(monthKey(e.ts))];
+  if (!r) continue;
+  r.events++;
+  r.kinds[e.kind] = (r.kinds[e.kind] || 0) + 1;
+  if (e.kind !== 'commit') continue;          // RADIUS IS COMMITS ONLY
+  const si = SI.get(e.sector);
+  if (si === undefined) continue;             // unknown sector: counted in events, not radius
+  r.commits[si]++; r.total++;
+}
+
+// angular asymmetry — the headline finding, computed here not hard-coded
+for (const r of rows) {
+  let x = 0, y = 0;
+  SECTORS.forEach((s, i) => { const v = r.commits[i]; x += v * Math.cos(deg(s.az)); y += v * Math.sin(deg(s.az)); });
+  r.asym = r.total ? Math.hypot(x, y) / r.total : 0;
+}
+
+const MAX_CELL = Math.max(1, ...rows.map((r) => Math.max(...r.commits)));
+
+// sqrt scale, stated on the page. Zero maps exactly to the core, never below.
+const radiusOf = (c) => (c <= 0 ? CORE_R : CORE_R + Math.sqrt(c / MAX_CELL) * (MAX_R - CORE_R));
+
+/* ==========================================================================
+   2 · ring geometry — periodic Catmull-Rom BY ANGLE
+   --------------------------------------------------------------------------
+   Sector bearings are unevenly spaced (15..350 deg, with a 80-deg jump from
+   225 to 270 and a 40-deg one either side). Splining by array index would
+   compress the wide gaps and stretch the tight ones, putting lobe peaks off
+   their true bearings. So we parameterise by ANGLE and wrap +-360.
+   ========================================================================== */
+function catmull(p0, p1, p2, p3, t) {
+  const t2 = t * t, t3 = t2 * t;
+  return 0.5 * ((2 * p1) + (-p0 + p2) * t +
+    (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
+    (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+}
+
+// Build one ring of RING_N radii from a per-sector radius array.
+function ringRadii(radii) {
+  const n = SECTORS.length;
+  const az = SECTORS.map((s) => s.az);
+  const out = new Float32Array(RING_N);
+  for (let k = 0; k < RING_N; k++) {
+    const a = (k / RING_N) * 360;
+    // locate the control interval containing angle a (periodic)
+    let i = 0;
+    while (i < n && az[i] <= a) i++;
+    const i1 = (i - 1 + n) % n, i2 = i % n;
+    const i0 = (i1 - 1 + n) % n, i3 = (i2 + 1) % n;
+    let a1 = az[i1], a2 = az[i2];
+    if (a2 <= a1) a2 += 360;                     // wrap across 350 -> 15
+    let aa = a; if (aa < a1) aa += 360;
+    const t = (aa - a1) / (a2 - a1 || 1);
+    const v = catmull(radii[i0], radii[i1], radii[i2], radii[i3], t);
+    // Catmull-Rom overshoots between extremes; clamp so it can never dip
+    // below the drawn core (which would read as a spike-in, i.e. fake data).
+    out[k] = Math.max(CORE_R, v);
+  }
+  return out;
+}
+
+// Per-month rings at true data heights.
+const monthRings = rows.map((r) => ringRadii(r.commits.map(radiusOf)));
+
+/* ==========================================================================
+   3 · vertical loft — smooth, BUT broken at the 2025-02 gap
+   --------------------------------------------------------------------------
+   A missing month is not a low month. We insert it as a real ring pinched to
+   the core, and we do NOT let the vertical spline interpolate across it: the
+   segments on either side are splined independently, so the waist is a true
+   feature you can see through rather than a smoothed dip.
+   ========================================================================== */
+const yOf = (i) => i * BAND_H;
+
+// Split the month index range into contiguous runs of PRESENT months.
+const runs = [];
+{
+  let cur = null;
+  rows.forEach((r, i) => {
+    if (r.present) { if (!cur) { cur = { i0: i, i1: i }; runs.push(cur); } else cur.i1 = i; }
+    else cur = null;
+  });
+}
+
+// levels[] = { y, radii[RING_N], mi (fractional month index) }
+const levels = [];
+for (const run of runs) {
+  const len = run.i1 - run.i0;
+  if (len === 0) {                              // isolated single month: emit flat slab
+    levels.push({ y: yOf(run.i0) - BAND_H * 0.32, radii: monthRings[run.i0], mi: run.i0 });
+    levels.push({ y: yOf(run.i0) + BAND_H * 0.32, radii: monthRings[run.i0], mi: run.i0 });
+    continue;
+  }
+  const steps = len * SUB_V;
+  for (let s = 0; s <= steps; s++) {
+    const f = run.i0 + (s / steps) * len;       // fractional month index
+    const i1 = Math.min(run.i1, Math.floor(f)), t = f - i1;
+    const i2 = Math.min(run.i1, i1 + 1);
+    const i0 = Math.max(run.i0, i1 - 1), i3 = Math.min(run.i1, i2 + 1);
+    const radii = new Float32Array(RING_N);
+    for (let k = 0; k < RING_N; k++) {
+      radii[k] = Math.max(CORE_R, catmull(
+        monthRings[i0][k], monthRings[i1][k], monthRings[i2][k], monthRings[i3][k], t));
+    }
+    levels.push({ y: yOf(f), radii, mi: f });
+  }
+}
+// The gap months themselves: an explicit pinched ring at the core, so the
+// solid genuinely necks to nothing there.
+rows.forEach((r, i) => {
+  if (r.present) return;
+  const radii = new Float32Array(RING_N).fill(CORE_R);
+  levels.push({ y: yOf(i), radii, mi: i, gap: true });
+});
+levels.sort((a, b) => a.y - b.y);
+
+const TOP_Y = yOf(rows.length - 1);
+
+/* ==========================================================================
+   4 · scene
+   ========================================================================== */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(PAL.sky);
+// gentle fog only — the object is ~20 units tall and framed from ~28 units out,
+// so anything denser greys out the base exactly where the spiky detail lives
+scene.fog = new THREE.FogExp2(PAL.sky, 0.006);
+
+// Frame the WHOLE solid: it is tall and thin, so the vertical extent drives the
+// distance, not the radius. Solve the fov for the full height plus headroom, then
+// pull back a little more so the month ladder and sector labels stay inside frame.
+const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 0.1, 300);
+function frameAll() {
+  const halfH = TOP_Y / 2 + 1.6;
+  const vFov = deg(camera.fov);
+  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+  const distV = halfH / Math.tan(vFov / 2);
+  const distH = (MAX_R + 2.6) / Math.tan(hFov / 2);
+  const d = Math.max(distV, distH) * 1.06;
+  camera.position.set(d * 0.72, TOP_Y * 0.52 + 1.4, d * 0.72);
+  controls.target.set(0, TOP_Y * 0.5, 0);
+  controls.update();
+}
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.getElementById('app').appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.5;
+controls.minDistance = 5;
+controls.maxDistance = 90;
+frameAll();
+
+scene.add(new THREE.HemisphereLight(0x9fc4ff, 0x1a2418, 0.85));
+const key = new THREE.DirectionalLight(0xfff0d6, 1.15); key.position.set(6, 14, 8); scene.add(key);
+const rim = new THREE.DirectionalLight(0x6ea8ff, 0.55); rim.position.set(-9, 5, -7); scene.add(rim);
+
+/* ---- ground haze disc, for the savanna-night family look ---- */
+{
+  const g = new THREE.RingGeometry(0.4, 26, 64);
+  const m = new THREE.MeshBasicMaterial({
+    color: PAL.haze, transparent: true, opacity: 0.05, side: THREE.DoubleSide, depthWrite: false,
+  });
+  const disc = new THREE.Mesh(g, m); disc.rotation.x = -Math.PI / 2; disc.position.y = -0.02;
+  scene.add(disc);
+}
+
+/* ==========================================================================
+   5 · the envelope surface
+   --------------------------------------------------------------------------
+   Vertex colour carries TWO things at once, neither of them size:
+     - hue: blended sector hue, weighted by how much each sector contributes
+            to the radius at this bearing (so a lobe is its sector's colour)
+     - temperature/banding: the month's commit/pr/review/issue MIX
+   ========================================================================== */
+const rnd = mulberry32(SEED);
+const noiseTable = Array.from({ length: 512 }, () => rnd() - 0.5);
+
+// mix -> a 0..1 "collaboration" number: share of events that are NOT plain commits.
+// Pure-commit month = 0 (warm, smooth). Review/PR-heavy = ->1 (cool, banded).
+function collabOf(r) {
+  if (!r.events) return 0;
+  const c = r.kinds.commit || 0;
+  return 1 - c / r.events;
+}
+const collabAt = (mi) => {
+  const i1 = Math.max(0, Math.min(rows.length - 1, Math.floor(mi)));
+  const i2 = Math.max(0, Math.min(rows.length - 1, i1 + 1));
+  const t = mi - i1;
+  return collabOf(rows[i1]) * (1 - t) + collabOf(rows[i2]) * t;
+};
+
+// Sector hue at a bearing: weight each sector by angular proximity AND by its
+// share of the radius, so an empty flank stays neutral grey instead of borrowing
+// colour from a loud neighbour.
+const sectorColors = SECTORS.map((s) => new THREE.Color(s.hue));
+const neutral = new THREE.Color(PAL.dead);
+function hueAt(k, radii, commits) {
+  const a = (k / RING_N) * 360;
+  let wr = 0, wg = 0, wb = 0, wsum = 0;
+  SECTORS.forEach((s, i) => {
+    let d = Math.abs(((a - s.az + 540) % 360) - 180);
+    d = 180 - d;                                  // angular distance 0..180
+    const prox = Math.exp(-(d * d) / (2 * 26 * 26));
+    const w = prox * commits[i];
+    if (w > 0) { const c = sectorColors[i]; wr += c.r * w; wg += c.g * w; wb += c.b * w; wsum += w; }
+  });
+  if (wsum <= 0) return neutral;
+  return new THREE.Color(wr / wsum, wg / wsum, wb / wsum);
+}
+
+let surfMesh = null, wireMesh = null;
+const surfGroup = new THREE.Group(); scene.add(surfGroup);
+
+function buildSurface() {
+  const L = levels.length;
+  const pos = [], col = [], idx = [], nor = [];
+  const tmp = new THREE.Color();
+
+  for (let li = 0; li < L; li++) {
+    const lev = levels[li];
+    const collab = collabAt(lev.mi);
+    const mi1 = Math.max(0, Math.min(rows.length - 1, Math.round(lev.mi)));
+    const commits = rows[mi1].commits;
+    // banding: a soft ring pulse per month, stronger when the mix is collaborative
+    const band = 0.5 + 0.5 * Math.cos(lev.mi * Math.PI * 2);
+    for (let k = 0; k < RING_N; k++) {
+      const a = (k / RING_N) * (Math.PI * 2);
+      // organic surface noise — small, deterministic, never enough to change a reading
+      const n = noiseTable[(k * 7 + li * 13) % noiseTable.length];
+      const r = lev.radii[k] * (1 + n * 0.012);
+      pos.push(Math.cos(a) * r, lev.y, Math.sin(a) * r);
+
+      const base = hueAt(k, lev.radii, commits);
+      tmp.copy(base);
+      // cool + band the skin by mix; brighten slightly toward the top so the
+      // recent, rounder months read as "lit"
+      tmp.lerp(new THREE.Color(PAL.dusk), collab * 0.42);
+      const lift = 0.80 + 0.34 * (lev.y / (TOP_Y || 1)) + band * collab * 0.16;
+      tmp.multiplyScalar(lift);
+      if (lev.gap) tmp.setRGB(0.42, 0.16, 0.16);   // the missing month reads as a dark scar
+      col.push(tmp.r, tmp.g, tmp.b);
+      nor.push(Math.cos(a), 0, Math.sin(a));
+    }
+  }
+  for (let li = 0; li < L - 1; li++) {
+    // do not stitch across the gap ring: leave the solid genuinely open there
+    if (levels[li].gap || levels[li + 1].gap) {
+      if (!(levels[li].gap && levels[li + 1].gap)) {
+        // still close the surface onto the pinch so we see a neck, not a hole
+      }
+    }
+    for (let k = 0; k < RING_N; k++) {
+      const k2 = (k + 1) % RING_N;
+      const A = li * RING_N + k, B = li * RING_N + k2;
+      const C = (li + 1) * RING_N + k, D = (li + 1) * RING_N + k2;
+      idx.push(A, C, B, B, C, D);
+    }
+  }
+
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+
+  const m = new THREE.MeshStandardMaterial({
+    vertexColors: true, roughness: 0.72, metalness: 0.06,
+    side: THREE.DoubleSide, flatShading: false,
+    clippingPlanes: [], clipShadows: false,
+  });
+  surfMesh = new THREE.Mesh(g, m);
+  surfGroup.add(surfMesh);
+
+  // caps so the solid reads closed at bottom and top
+  for (const [lev, dir] of [[levels[0], -1], [levels[L - 1], 1]]) {
+    const cp = [], ci = [];
+    cp.push(0, lev.y, 0);
+    for (let k = 0; k < RING_N; k++) {
+      const a = (k / RING_N) * (Math.PI * 2);
+      cp.push(Math.cos(a) * lev.radii[k], lev.y, Math.sin(a) * lev.radii[k]);
+    }
+    for (let k = 0; k < RING_N; k++) {
+      const k2 = (k + 1) % RING_N;
+      if (dir > 0) ci.push(0, k + 1, k2 + 1); else ci.push(0, k2 + 1, k + 1);
+    }
+    const cg = new THREE.BufferGeometry();
+    cg.setAttribute('position', new THREE.Float32BufferAttribute(cp, 3));
+    cg.setIndex(ci); cg.computeVertexNormals();
+    const cm = new THREE.MeshStandardMaterial({
+      color: dir > 0 ? 0x2c3a52 : 0x1d2635, roughness: 0.85, side: THREE.DoubleSide,
+    });
+    surfGroup.add(new THREE.Mesh(cg, cm));
+  }
+
+  // ring wireframe — shows the 96-point rings the loft passes through
+  const wp = [];
+  rows.forEach((r, i) => {
+    const radii = monthRings[i];
+    for (let k = 0; k < RING_N; k++) {
+      const k2 = (k + 1) % RING_N;
+      const a1 = (k / RING_N) * Math.PI * 2, a2 = (k2 / RING_N) * Math.PI * 2;
+      const rr1 = r.present ? radii[k] : CORE_R, rr2 = r.present ? radii[k2] : CORE_R;
+      wp.push(Math.cos(a1) * rr1, yOf(i), Math.sin(a1) * rr1);
+      wp.push(Math.cos(a2) * rr2, yOf(i), Math.sin(a2) * rr2);
+    }
+  });
+  const wg = new THREE.BufferGeometry();
+  wg.setAttribute('position', new THREE.Float32BufferAttribute(wp, 3));
+  wireMesh = new THREE.LineSegments(wg, new THREE.LineBasicMaterial({
+    color: PAL.star, transparent: true, opacity: 0.3,
+  }));
+  wireMesh.visible = false;
+  surfGroup.add(wireMesh);
+}
+buildSurface();
+
+/* ---- the drawn core: the floor every zero rests on (toggleable, honest) ---- */
+let coreMesh;
+{
+  const g = new THREE.CylinderGeometry(CORE_R * 0.985, CORE_R * 0.985, TOP_Y, 40, 1, true);
+  const m = new THREE.MeshStandardMaterial({
+    color: 0x8a6b4a, roughness: 0.9, transparent: true, opacity: 0.95, side: THREE.DoubleSide,
+  });
+  coreMesh = new THREE.Mesh(g, m);
+  coreMesh.position.y = TOP_Y / 2;
+  scene.add(coreMesh);
+}
+
+/* ==========================================================================
+   6 · labels — months up the axis, sectors around it
+   ========================================================================== */
+function makeLabel(text, opts = {}) {
+  const { size = 42, col = '#cfd8e3', bold = false, pad = 8 } = opts;
+  const cv = document.createElement('canvas');
+  const ctx = cv.getContext('2d');
+  const font = (bold ? '600 ' : '') + size + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.font = font;
+  const w = Math.ceil(ctx.measureText(text).width) + pad * 2;
+  cv.width = w; cv.height = size + pad * 2;
+  const c2 = cv.getContext('2d');
+  c2.font = font; c2.fillStyle = col; c2.textBaseline = 'middle';
+  c2.shadowColor = 'rgba(0,0,0,.85)'; c2.shadowBlur = 8;
+  c2.fillText(text, pad, cv.height / 2);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.anisotropy = 4;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: tex, transparent: true, depthTest: false, depthWrite: false,
+  }));
+  sp.scale.set(cv.width / 100, cv.height / 100, 1);
+  sp.renderOrder = 5;
+  return sp;
+}
+
+const monthLabels = [];
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const monLabel = (key) => {
+  const [y, m] = key.split('-');
+  return MON[Number(m) - 1] + " '" + y.slice(2);
+};
+rows.forEach((r, i) => {
+  // label every other month to avoid a cluttered ladder, but ALWAYS label the gap
+  if (i % 2 !== 0 && r.present) return;
+  const sp = makeLabel(monLabel(r.key) + (r.present ? '' : '  · no data'), {
+    size: 34, col: r.present ? '#9fb2c8' : '#ff9d9d',
+  });
+  sp.position.set(MAX_R + 1.5, yOf(i), 0);
+  sp.userData.axis = true;
+  scene.add(sp); monthLabels.push(sp);
+});
+
+SECTORS.forEach((s) => {
+  const empty = rows.every((r) => r.commits[SI.get(s.id)] === 0);
+  const sp = makeLabel(s.label + (empty ? '  (no events ever)' : ''), {
+    size: 34, col: empty ? '#5c6672' : '#' + s.hue.toString(16).padStart(6, '0'), bold: !empty,
+  });
+  const a = deg(s.az), rr = MAX_R + 1.3;
+  sp.position.set(Math.cos(a) * rr, 0.12, Math.sin(a) * rr);
+  scene.add(sp);
+  // a faint spoke on the ground marking the true bearing
+  const gm = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(Math.cos(a) * CORE_R, 0.01, Math.sin(a) * CORE_R),
+    new THREE.Vector3(Math.cos(a) * (MAX_R + 0.9), 0.01, Math.sin(a) * (MAX_R + 0.9)),
+  ]);
+  scene.add(new THREE.Line(gm, new THREE.LineBasicMaterial({
+    color: empty ? PAL.dead : s.hue, transparent: true, opacity: empty ? 0.16 : 0.34,
+  })));
+});
+
+/* ==========================================================================
+   7 · cut view — slice the solid to read one month's rosette
+   ========================================================================== */
+// Clip AWAY everything above the plane, keeping the solid from the base up to the
+// chosen month. Cutting at an early month should reveal history-so-far with the cut
+// face on top, not blank the screen.
+const clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
+renderer.localClippingEnabled = true;
+
+const cutGroup = new THREE.Group(); scene.add(cutGroup);
+let cutIndex = (() => {
+  const v = parseInt(PARAMS.get('cut'), 10);
+  return Number.isFinite(v) && v >= 0 && v < rows.length ? v : rows.length - 1;
+})();
+let cutOn = PARAMS.has('cut');
+
+function buildCut(i) {
+  cutGroup.clear();
+  const r = rows[i], y = yOf(i);
+  const radii = monthRings[i];
+
+  // the rosette outline at this month
+  const pts = [];
+  for (let k = 0; k <= RING_N; k++) {
+    const kk = k % RING_N, a = (kk / RING_N) * Math.PI * 2;
+    const rr = r.present ? radii[kk] : CORE_R;
+    pts.push(new THREE.Vector3(Math.cos(a) * rr, y + 0.012, Math.sin(a) * rr));
+  }
+  const og = new THREE.BufferGeometry().setFromPoints(pts);
+  cutGroup.add(new THREE.Line(og, new THREE.LineBasicMaterial({
+    color: r.present ? 0xffffff : 0xff9d9d, transparent: true, opacity: 0.95,
+  })));
+
+  // filled rosette disc so the cross-section reads as a solid face
+  const fp = [0, y + 0.008, 0], fi = [];
+  for (let k = 0; k < RING_N; k++) {
+    const a = (k / RING_N) * Math.PI * 2;
+    const rr = r.present ? radii[k] : CORE_R;
+    fp.push(Math.cos(a) * rr, y + 0.008, Math.sin(a) * rr);
+  }
+  for (let k = 0; k < RING_N; k++) fi.push(0, k + 1, ((k + 1) % RING_N) + 1);
+  const fg = new THREE.BufferGeometry();
+  fg.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3));
+  fg.setIndex(fi); fg.computeVertexNormals();
+  cutGroup.add(new THREE.Mesh(fg, new THREE.MeshBasicMaterial({
+    color: 0x9fd4ff, transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false,
+  })));
+
+  // per-sector stems + counts, so the cut is READABLE as numbers not just shape
+  SECTORS.forEach((s, si) => {
+    const c = r.commits[si]; if (!c) return;
+    const a = deg(s.az), rr = radiusOf(c);
+    const lg = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, y + 0.02, 0),
+      new THREE.Vector3(Math.cos(a) * rr, y + 0.02, Math.sin(a) * rr),
+    ]);
+    cutGroup.add(new THREE.Line(lg, new THREE.LineBasicMaterial({ color: s.hue, transparent: true, opacity: 0.9 })));
+    const sp = makeLabel(String(c), { size: 30, col: '#' + s.hue.toString(16).padStart(6, '0'), bold: true });
+    sp.position.set(Math.cos(a) * (rr + 0.34), y + 0.16, Math.sin(a) * (rr + 0.34));
+    cutGroup.add(sp);
+  });
+
+  // asymmetry arrow: the resultant vector, drawn on the cut plane itself.
+  // This is the headline finding made visible in situ.
+  if (r.total) {
+    let x = 0, z = 0;
+    SECTORS.forEach((s, si) => { const v = r.commits[si]; x += v * Math.cos(deg(s.az)); z += v * Math.sin(deg(s.az)); });
+    const mag = Math.hypot(x, z) / r.total;
+    if (mag > 0.001) {
+      const dir = new THREE.Vector3(x, 0, z).normalize();
+      const len = 0.5 + mag * (MAX_R * 0.82);
+      cutGroup.add(new THREE.ArrowHelper(dir, new THREE.Vector3(0, y + 0.05, 0), len, 0xffffff, 0.3, 0.18));
+      const sp = makeLabel('asym ' + mag.toFixed(2), { size: 30, col: '#eef4fb', bold: true });
+      sp.position.copy(dir).multiplyScalar(len + 0.6).setY(y + 0.42);
+      cutGroup.add(sp);
+    }
+  }
+  cutGroup.visible = cutOn;
+}
+
+function applyCut() {
+  clipPlane.constant = yOf(cutIndex) + 0.001;
+  const planes = cutOn ? [clipPlane] : [];
+  surfGroup.traverse((o) => { if (o.material) o.material.clippingPlanes = planes; });
+  if (coreMesh) coreMesh.material.clippingPlanes = planes;
+  cutGroup.visible = cutOn;
+  buildCut(cutIndex);
+  // Keep the visible stump centred: when the cut is low, framing the whole 20-unit
+  // column would leave the remaining slice as a speck at the bottom of the screen.
+  if (cutOn) {
+    const visTop = yOf(cutIndex);
+    controls.target.set(0, visTop * 0.55, 0);
+    const want = Math.max(9, visTop * 1.5 + MAX_R * 2.4);
+    const dir = camera.position.clone().sub(controls.target).normalize();
+    camera.position.copy(controls.target).add(dir.multiplyScalar(want));
+    controls.update();
+  }
+  syncCutUI();
+}
+
+function syncCutUI() {
+  const r = rows[cutIndex];
+  document.getElementById('cutMonth').textContent = monLabel(r.key);
+  const live = r.commits.filter((c) => c > 0).length;
+  const parts = Object.entries(r.kinds).sort((a, b) => b[1] - a[1]).map(([k, v]) => k + ' ' + v);
+  document.getElementById('cutInfo').innerHTML = r.present
+    ? `<b>${r.total}</b> commits across <b>${live}</b> sector${live === 1 ? '' : 's'} &middot; ` +
+      `asymmetry <b>${r.asym.toFixed(2)}</b>${r.total < 10 ? ' <span class="gap">(tiny month — noisy)</span>' : ''}` +
+      `<br><span style="color:#7f93aa">mix: ${parts.join(' &middot; ') || 'none'}</span>`
+    : `<span class="gap">2025-02 is missing from the log entirely — no events of any kind. ` +
+      `The solid necks to the core here; nothing is interpolated across it.</span>`;
+  document.querySelectorAll('#tbl tr').forEach((tr) => {
+    tr.classList.toggle('on', Number(tr.dataset.i) === cutIndex);
+  });
+  document.getElementById('cutRange').value = String(cutIndex);
+  drawSpark();
+}
+
+/* ==========================================================================
+   8 · side panel numbers + asymmetry sparkline
+   ========================================================================== */
+{
+  const tbl = document.getElementById('tbl');
+  const live = SECTORS.filter((s) => rows.some((r) => r.commits[SI.get(s.id)] > 0));
+  let html = '<tr><th class="l">month</th>' +
+    live.map((s) => `<th title="${s.id}">${s.label.slice(0, 4)}</th>`).join('') +
+    '<th>&Sigma;</th><th>asym</th></tr>';
+  rows.forEach((r, i) => {
+    if (!r.present) {
+      html += `<tr class="gap" data-i="${i}"><td class="l">${monLabel(r.key)}</td>` +
+        `<td colspan="${live.length + 2}">— no data in log —</td></tr>`;
+      return;
+    }
+    html += `<tr data-i="${i}"><td class="l">${monLabel(r.key)}</td>` +
+      live.map((s) => {
+        const c = r.commits[SI.get(s.id)];
+        return `<td class="${c ? '' : 'z'}">${c || '·'}</td>`;
+      }).join('') +
+      `<td><b>${r.total}</b></td><td>${r.asym.toFixed(2)}</td></tr>`;
+  });
+  tbl.innerHTML = html;
+  tbl.querySelectorAll('tr[data-i]').forEach((tr) => {
+    tr.addEventListener('click', () => { cutIndex = Number(tr.dataset.i); cutOn = true; setPressed('bCut', true); applyCut(); });
+    tr.style.cursor = 'pointer';
+  });
+}
+
+const sparkCv = document.getElementById('asymCv');
+function drawSpark() {
+  const ctx = sparkCv.getContext('2d');
+  const W = sparkCv.width, H = sparkCv.height;
+  ctx.clearRect(0, 0, W, H);
+  const padL = 26, padR = 8, padT = 10, padB = 18;
+  const x = (i) => padL + (i / (rows.length - 1)) * (W - padL - padR);
+  const y = (v) => padT + (1 - v) * (H - padT - padB);
+
+  ctx.strokeStyle = 'rgba(120,160,230,.22)'; ctx.lineWidth = 1;
+  [0, 0.5, 1].forEach((v) => {
+    ctx.beginPath(); ctx.moveTo(padL, y(v)); ctx.lineTo(W - padR, y(v)); ctx.stroke();
+    ctx.fillStyle = '#5f7186'; ctx.font = '13px "Segoe UI", system-ui, sans-serif';
+    ctx.fillText(v.toFixed(1), 2, y(v) + 4);
+  });
+
+  // trend line over months with >=10 commits — the ones that mean something
+  const solid = rows.map((r, i) => ({ i, r })).filter((o) => o.r.present && o.r.total >= 10);
+  if (solid.length > 1) {
+    let sx = 0, sy = 0, sxy = 0, sxx = 0;
+    solid.forEach((o) => { sx += o.i; sy += o.r.asym; sxy += o.i * o.r.asym; sxx += o.i * o.i; });
+    const n = solid.length, b = (n * sxy - sx * sy) / (n * sxx - sx * sx || 1), a = (sy - b * sx) / n;
+    ctx.strokeStyle = 'rgba(255,207,110,.5)'; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x(solid[0].i), y(Math.max(0, Math.min(1, a + b * solid[0].i))));
+    ctx.lineTo(x(solid[n - 1].i), y(Math.max(0, Math.min(1, a + b * solid[n - 1].i))));
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // the series itself, broken at the gap
+  ctx.strokeStyle = 'rgba(79,216,196,.85)'; ctx.lineWidth = 2;
+  ctx.beginPath(); let pen = false;
+  rows.forEach((r, i) => {
+    if (!r.present) { pen = false; return; }
+    if (!pen) { ctx.moveTo(x(i), y(r.asym)); pen = true; } else ctx.lineTo(x(i), y(r.asym));
+  });
+  ctx.stroke();
+
+  rows.forEach((r, i) => {
+    if (!r.present) {
+      ctx.strokeStyle = 'rgba(255,157,157,.85)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(x(i), padT); ctx.lineTo(x(i), H - padB); ctx.stroke();
+      return;
+    }
+    const solidDot = r.total >= 10;
+    ctx.beginPath(); ctx.arc(x(i), y(r.asym), i === cutIndex ? 4.2 : 2.8, 0, Math.PI * 2);
+    if (solidDot) { ctx.fillStyle = i === cutIndex ? '#ffffff' : '#4fd8c4'; ctx.fill(); }
+    else { ctx.strokeStyle = i === cutIndex ? '#ffffff' : 'rgba(79,216,196,.75)'; ctx.lineWidth = 1.5; ctx.stroke(); }
+  });
+
+  ctx.fillStyle = '#5f7186'; ctx.font = '12px "Segoe UI", system-ui, sans-serif';
+  ctx.fillText(monLabel(rows[0].key), padL - 4, H - 5);
+  const lbl = monLabel(rows[rows.length - 1].key);
+  ctx.fillText(lbl, W - padR - ctx.measureText(lbl).width, H - 5);
+}
+
+/* ==========================================================================
+   9 · UI wiring
+   ========================================================================== */
+function setPressed(id, on) { document.getElementById(id).setAttribute('aria-pressed', String(on)); }
+
+document.getElementById('bCut').addEventListener('click', () => {
+  cutOn = !cutOn; setPressed('bCut', cutOn); applyCut();
+});
+document.getElementById('bCore').addEventListener('click', () => {
+  coreMesh.visible = !coreMesh.visible; setPressed('bCore', coreMesh.visible);
+});
+document.getElementById('bSpin').addEventListener('click', () => {
+  controls.autoRotate = !controls.autoRotate; setPressed('bSpin', controls.autoRotate);
+});
+document.getElementById('bWire').addEventListener('click', () => {
+  wireMesh.visible = !wireMesh.visible; setPressed('bWire', wireMesh.visible);
+});
+document.getElementById('cutRange').addEventListener('input', (e) => {
+  cutIndex = Number(e.target.value);
+  if (!cutOn) { cutOn = true; setPressed('bCut', true); }
+  applyCut();
+});
+document.getElementById('cutRange').max = String(rows.length - 1);
+
+document.getElementById('bFrame').addEventListener('click', frameAll);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+setPressed('bCut', cutOn);
+applyCut();
+
+/* ==========================================================================
+   10 · loop
+   ========================================================================== */
+renderer.setAnimationLoop(() => {
+  controls.update();
+  // keep month labels off the far side of the solid so the ladder stays readable
+  const camAz = Math.atan2(camera.position.z, camera.position.x);
+  monthLabels.forEach((sp) => {
+    sp.position.x = Math.cos(camAz) * (MAX_R + 1.5);
+    sp.position.z = Math.sin(camAz) * (MAX_R + 1.5);
+  });
+  renderer.render(scene, camera);
+});
+
+// expose a tiny probe so headless verification can assert the numbers
+window.__probe = () => ({
+  months: rows.map((r) => r.key),
+  present: rows.map((r) => r.present),
+  commits: rows.map((r) => r.commits),
+  totals: rows.map((r) => r.total),
+  asym: rows.map((r) => Number(r.asym.toFixed(2))),
+  sectors: SECTORS.map((s) => s.id),
+  maxCell: MAX_CELL,
+  levels: levels.length,
+});
+</script>
+</body>
+</html>
