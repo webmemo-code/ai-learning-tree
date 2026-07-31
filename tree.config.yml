@@ -117,7 +117,7 @@ harvest:
                             # reads as a maturity signal. Costs three more list endpoints per
                             # repo (plus one per newly-seen PR, for its reviews), which is why
                             # it is opt-in rather than always-on. Metadata only, same as
-                            # commits: timestamps, numbers and state — a PR or issue TITLE or
+                            # commits: just a timestamp and the PR/issue number — a TITLE or
                             # BODY is free text and is never emitted (docs/03 §6).
 
 # ----------------------------------------------------------------------------------------

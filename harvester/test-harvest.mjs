@@ -460,6 +460,17 @@ ok(runE.events.some((e) => e.id === 'gh:faketree/explicit-repo:pr10r555010'), 'a
 ok(!netE.calls.some((u) => u.includes('/pulls/7/reviews')), 'no per-PR review call for a PR untouched since before the pr cursor');
 ok(!netE.calls.some((u) => u.includes('/pulls/8/reviews')), 'no per-PR review call for a second untouched PR');
 
+// …and the updated_at gate above is only REACHABLE if the PR is on a page we
+// actually fetched. paginate() caps at 20 pages (2000 PRs); under GitHub's
+// default ordering an old-but-recently-reviewed PR sits deep in the list and
+// would fall past that cap in a high-PR repo, silently losing its late reviews.
+// Sorting by update recency puts exactly those PRs on the first pages. This
+// assertion guards the pairing — the gate and the sort are one mechanism.
+const pullsListCalls = netE.calls.filter((u) => /\/pulls\?/.test(u));
+ok(pullsListCalls.length > 0, 'sanity: the /pulls list endpoint was called');
+ok(pullsListCalls.every((u) => u.includes('sort=updated') && u.includes('direction=desc')),
+  '/pulls is fetched sorted by update recency, so late reviews on old PRs stay inside the page cap');
+
 // --since overrides every family's floor, as before
 const netF = makeFetch();
 await harvestRepos({ owner: 'faketree', config: configCollab, token: 't', fetch_: netF.fetch_, existing: mixed, since: '2020-01-01T00:00:00Z' });

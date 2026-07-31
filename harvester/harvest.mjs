@@ -85,8 +85,12 @@ export function commitEvent({ owner, repo, sha, ts, sector, lang, priv, files })
 //
 // METADATA ONLY, harder than for commits: a PR/issue TITLE and BODY are free
 // text the author wrote, so unlike a file count they can carry anything. We
-// read only the number, the state, the author login (to filter), and the
-// timestamp. No title, no body, no branch name, no label text — nothing that
+// read only the number, the author login (to filter), and the timestamp — and
+// of those, only the number and timestamp are EMITTED (the login is a filter
+// input and never reaches an event). Note we deliberately do not carry state
+// (open/closed/merged) either: it adds no maturity signal the kind + timestamp
+// don't already give, and every field not emitted is one that cannot leak.
+// No title, no body, no branch name, no label text — nothing that
 // could round-trip prose into the log. (attrs.title/attrs.url exist in the
 // schema for MILESTONES; deliberately not reused here.)
 //
@@ -497,9 +501,18 @@ async function listSoft(urlFor, token, fetch_, opts) {
 // PRs authored by the owner. GitHub has no `author=` filter on /pulls, so we
 // pull state=all and filter on user.login — a PR someone else opened on your
 // repo is their growth event, not yours.
+//
+// sort=updated&direction=desc is LOAD-BEARING, not cosmetic. paginate() caps at
+// 20 pages (2000 PRs). Under GitHub's default ordering (by number/creation
+// desc) an OLD pr that just received a NEW review sits deep in the list — past
+// the cap in a high-PR repo — so we would never see it, and the updated_at gate
+// below could never fire because the PR never reached it. Sorting by update
+// recency puts exactly the PRs that can yield new reviews on the first pages,
+// which is the same ordering the gate assumes. This also means an early page
+// whose PRs are all older than the floor implies every later page is too.
 async function listPulls({ owner, repo, token, fetch_, opts }) {
   return listSoft(
-    (page) => `${API}/repos/${owner}/${repo}/pulls?state=all&per_page=100&page=${page}`,
+    (page) => `${API}/repos/${owner}/${repo}/pulls?state=all&sort=updated&direction=desc&per_page=100&page=${page}`,
     token, fetch_, opts,
   );
 }
