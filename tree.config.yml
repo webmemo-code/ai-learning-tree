@@ -48,6 +48,7 @@ repos:
 
   # CREATE / copy — writing + publishing pipelines
   copywriting-style-guide:             create.copy
+  content-writing:                     create.copy
   markdown-wp-rm-post-publisher:       create.copy
   markdown-wp-wm-linkedin-article-publisher: create.copy
   wp-categories-enhancer:              create.copy
