@@ -109,6 +109,16 @@ harvest:
                             # repos AND let their commit weight lift limb height + canopy
                             # as aggregate geometry only; ids/refs of private commits never
                             # reach tree.json. Vault notes stay roots-only regardless.
+  collaboration: true       # opt-in, DEFAULT OFF when this key is absent — also harvest pull
+                            # requests, PR reviews and issues you authored (kind pr / review /
+                            # issue), not just commits. The point is the MIX: novices only
+                            # commit, experienced developers package work into PRs, review
+                            # other people's, and file issues to plan, so the ratio per year
+                            # reads as a maturity signal. Costs three more list endpoints per
+                            # repo (plus one per newly-seen PR, for its reviews), which is why
+                            # it is opt-in rather than always-on. Metadata only, same as
+                            # commits: timestamps, numbers and state — a PR or issue TITLE or
+                            # BODY is free text and is never emitted (docs/03 §6).
 
 # ----------------------------------------------------------------------------------------
 # 4. Obsidian vault harvesting (notes -> roots; content never leaves the vault)

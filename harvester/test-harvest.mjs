@@ -7,12 +7,13 @@
 //
 //   node harvester/test-harvest.mjs
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import {
   harvestRepos, classify, weightForFiles, parseMilestones, milestoneEvents,
   parseLog, indexExisting, buildOutput, jline, commitEvent,
+  weightForCollab, collabEvent, idFamily, cursorFor,
 } from './harvest.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -30,12 +31,40 @@ function eq(a, b, msg) { ok(JSON.stringify(a) === JSON.stringify(b), `${msg} (go
 // opts.rateLimited: /user/repos answers a rate-limit 403 (remaining: 0).
 // opts.forbidden: /user/repos answers a non-integration hard 403 (e.g. a PAT
 //   blocked by org policy) — must abort, never fall back.
+// opts.issuesDisabled: /issues answers 404 for topic-repo (issues turned off /
+//   invisible to the token) — one bad endpoint must not abort the harvest.
 function makeFetch(opts = {}) {
   const calls = [];
   const detailMap = { a: null, b: 'commit-detail-b.json', c: 'commit-detail-c.json', d: 'commit-detail-d.json', e: 'commit-detail-e.json' };
   async function fetch_(url) {
     calls.push(url);
     const reply = (body) => ({ status: 200, headers: { 'x-ratelimit-remaining': '4999' }, body });
+    const page1 = /page=1(\b|&|$)/.test(url);
+
+    // --- collaboration endpoints (only ever hit with harvest.collaboration) ---
+    const reviews = url.match(/\/repos\/faketree\/([^/]+)\/pulls\/(\d+)\/reviews\?/);
+    if (reviews) {
+      if (!page1) return reply([]);
+      const f = `reviews-${reviews[1]}-${reviews[2]}.json`;
+      return reply(existsSync(resolve(__dirname, 'fixtures', f)) ? fx(f) : []);
+    }
+    const pulls = url.match(/\/repos\/faketree\/([^/]+)\/pulls\?/);
+    if (pulls) {
+      if (!page1) return reply([]);
+      const f = `pulls-${pulls[1]}.json`;
+      return reply(existsSync(resolve(__dirname, 'fixtures', f)) ? fx(f) : []);
+    }
+    const issues = url.match(/\/repos\/faketree\/([^/]+)\/issues\?/);
+    if (issues) {
+      if (opts.issuesDisabled && issues[1] === 'topic-repo') {
+        // GitHub answers 404 when a repo has issues disabled / invisible
+        return { status: 404, headers: { 'x-ratelimit-remaining': '4999' }, body: { message: 'Not Found' } };
+      }
+      if (!page1) return reply([]);
+      const f = `issues-${issues[1]}.json`;
+      return reply(existsSync(resolve(__dirname, 'fixtures', f)) ? fx(f) : []);
+    }
+
     if (url.includes('/user/repos')) {
       if (opts.rateLimited) {
         return { status: 403, headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '1750000000' }, body: { message: 'API rate limit exceeded' } };
@@ -249,6 +278,227 @@ const sample = commitEvent({ owner: 'faketree', repo: 'r', sha: 'abcdef01234', t
 eq(jline(sample),
   '{"id": "gh:faketree/r:abcdef0", "ts": "2025-01-02T03:04:05Z", "source": "github", "kind": "commit", "sector": "build.pro-code", "project": "r", "weight": 1.19, "attrs": {"runtime": "cloud", "lang": "Go"}, "private": false}',
   'commitEvent serialises to the on-disk §2 line shape');
+
+// ============================================================================
+// 9. collaboration events (kind: pr | review | issue) — OPT-IN via
+//    harvest.collaboration. The commit/PR/review/issue mix is the point.
+// ============================================================================
+
+// --- 9a. the flag is off by default: no events, and NO calls to the endpoints
+for (const [label, cfg] of [
+  ['absent', config],
+  ['explicitly false', { ...config, harvest: { ...config.harvest, collaboration: false } }],
+]) {
+  const net = makeFetch();
+  const run = await harvestRepos({ owner: 'faketree', config: cfg, token: 't', fetch_: net.fetch_, existing });
+  ok(!run.events.some((e) => ['pr', 'review', 'issue'].includes(e.kind)), `collaboration ${label}: no pr/review/issue events`);
+  ok(!net.calls.some((u) => /\/pulls[?/]/.test(u)), `collaboration ${label}: /pulls never called`);
+  ok(!net.calls.some((u) => /\/issues\?/.test(u)), `collaboration ${label}: /issues never called`);
+  ok(!net.calls.some((u) => /\/reviews\?/.test(u)), `collaboration ${label}: /reviews never called`);
+  eq(run.events.map((e) => e.id).sort(), run1.events.map((e) => e.id).sort(), `collaboration ${label}: identical to a commits-only harvest`);
+}
+
+// --- 9b. the flag on: pr/review/issue events with correct ids/kinds/ts/weight
+const configCollab = { ...config, harvest: { ...config.harvest, collaboration: true } };
+const netC = makeFetch();
+const runC = await harvestRepos({ owner: 'faketree', config: configCollab, token: 't', fetch_: netC.fetch_, existing });
+const cById = Object.fromEntries(runC.events.map((e) => [e.id, e]));
+
+eq(cById['gh:faketree/explicit-repo:pr7']?.kind, 'pr', 'PR event emitted with kind pr');
+eq(cById['gh:faketree/explicit-repo:pr7']?.ts, '2025-02-10T09:30:00Z', 'PR ts is created_at in UTC Z');
+eq(cById['gh:faketree/explicit-repo:pr7']?.weight, 1.5, 'PR weight 1.5');
+eq(cById['gh:faketree/explicit-repo:pr7']?.sector, 'build.pro-code', 'PR classified by the same repo->sector chain');
+eq(cById['gh:faketree/explicit-repo:pr7']?.project, 'explicit-repo', 'PR project is the repo');
+eq(cById['gh:faketree/explicit-repo:pr7']?.private, false, 'public-repo PR is private:false');
+eq(cById['gh:faketree/explicit-repo:pr7']?.attrs, { runtime: 'cloud', lang: 'TypeScript' }, 'PR attrs carry runtime + repo lang only');
+ok(cById['gh:faketree/explicit-repo:pr8'], 'second owner PR emitted');
+
+eq(cById['gh:faketree/explicit-repo:pr7r555001']?.kind, 'review', 'review event emitted with kind review');
+eq(cById['gh:faketree/explicit-repo:pr7r555001']?.ts, '2025-02-11T08:00:00Z', 'review ts is submitted_at');
+eq(cById['gh:faketree/explicit-repo:pr7r555001']?.weight, 1.0, 'review weight 1.0');
+ok(!cById['gh:faketree/explicit-repo:pr7r555003'], 'PENDING review (no submitted_at) not emitted');
+
+eq(cById['gh:faketree/explicit-repo:i12']?.kind, 'issue', 'issue event emitted with kind issue');
+eq(cById['gh:faketree/explicit-repo:i12']?.ts, '2025-02-15T11:00:00Z', 'issue ts is created_at');
+eq(cById['gh:faketree/explicit-repo:i12']?.weight, 0.6, 'issue weight 0.6');
+eq(cById['gh:faketree/explicit-repo:i12']?.source, 'github', 'issue source is github');
+
+ok(cById['gh:faketree/explicit-repo:pr10'], 'third owner PR emitted');
+eq(cById['gh:faketree/explicit-repo:pr10r555010']?.ts, '2025-07-15T08:00:00Z', 'a review submitted long after the PR opened is emitted at its own submitted_at');
+
+eq(runC.stats.prs, 3, 'stats.prs counts only the owner PRs');
+eq(runC.stats.reviews, 2, 'stats.reviews counts only the owner submitted reviews');
+eq(runC.stats.issues, 1, 'stats.issues counts only real owner issues');
+
+// the `pull_request` key filter — PR #7 also comes back from /issues, and must
+// NOT become a second event as gh:…:i7
+ok(!cById['gh:faketree/explicit-repo:i7'], 'issue carrying a pull_request key is NOT double-counted as an issue');
+eq(runC.events.filter((e) => /:(pr7|i7)$/.test(e.id)).length, 1, 'PR #7 produced exactly one event, not two');
+
+// authorship filter — another user's PR / review / issue is never yours
+ok(!cById['gh:faketree/explicit-repo:pr9'], "another user's PR excluded");
+ok(!cById['gh:faketree/explicit-repo:pr7r555002'], "another user's review on your PR excluded");
+ok(!cById['gh:faketree/explicit-repo:i13'], "another user's issue excluded");
+
+// commits still harvested identically alongside the new kinds
+ok(cById['gh:faketree/explicit-repo:bbbbbbb'], 'commits still emitted when collaboration is on');
+eq(runC.stats.commits, run1.stats.commits, 'collaboration does not change the commit count');
+
+// private flag mirrors the repo, and the private-repos gate still applies first
+ok(!runC.events.some((e) => e.project === 'secret-repo'), 'no private-repo collaboration events without the private opt-in');
+ok(!netC.calls.some((u) => u.includes('/secret-repo/pulls')), 'private repo: /pulls not even called without the opt-in');
+const netCp = makeFetch();
+const configCollabPriv = { ...config, harvest: { 'include-forks': false, 'private-repos': true, collaboration: true } };
+const runCp = await harvestRepos({ owner: 'faketree', config: configCollabPriv, token: 't', fetch_: netCp.fetch_, existing });
+const privPr = runCp.events.find((e) => e.id === 'gh:faketree/secret-repo:pr3');
+const privIssue = runCp.events.find((e) => e.id === 'gh:faketree/secret-repo:i4');
+eq(privPr?.private, true, 'private-repo PR carries private: true');
+eq(privIssue?.private, true, 'private-repo issue carries private: true');
+eq(privPr?.weight, 1.5, 'private-repo PR keeps the pr weight');
+
+// --- 9c. a soft-failing endpoint (404) on one repo must not abort the harvest
+const netD = makeFetch({ issuesDisabled: true });
+const runD = await harvestRepos({ owner: 'faketree', config: configCollab, token: 't', fetch_: netD.fetch_, existing });
+ok(netD.calls.some((u) => u.includes('/topic-repo/issues')), 'issues-disabled repo: endpoint was still attempted');
+ok(runD.events.some((e) => e.id === 'gh:faketree/explicit-repo:i12'), 'issues 404 on one repo did not abort the others');
+eq(runD.events.map((e) => e.id).sort(), runC.events.map((e) => e.id).sort(), 'issues 404 degrades to zero issues for that repo only');
+
+// --- 9d. pure helpers: weight clamp, id shapes, family classification -------
+eq(weightForCollab('pr'), 1.5, 'weightForCollab pr');
+eq(weightForCollab('review'), 1.0, 'weightForCollab review');
+eq(weightForCollab('issue'), 0.6, 'weightForCollab issue');
+eq(weightForCollab('nonsense'), 0.4, 'weightForCollab unknown kind clamps to the 0.4 floor');
+for (const k of ['pr', 'review', 'issue', 'nonsense']) {
+  const w = weightForCollab(k);
+  ok(w >= 0.4 && w <= 3.0, `weightForCollab ${k} stays inside the 0.4..3.0 clamp`);
+  eq(Math.round(w * 100) / 100, w, `weightForCollab ${k} is rounded to 2 decimals`);
+}
+
+eq(collabEvent({ owner: 'faketree', repo: 'r', kind: 'pr', number: 3, ts: '2025-01-02T03:04:05Z', sector: 'build.pro-code', lang: 'Go' }).id,
+  'gh:faketree/r:pr3', 'PR id shape gh:owner/repo:pr{n}');
+eq(collabEvent({ owner: 'faketree', repo: 'r', kind: 'review', number: 3, reviewId: 99, ts: '2025-01-02T03:04:05Z', sector: 's' }).id,
+  'gh:faketree/r:pr3r99', 'review id shape gh:owner/repo:pr{n}r{reviewId}');
+eq(collabEvent({ owner: 'faketree', repo: 'r', kind: 'issue', number: 3, ts: '2025-01-02T03:04:05Z', sector: 's' }).id,
+  'gh:faketree/r:i3', 'issue id shape gh:owner/repo:i{n}');
+eq(jline(collabEvent({ owner: 'faketree', repo: 'r', kind: 'pr', number: 3, ts: '2025-01-02T03:04:05Z', sector: 'build.pro-code', lang: 'Go', priv: false })),
+  '{"id": "gh:faketree/r:pr3", "ts": "2025-01-02T03:04:05Z", "source": "github", "kind": "pr", "sector": "build.pro-code", "project": "r", "weight": 1.5, "attrs": {"runtime": "cloud", "lang": "Go"}, "private": false}',
+  'collabEvent serialises to the same §2 line shape, same 9 keys in the same order');
+// review's 1.0 serialises as `1` — JS has no int/float split and jline is
+// JSON.stringify. This matches the log's pre-existing shape (weightForFiles's
+// 3.0 clamp already writes `"weight": 3`), and such a line round-trips
+// byte-identically, so the append-only guarantee is untouched.
+const rvLine = jline(collabEvent({ owner: 'o', repo: 'r', kind: 'review', number: 1, reviewId: 2, ts: '2025-01-01T00:00:00Z', sector: 's' }));
+ok(rvLine.includes('"weight": 1,'), 'review weight serialises as 1 (JSON has no 1.0), matching the log\'s existing integer weights');
+eq(jline(JSON.parse(rvLine)), rvLine, 'an integer weight round-trips byte-identically — append-only holds');
+eq(jline(JSON.parse(jline(commitEvent({ owner: 'o', repo: 'r', sha: 'abcdef0', ts: '2025-01-01T00:00:00Z', sector: 's', files: 100000 })))),
+  jline(commitEvent({ owner: 'o', repo: 'r', sha: 'abcdef0', ts: '2025-01-01T00:00:00Z', sector: 's', files: 100000 })),
+  'the pre-existing 3.0 commit clamp round-trips the same way');
+
+eq(Object.keys(collabEvent({ owner: 'o', repo: 'r', kind: 'pr', number: 1, ts: '2025-01-01T00:00:00Z', sector: 's' })),
+  Object.keys(commitEvent({ owner: 'o', repo: 'r', sha: 'abcdef0', ts: '2025-01-01T00:00:00Z', sector: 's', files: 1 })),
+  'collabEvent and commitEvent share the exact same top-level key order');
+
+// ids never collide with a commit sha7: `p`, `r` and `i` are not hex digits, so
+// no collaboration suffix can ever BE a 7-hex sha, in either direction.
+eq(idFamily('abcdef0'), 'commit', 'idFamily: 7-hex suffix is a commit');
+eq(idFamily('pr7'), 'pr', 'idFamily: pr{n} is the pr family');
+eq(idFamily('pr7r555001'), 'pr', 'idFamily: a review folds into the pr family (no list cursor of its own)');
+eq(idFamily('i12'), 'issue', 'idFamily: i{n} is the issue family');
+eq(idFamily('deadbee'), 'commit', 'idFamily: an all-hex word is still a commit');
+eq(idFamily('whatever'), null, 'idFamily: an unknown suffix moves no cursor');
+for (const s of ['pr7', 'pr7r1', 'i12']) ok(!/^[0-9a-f]{7}$/.test(s), `collaboration suffix ${s} can never look like a sha7`);
+for (const s of ['abcdef0', '1234567', 'deadbee']) ok(idFamily(s) === 'commit' && !/^(pr|i)\d/.test(s), `sha7 ${s} can never look like a collaboration suffix`);
+
+// ============================================================================
+// 10. CURSOR CORRECTNESS — the subtle one. Per-FAMILY high-water marks.
+//     A repo whose NEWEST logged event is a PR must still fetch commits from
+//     the newest logged COMMIT, or every commit in between is lost forever.
+// ============================================================================
+const mixedLog = [
+  '{"id": "gh:faketree/explicit-repo:aaaaaaa", "ts": "2025-01-01T00:00:00Z", "source": "github", "kind": "commit", "sector": "build.pro-code", "project": "explicit-repo", "weight": 1.0, "attrs": {"runtime": "cloud", "lang": "TypeScript"}, "private": false}',
+  // …and a MUCH newer PR on the same repo. Naive "newest ts per repo" would
+  // floor the commit fetch at June and swallow February–June commits.
+  '{"id": "gh:faketree/explicit-repo:pr7", "ts": "2025-06-30T00:00:00Z", "source": "github", "kind": "pr", "sector": "build.pro-code", "project": "explicit-repo", "weight": 1.5, "attrs": {"runtime": "cloud", "lang": "TypeScript"}, "private": false}',
+  '{"id": "gh:faketree/explicit-repo:i12", "ts": "2025-05-05T00:00:00Z", "source": "github", "kind": "issue", "sector": "build.pro-code", "project": "explicit-repo", "weight": 0.6, "attrs": {"runtime": "cloud", "lang": "TypeScript"}, "private": false}',
+].join('\n') + '\n';
+const mixedRows = parseLog(mixedLog);
+const mixed = indexExisting(mixedRows);
+
+eq(cursorFor(mixed, 'faketree/explicit-repo', 'commit'), '2025-01-01T00:00:00Z', 'commit cursor reads the newest COMMIT, not the newer PR');
+eq(cursorFor(mixed, 'faketree/explicit-repo', 'pr'), '2025-06-30T00:00:00Z', 'pr cursor reads the newest PR');
+eq(cursorFor(mixed, 'faketree/explicit-repo', 'issue'), '2025-05-05T00:00:00Z', 'issue cursor reads the newest ISSUE');
+eq(cursorFor(mixed, 'faketree/never-seen', 'commit'), null, 'no cursor for a repo with no prior events');
+// backward compatibility with the pre-collaboration index shape (bare ts string)
+const legacy = { cursor: new Map([['faketree/explicit-repo', '2025-01-01T00:00:00Z']]) };
+eq(cursorFor(legacy, 'faketree/explicit-repo', 'commit'), '2025-01-01T00:00:00Z', 'legacy string cursor still floors the commit fetch');
+eq(cursorFor(legacy, 'faketree/explicit-repo', 'pr'), null, 'legacy string cursor claims nothing about the pr family');
+
+// …and end-to-end: the commit list URL must carry since=<the January COMMIT ts>
+const netE = makeFetch();
+const runE = await harvestRepos({ owner: 'faketree', config: configCollab, token: 't', fetch_: netE.fetch_, existing: mixed });
+const mixedCommitList = netE.calls.find((u) => /\/explicit-repo\/commits\?/.test(u));
+ok(mixedCommitList && mixedCommitList.includes('since=2025-01-01T00%3A00%3A00Z'),
+  'cursor: newest event is a PR, yet commits are still fetched since the newest COMMIT');
+ok(!mixedCommitList.includes('2025-06-30'), 'cursor: the PR ts never leaks into the commit since= floor');
+ok(runE.events.some((e) => e.id === 'gh:faketree/explicit-repo:bbbbbbb'),
+  'cursor: the February commit that sits BEHIND the June PR is still harvested');
+const mixedIssueList = netE.calls.find((u) => /\/explicit-repo\/issues\?/.test(u));
+ok(mixedIssueList && mixedIssueList.includes('since=2025-05-05T00%3A00%3A00Z'), 'cursor: issues floored by the issue family only');
+// the already-logged pr7/i12 are not re-emitted
+ok(!runE.events.some((e) => e.id === 'gh:faketree/explicit-repo:pr7'), 'already-logged PR not re-emitted');
+ok(!runE.events.some((e) => e.id === 'gh:faketree/explicit-repo:i12'), 'already-logged issue not re-emitted');
+// The per-PR review call is gated on updated_at, NOT created_at. pr10 was
+// OPENED in February — behind the June cursor — but was reviewed in July, so it
+// must still be polled, or that review would be lost forever.
+ok(netE.calls.some((u) => u.includes('/pulls/10/reviews')), 'reviews still fetched for an OLD PR whose updated_at is past the pr cursor');
+ok(runE.events.some((e) => e.id === 'gh:faketree/explicit-repo:pr10r555010'), 'a late review on an old PR is harvested, not skipped by the cursor');
+// …while pr7/pr8, untouched since before the pr high-water mark, cost no
+// per-PR review call at all.
+ok(!netE.calls.some((u) => u.includes('/pulls/7/reviews')), 'no per-PR review call for a PR untouched since before the pr cursor');
+ok(!netE.calls.some((u) => u.includes('/pulls/8/reviews')), 'no per-PR review call for a second untouched PR');
+
+// --since overrides every family's floor, as before
+const netF = makeFetch();
+await harvestRepos({ owner: 'faketree', config: configCollab, token: 't', fetch_: netF.fetch_, existing: mixed, since: '2020-01-01T00:00:00Z' });
+const forcedCommits = netF.calls.find((u) => /\/explicit-repo\/commits\?/.test(u));
+const forcedIssues = netF.calls.find((u) => /\/explicit-repo\/issues\?/.test(u));
+ok(forcedCommits.includes('since=2020-01-01T00%3A00%3A00Z'), '--since overrides the commit family floor');
+ok(forcedIssues.includes('since=2020-01-01T00%3A00%3A00Z'), '--since overrides the issue family floor');
+
+// ============================================================================
+// 11. dedupe / idempotence + PRIVACY for the new kinds
+// ============================================================================
+const collabOut1 = buildOutput(seedRows, runC.events, new Set(seedRows.map((r) => r.id)));
+ok(collabOut1.appended.some((e) => e.id === 'gh:faketree/explicit-repo:pr7'), 'collaboration: PR appended on the first run');
+ok(collabOut1.appended.some((e) => e.id === 'gh:faketree/explicit-repo:pr7r555001'), 'collaboration: review appended on the first run');
+ok(collabOut1.appended.some((e) => e.id === 'gh:faketree/explicit-repo:i12'), 'collaboration: issue appended on the first run');
+const collabOut2 = buildOutput(parseLog(collabOut1.text), runC.events, null);
+eq(collabOut2.appended.length, 0, 'collaboration dedupe: a second run appends nothing');
+eq(collabOut2.text, collabOut1.text, 'collaboration dedupe: a second run leaves the file byte-identical');
+// re-running the harvester against the produced log emits the events again as
+// candidates? No — indexExisting sees them, so harvestRepos itself emits none.
+const netG = makeFetch();
+const runG = await harvestRepos({ owner: 'faketree', config: configCollab, token: 't', fetch_: netG.fetch_, existing: indexExisting(parseLog(collabOut1.text)) });
+ok(!runG.events.some((e) => ['pr', 'review', 'issue'].includes(e.kind)), 'collaboration idempotence: a second harvest emits no already-logged pr/review/issue');
+
+// the §7 privacy scan, extended over every collaboration event. The fixtures
+// stuffed "SECRET …" into every PR/issue title AND body, plus review bodies,
+// branch names and label names — none of it may survive into an event.
+for (const e of runCp.events) {
+  for (const k of Object.keys(e)) ok(ALLOWED_TOP.has(k), `collab event ${e.id}: unexpected top-level key "${k}"`);
+  for (const k of Object.keys(e.attrs || {})) ok(ALLOWED_ATTR.has(k), `collab event ${e.id}: unexpected attrs key "${k}"`);
+  const blob = jline(e);
+  for (const bad of [...FORBIDDEN_KEYS, 'title', 'pull_request', 'user', 'login', 'state', 'labels', 'number', 'head', 'ref']) {
+    ok(!blob.includes(`"${bad}":`), `collab event ${e.id}: forbidden key "${bad}" present`);
+  }
+  ok(!/SECRET/.test(blob), `collab event ${e.id}: PR/issue/review title or body text leaked`);
+  ok(!/private-path|secret\/|SECRET-branch|SECRET-label/.test(blob), `collab event ${e.id}: path/branch/label text leaked`);
+}
+ok(!/SECRET/.test(collabOut1.text), 'no PR/issue/review text anywhere in the produced collaboration log');
+// belt and braces: scan the raw fixture text to prove the SECRETs were really there
+ok(/SECRET/.test(fxText('pulls-explicit-repo.json')), 'sanity: the PR fixture really does contain SECRET text to leak');
+ok(/SECRET/.test(fxText('issues-explicit-repo.json')), 'sanity: the issue fixture really does contain SECRET text to leak');
+ok(/SECRET/.test(fxText('reviews-explicit-repo-7.json')), 'sanity: the review fixture really does contain SECRET text to leak');
 
 // ----------------------------------------------------------------------------
 console.log(`\n${failed === 0 ? '✓ all green' : '✗ FAILURES'} — ${passed} passed, ${failed} failed`);

@@ -1,0 +1,23 @@
+[
+  {
+    "id": 555001,
+    "state": "APPROVED",
+    "submitted_at": "2025-02-11T08:00:00Z",
+    "body": "SECRET review body — approving text must never leak",
+    "user": { "login": "faketree" }
+  },
+  {
+    "id": 555002,
+    "state": "COMMENTED",
+    "submitted_at": "2025-02-11T09:00:00Z",
+    "body": "SECRET review by someone else on the owner's PR",
+    "user": { "login": "someone-else" }
+  },
+  {
+    "id": 555003,
+    "state": "PENDING",
+    "submitted_at": null,
+    "body": "SECRET pending review — never submitted, must not be emitted",
+    "user": { "login": "faketree" }
+  }
+]
