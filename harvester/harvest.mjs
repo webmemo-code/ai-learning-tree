@@ -322,40 +322,82 @@ export async function fetchJson(url, token) {
   return { status: res.status, headers: h, body };
 }
 
+// --- transient-failure retry ------------------------------------------------
+// A full backfill makes many hundreds of API calls, so an occasional GitHub 5xx
+// or a dropped socket is near-certain. Losing the whole run (and, nightly, a
+// whole night) to one momentary hiccup is not acceptable, so ghGet retries a
+// narrowly-defined TRANSIENT set. Everything else keeps failing fast, exactly
+// as before — in particular a rate-limit 403/429 must NEVER be retried: the
+// budget is already gone, so retrying just burns the remainder and delays a
+// clear error message.
+const RETRY_STATUS = new Set([500, 502, 503, 504]);
+const MAX_ATTEMPTS = 3;      // 1 try + 2 retries
+const RETRY_BASE_MS = 500;   // 500ms, then 1000ms — bounded, modest added latency
+
+// injectable so the tests never touch real timers (the suite must stay fast).
+export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 // wrap fetchJson with rate-limit + error handling (docs: abort clearly on 403
-// ratelimit rather than silently truncating the harvest).
-async function ghGet(url, token, fetch_) {
-  const res = await fetch_(url, token);
-  const { status, headers = {}, body } = res;
-  const remaining = headers['x-ratelimit-remaining'];
-  const rateLimited =
-    (status === 403 || status === 429) &&
-    (remaining === '0' || headers['retry-after'] != null || /rate limit/i.test(body?.message || ''));
-  if (rateLimited) {
-    const reset = headers['x-ratelimit-reset'];
-    const when = headers['retry-after'] != null
-      ? `${headers['retry-after']}s`
-      : reset ? new Date(Number(reset) * 1000).toISOString() : 'unknown';
-    throw new Error(
-      `GitHub rate limit hit (resets ${when}). Set HARVEST_TOKEN or GITHUB_TOKEN to raise the limit, or retry later.`,
-    );
+// ratelimit rather than silently truncating the harvest) plus a bounded retry
+// for transient 5xx / network failures.
+async function ghGet(url, token, fetch_, { sleep_ = sleep, log = () => {} } = {}) {
+  for (let attempt = 1; ; attempt++) {
+    // A network-level throw from fetch_ (DNS failure, socket hangup, ECONNRESET)
+    // is retried on the same terms as a 5xx: it is the same class of momentary
+    // infrastructure failure, and it is the MORE likely one over a long backfill.
+    // The error object is re-thrown unchanged once the attempts run out, so it
+    // carries no .status and cannot be mistaken for a soft-failable 404/403/409.
+    let res;
+    try {
+      res = await fetch_(url, token);
+    } catch (err) {
+      if (attempt >= MAX_ATTEMPTS) throw err;
+      const wait = RETRY_BASE_MS * 2 ** (attempt - 1);
+      log(`  … ${err.message} on ${url}, retrying (${attempt + 1}/${MAX_ATTEMPTS}) in ${wait}ms`);
+      await sleep_(wait);
+      continue;
+    }
+
+    const { status, headers = {}, body } = res;
+    const remaining = headers['x-ratelimit-remaining'];
+    const rateLimited =
+      (status === 403 || status === 429) &&
+      (remaining === '0' || headers['retry-after'] != null || /rate limit/i.test(body?.message || ''));
+    if (rateLimited) {
+      const reset = headers['x-ratelimit-reset'];
+      const when = headers['retry-after'] != null
+        ? `${headers['retry-after']}s`
+        : reset ? new Date(Number(reset) * 1000).toISOString() : 'unknown';
+      throw new Error(
+        `GitHub rate limit hit (resets ${when}). Set HARVEST_TOKEN or GITHUB_TOKEN to raise the limit, or retry later.`,
+      );
+    }
+    if (status === 401) throw new Error('GitHub auth failed (401) — token invalid or lacks scope.');
+    if (status === 404) throw new Error(`GitHub 404 for ${url} — owner/repo not found or token cannot see it.`);
+    if (status < 200 || status >= 300) {
+      // Retry the transient statuses; every other non-2xx is a real error and
+      // throws on the first attempt, with the identical message/shape as before.
+      if (RETRY_STATUS.has(status) && attempt < MAX_ATTEMPTS) {
+        const wait = RETRY_BASE_MS * 2 ** (attempt - 1);
+        log(`  … ${status} on ${url}, retrying (${attempt + 1}/${MAX_ATTEMPTS}) in ${wait}ms`);
+        await sleep_(wait);
+        continue;
+      }
+      const err = new Error(`GitHub ${status} for ${url}: ${body?.message || 'unexpected response'}`);
+      err.status = status; // callers may branch on a non-rate-limit 403 (installation tokens)
+      throw err;
+    }
+    return res;
   }
-  if (status === 401) throw new Error('GitHub auth failed (401) — token invalid or lacks scope.');
-  if (status === 404) throw new Error(`GitHub 404 for ${url} — owner/repo not found or token cannot see it.`);
-  if (status < 200 || status >= 300) {
-    const err = new Error(`GitHub ${status} for ${url}: ${body?.message || 'unexpected response'}`);
-    err.status = status; // callers may branch on a non-rate-limit 403 (installation tokens)
-    throw err;
-  }
-  return res;
 }
 
 // paginate a list endpoint: urlFor(page) -> full URL. Stops when a page is short
 // or empty. Cap at 20 pages (2000 items) — polite and loop-safe.
-async function paginate(urlFor, token, fetch_) {
+// `opts` carries the retry seam ({ sleep_, log }) straight through to ghGet.
+async function paginate(urlFor, token, fetch_, opts) {
   const out = [];
   for (let page = 1; page <= 20; page++) {
-    const { body } = await ghGet(urlFor(page), token, fetch_);
+    const { body } = await ghGet(urlFor(page), token, fetch_, opts);
     if (!Array.isArray(body) || body.length === 0) break;
     out.push(...body);
     if (body.length < 100) break;
@@ -372,12 +414,12 @@ async function paginate(urlFor, token, fetch_) {
 // limit. No token goes straight to the public endpoint. The private-repos
 // CONFIG flag gates KEEPING private repos, separately from the token being
 // able to SEE them (docs/03 §6).
-async function listRepos({ owner, token, fetch_, log = () => {} }) {
+async function listRepos({ owner, token, fetch_, opts, log = () => {} }) {
   const ownerOnly = (repos) => repos.filter((r) => !r.owner || r.owner.login === owner);
   if (token) {
     try {
       return ownerOnly(await paginate(
-        (page) => `${API}/user/repos?per_page=100&affiliation=owner&page=${page}`, token, fetch_,
+        (page) => `${API}/user/repos?per_page=100&affiliation=owner&page=${page}`, token, fetch_, opts,
       ));
     } catch (err) {
       // Only the installation-token 403 falls through to the public list.
@@ -389,15 +431,19 @@ async function listRepos({ owner, token, fetch_, log = () => {} }) {
     }
   }
   return ownerOnly(await paginate(
-    (page) => `${API}/users/${owner}/repos?per_page=100&page=${page}`, token, fetch_,
+    (page) => `${API}/users/${owner}/repos?per_page=100&page=${page}`, token, fetch_, opts,
   ));
 }
 
-async function listCommits({ owner, repo, token, since, fetch_ }) {
+// COMMITS ABORT, they never soft-fail. Commits are the core signal and the log
+// IS the cursor: silently degrading a failed commit page to [] would move no
+// cursor but would report "no new growth", so the gap would be invisible and
+// permanent. A persistent 5xx here (after retries) must stop the run loudly.
+async function listCommits({ owner, repo, token, since, fetch_, opts }) {
   const base = `${API}/repos/${owner}/${repo}/commits?per_page=100&author=${encodeURIComponent(owner)}`;
   const sinceQ = since ? `&since=${encodeURIComponent(since)}` : '';
   try {
-    return await paginate((page) => `${base}${sinceQ}&page=${page}`, token, fetch_);
+    return await paginate((page) => `${base}${sinceQ}&page=${page}`, token, fetch_, opts);
   } catch (err) {
     // GitHub answers 409 "Git Repository is empty." for a repo with no commits
     // yet — that's a normal state for a freshly created repo, not an error;
@@ -407,8 +453,8 @@ async function listCommits({ owner, repo, token, since, fetch_ }) {
   }
 }
 
-async function commitDetail({ owner, repo, sha, token, fetch_ }) {
-  const { body } = await ghGet(`${API}/repos/${owner}/${repo}/commits/${sha}`, token, fetch_);
+async function commitDetail({ owner, repo, sha, token, fetch_, opts }) {
+  const { body } = await ghGet(`${API}/repos/${owner}/${repo}/commits/${sha}`, token, fetch_, opts);
   return body;
 }
 
@@ -419,15 +465,31 @@ async function commitDetail({ owner, repo, sha, token, fetch_ }) {
 // abort the night's harvest for the other 30. Rate-limit 403s do NOT land here:
 // ghGet throws those without a .status, so they still propagate and abort.
 // (ghGet turns 404 into a plain Error with no .status, so match on the message.)
+//
+// A PERSISTENT 5xx (i.e. one that survived ghGet's three attempts) soft-fails
+// TOO, and only here. The asymmetry with listCommits is deliberate:
+//   - collaboration data is optional ENRICHMENT. Losing one repo's PR list for
+//     one night costs a few pr/review/issue events that the next run re-fetches
+//     anyway (they are id-deduped, and /pulls has no server-side cursor), so
+//     the damage self-heals. Aborting instead would cost the whole night's
+//     harvest across every repo — strictly worse.
+//   - commits are the CORE signal and set the cursor, so listCommits keeps
+//     propagating: a silent gap there would never self-heal.
+// This only fires after the retry budget is spent, so a momentary blip is
+// already handled upstream and never reaches here.
 function softFail(err) {
   if (err.status === 404 || err.status === 403 || err.status === 409) return true;
+  if (err.status >= 500 && err.status < 600) return true;
   return err.status === undefined && /^GitHub 404 for /.test(err.message);
 }
-async function listSoft(urlFor, token, fetch_) {
+async function listSoft(urlFor, token, fetch_, opts) {
   try {
-    return await paginate(urlFor, token, fetch_);
+    return await paginate(urlFor, token, fetch_, opts);
   } catch (err) {
-    if (softFail(err)) return [];
+    if (softFail(err)) {
+      if (err.status >= 500) (opts?.log || (() => {}))(`  … ${err.status} persisted after ${MAX_ATTEMPTS} attempts on a collaboration endpoint — skipping it for this run`);
+      return [];
+    }
     throw err;
   }
 }
@@ -435,19 +497,19 @@ async function listSoft(urlFor, token, fetch_) {
 // PRs authored by the owner. GitHub has no `author=` filter on /pulls, so we
 // pull state=all and filter on user.login — a PR someone else opened on your
 // repo is their growth event, not yours.
-async function listPulls({ owner, repo, token, fetch_ }) {
+async function listPulls({ owner, repo, token, fetch_, opts }) {
   return listSoft(
     (page) => `${API}/repos/${owner}/${repo}/pulls?state=all&per_page=100&page=${page}`,
-    token, fetch_,
+    token, fetch_, opts,
   );
 }
 
 // Reviews on ONE pull request. Only ever called for PRs we are keeping and that
 // are genuinely new to the log — this is the per-PR call, the expensive one.
-async function listReviews({ owner, repo, number, token, fetch_ }) {
+async function listReviews({ owner, repo, number, token, fetch_, opts }) {
   return listSoft(
     (page) => `${API}/repos/${owner}/${repo}/pulls/${number}/reviews?per_page=100&page=${page}`,
-    token, fetch_,
+    token, fetch_, opts,
   );
 }
 
@@ -459,18 +521,21 @@ async function listReviews({ owner, repo, number, token, fetch_ }) {
 // is safe as a floor — anything created after the floor was also updated after
 // it — but it is deliberately loose: an old issue that got a comment yesterday
 // comes back in the page and is then dropped by the id-dedupe. Correct, not free.
-async function listIssues({ owner, repo, token, since, fetch_ }) {
+async function listIssues({ owner, repo, token, since, fetch_, opts }) {
   const sinceQ = since ? `&since=${encodeURIComponent(since)}` : '';
   return listSoft(
     (page) => `${API}/repos/${owner}/${repo}/issues?state=all&per_page=100${sinceQ}&page=${page}`,
-    token, fetch_,
+    token, fetch_, opts,
   );
 }
 
 // ---------------------------------------------------------------------------
 // orchestrator — testable with an injected fetch_. Returns { events, stats }.
 // ---------------------------------------------------------------------------
-export async function harvestRepos({ owner, config, token, fetch_, existing, since, onlyRepo, log = () => {} }) {
+export async function harvestRepos({ owner, config, token, fetch_, existing, since, onlyRepo, log = () => {}, sleep_ = sleep }) {
+  // the retry seam, threaded to every ghGet call site. sleep_ is injectable so
+  // the test suite never burns real wall-clock time on backoff.
+  const opts = { sleep_, log };
   const includeForks = !!(config.harvest && config.harvest['include-forks']);
   const includePrivate = !!(config.harvest && config.harvest['private-repos']);
   // OPT-IN: three extra list endpoints per repo (plus one per new PR) roughly
@@ -480,7 +545,7 @@ export async function harvestRepos({ owner, config, token, fetch_, existing, sin
   const events = [];
   const stats = { repos: 0, skippedForks: [], skippedPrivate: [], commits: 0, prs: 0, reviews: 0, issues: 0 };
 
-  let repos = await listRepos({ owner, token, fetch_, log });
+  let repos = await listRepos({ owner, token, fetch_, opts, log });
   if (onlyRepo) repos = repos.filter((r) => r.name === onlyRepo.repo);
 
   for (const repo of repos) {
@@ -492,7 +557,7 @@ export async function harvestRepos({ owner, config, token, fetch_, existing, sin
     // --since overrides every family's floor; otherwise each family reads its own.
     const cursor = since || cursorFor(existing, repoKey, 'commit');
     log(`  ${repo.name}${cursor ? ` (since ${cursor})` : ' (full history)'}`);
-    const commits = await listCommits({ owner, repo: repo.name, token, since: cursor, fetch_ });
+    const commits = await listCommits({ owner, repo: repo.name, token, since: cursor, fetch_, opts });
 
     // every event from this repo shares the repo's sector/lang/private flags
     const sector = classify(repo, config);
@@ -504,7 +569,7 @@ export async function harvestRepos({ owner, config, token, fetch_, existing, sin
       // per-commit detail is fetched only for genuinely-new commits (the weight
       // heuristic needs the file count). METADATA ONLY: we read files.length and
       // throw the rest — names, patches, message — away.
-      const detail = await commitDetail({ owner, repo: repo.name, sha: c.sha, token, fetch_ });
+      const detail = await commitDetail({ owner, repo: repo.name, sha: c.sha, token, fetch_, opts });
       const files = detail && Array.isArray(detail.files) ? detail.files.length : 0;
       const ts = c.commit?.committer?.date || c.commit?.author?.date;
       events.push(commitEvent({ ...common, sha: c.sha, ts, files }));
@@ -517,7 +582,7 @@ export async function harvestRepos({ owner, config, token, fetch_, existing, sin
     // /pulls has no server-side `since`, so we always list and filter locally
     // by id-dedupe; the pr cursor exists to bound the per-PR REVIEW fetch.
     const prFloor = since || cursorFor(existing, repoKey, 'pr');
-    for (const pr of await listPulls({ owner, repo: repo.name, token, fetch_ })) {
+    for (const pr of await listPulls({ owner, repo: repo.name, token, fetch_, opts })) {
       if (pr.user?.login !== owner) continue; // someone else's PR is their growth, not yours
       const ts = pr.created_at;
       if (!ts) continue;
@@ -536,7 +601,7 @@ export async function harvestRepos({ owner, config, token, fetch_, existing, sin
       // a wasted call) — false positives cost one request, false negatives
       // would cost a permanently missing event.
       if (prFloor && pr.updated_at && pr.updated_at < prFloor) continue;
-      for (const rv of await listReviews({ owner, repo: repo.name, number: pr.number, token, fetch_ })) {
+      for (const rv of await listReviews({ owner, repo: repo.name, number: pr.number, token, fetch_, opts })) {
         if (rv.user?.login !== owner) continue;
         if (!rv.submitted_at || rv.id == null) continue; // PENDING reviews have no submitted_at
         const rvId = `gh:${owner}/${repo.name}:pr${pr.number}r${rv.id}`;
@@ -550,7 +615,7 @@ export async function harvestRepos({ owner, config, token, fetch_, existing, sin
     // NOTE: /issues returns PRs as issues. Anything with a `pull_request` key is
     // dropped here, or every PR would be counted twice (once `pr`, once `issue`).
     const issueFloor = since || cursorFor(existing, repoKey, 'issue');
-    for (const it of await listIssues({ owner, repo: repo.name, token, since: issueFloor, fetch_ })) {
+    for (const it of await listIssues({ owner, repo: repo.name, token, since: issueFloor, fetch_, opts })) {
       if (it.pull_request) continue;
       if (it.user?.login !== owner) continue;
       if (!it.created_at) continue;

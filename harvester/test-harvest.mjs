@@ -2,8 +2,10 @@
 // test-harvest.mjs — zero-dep, NO NETWORK. Injects recorded GitHub fixtures
 // (harvester/fixtures/) into harvest.mjs's fetchJson seam and asserts the whole
 // contract: classification chain order, fork/private skipping, dedupe, the
-// cursor-in-log design, weight bounds, milestone merge/dedupe, ts sort, and the
-// privacy guarantee (no message/path/diff ever escapes into an event).
+// cursor-in-log design, weight bounds, milestone merge/dedupe, ts sort, the
+// privacy guarantee (no message/path/diff ever escapes into an event), and the
+// bounded transient-failure retry (§12 — with an INJECTED sleep, so the suite
+// never burns real wall-clock time on backoff).
 //
 //   node harvester/test-harvest.mjs
 
@@ -20,6 +22,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const fx = (name) => JSON.parse(readFileSync(resolve(__dirname, 'fixtures', name), 'utf8'));
 const fxText = (name) => readFileSync(resolve(__dirname, 'fixtures', name), 'utf8');
 
+const SUITE_STARTED_AT = Date.now(); // §12 asserts no real backoff timer ever ran
 let passed = 0, failed = 0;
 function ok(cond, msg) { if (cond) { passed++; } else { failed++; console.error(`  ✗ ${msg}`); } }
 function eq(a, b, msg) { ok(JSON.stringify(a) === JSON.stringify(b), `${msg} (got ${JSON.stringify(a)}, want ${JSON.stringify(b)})`); }
@@ -499,6 +502,255 @@ ok(!/SECRET/.test(collabOut1.text), 'no PR/issue/review text anywhere in the pro
 ok(/SECRET/.test(fxText('pulls-explicit-repo.json')), 'sanity: the PR fixture really does contain SECRET text to leak');
 ok(/SECRET/.test(fxText('issues-explicit-repo.json')), 'sanity: the issue fixture really does contain SECRET text to leak');
 ok(/SECRET/.test(fxText('reviews-explicit-repo-7.json')), 'sanity: the review fixture really does contain SECRET text to leak');
+
+// ============================================================================
+// 12. TRANSIENT-FAILURE RETRY — a single GitHub 502 must not lose the run.
+//     A full backfill makes hundreds of calls, so an occasional 5xx is
+//     near-certain; the whole night's harvest must survive one.
+//     NO REAL TIMERS: sleep_ is injected and merely records its delays.
+// ============================================================================
+
+// wrap a fake network so that URLs matching `pattern` fail `failTimes` times
+// (or always, when failTimes is Infinity) before being served normally.
+// Counts attempts PER URL so "bounded at 3" is directly assertable.
+function withFailures(net, { pattern, failTimes, reply }) {
+  const attempts = new Map();
+  const inner = net.fetch_;
+  async function fetch_(url, token) {
+    if (pattern.test(url)) {
+      const n = (attempts.get(url) || 0) + 1;
+      attempts.set(url, n);
+      if (n <= failTimes) return reply(url);
+    }
+    return inner(url, token);
+  }
+  return { fetch_, calls: net.calls, attempts };
+}
+const http = (status, message) => () => ({ status, headers: { 'x-ratelimit-remaining': '4999' }, body: { message } });
+// a recording fake sleep: never actually waits, just logs the requested delays.
+function fakeSleep() {
+  const delays = [];
+  return { sleep_: async (ms) => { delays.push(ms); }, delays };
+}
+
+// --- 12a. a 502 that succeeds on retry -> harvest completes, same events -----
+{
+  const net = withFailures(makeFetch(), {
+    pattern: /\/explicit-repo\/commits\?/, failTimes: 1, reply: http(502, 'Server Error'),
+  });
+  const sl = fakeSleep();
+  const logs = [];
+  const run = await harvestRepos({
+    owner: 'faketree', config, token: 't', fetch_: net.fetch_, existing,
+    sleep_: sl.sleep_, log: (m) => logs.push(m),
+  });
+  eq(run.events.map((e) => e.id).sort(), run1.events.map((e) => e.id).sort(),
+    'retry: a 502 that succeeds on attempt 2 yields exactly the same events as a clean run');
+  eq(run.stats.commits, run1.stats.commits, 'retry: commit count unaffected by a transient 502');
+  const failedUrl = [...net.attempts.keys()][0];
+  eq(net.attempts.get(failedUrl), 2, 'retry: the 502 URL was attempted exactly twice (failed once, then succeeded)');
+  eq(sl.delays, [500], 'retry: injected sleep called once with the 500ms base backoff — no real timer');
+  ok(logs.some((m) => /502 on .*retrying \(2\/3\) in 500ms/.test(m)), 'retry: the retry is logged in the existing two-space style');
+}
+
+// --- 12b. every transient status retries, and each is bounded at 3 attempts --
+for (const status of [500, 502, 503, 504]) {
+  const net = withFailures(makeFetch(), {
+    pattern: /\/explicit-repo\/commits\?/, failTimes: 2, reply: http(status, 'Server Error'),
+  });
+  const sl = fakeSleep();
+  const run = await harvestRepos({
+    owner: 'faketree', config, token: 't', fetch_: net.fetch_, existing, sleep_: sl.sleep_,
+  });
+  ok(run.events.some((e) => e.id === 'gh:faketree/explicit-repo:bbbbbbb'),
+    `retry: ${status} twice then success still harvests the repo`);
+  eq(sl.delays, [500, 1000], `retry: ${status} backoff is exponential 500ms then 1000ms`);
+}
+
+// --- 12c. retry count is BOUNDED: a permanent 5xx stops at exactly 3 ---------
+// On the COMMITS path a persistent 5xx must still ABORT: commits are the core
+// signal and the log IS the cursor, so silently degrading to [] would report
+// "no new growth" and leave a permanent, invisible hole.
+{
+  const net = withFailures(makeFetch(), {
+    pattern: /\/explicit-repo\/commits\?/, failTimes: Infinity, reply: http(502, 'Server Error'),
+  });
+  const sl = fakeSleep();
+  let err = null;
+  try {
+    await harvestRepos({ owner: 'faketree', config, token: 't', fetch_: net.fetch_, existing, sleep_: sl.sleep_ });
+  } catch (e) { err = e; }
+  ok(err && /GitHub 502 for /.test(err.message), 'retry: a persistent 502 on COMMITS aborts with the same error shape as before');
+  eq(err?.status, 502, 'retry: the thrown error still carries .status for callers that branch on it');
+  const failedUrl = [...net.attempts.keys()][0];
+  eq(net.attempts.get(failedUrl), 3, 'retry: BOUNDED — exactly 3 attempts, never a 4th');
+  eq(sl.delays, [500, 1000], 'retry: exactly two backoffs before giving up');
+}
+
+// --- 12d. a persistent 5xx on a COLLABORATION endpoint soft-fails to [] ------
+// Collaboration data is optional enrichment: losing one repo's PR list for one
+// night is far better than losing the whole night, and the next run re-fetches
+// it anyway (/pulls has no server-side cursor, and ids are deduped).
+{
+  const net = withFailures(makeFetch(), {
+    pattern: /\/topic-repo\/issues\?/, failTimes: Infinity, reply: http(503, 'Service Unavailable'),
+  });
+  const sl = fakeSleep();
+  const logs = [];
+  const run = await harvestRepos({
+    owner: 'faketree', config: configCollab, token: 't', fetch_: net.fetch_, existing,
+    sleep_: sl.sleep_, log: (m) => logs.push(m),
+  });
+  eq(run.events.map((e) => e.id).sort(), runC.events.map((e) => e.id).sort(),
+    'retry: a persistent 503 on ONE collaboration endpoint degrades to [] for that endpoint only, harvest completes');
+  const failedUrl = [...net.attempts.keys()][0];
+  eq(net.attempts.get(failedUrl), 3, 'retry: the soft-failing collaboration endpoint was also bounded at 3 attempts');
+  ok(logs.some((m) => /503 persisted after 3 attempts/.test(m)), 'retry: the soft-failed collaboration endpoint is logged, not silent');
+  ok(run.events.some((e) => e.id === 'gh:faketree/explicit-repo:i12'), 'retry: other repos’ issues still harvested past the persistent 503');
+}
+// …and the same for /pulls, which also loses that repo's reviews but nothing else.
+{
+  const net = withFailures(makeFetch(), {
+    pattern: /\/explicit-repo\/pulls\?/, failTimes: Infinity, reply: http(500, 'Server Error'),
+  });
+  const run = await harvestRepos({
+    owner: 'faketree', config: configCollab, token: 't', fetch_: net.fetch_, existing, sleep_: fakeSleep().sleep_,
+  });
+  ok(!run.events.some((e) => e.kind === 'pr' && e.project === 'explicit-repo'), 'retry: persistent 500 on /pulls yields no PR events for that repo');
+  ok(run.events.some((e) => e.id === 'gh:faketree/explicit-repo:bbbbbbb'), 'retry: …but that repo’s COMMITS are still harvested');
+  ok(run.events.some((e) => e.id === 'gh:faketree/explicit-repo:i12'), 'retry: …and its issues too — only /pulls degraded');
+}
+
+// --- 12e. REGRESSION GUARD: a rate-limit 403 is NEVER retried ---------------
+// Retrying would burn the remaining budget and delay a clear error. Exactly one
+// attempt, and it still aborts.
+{
+  const net = makeFetch({ rateLimited: true });
+  const sl = fakeSleep();
+  let err = null;
+  try {
+    await harvestRepos({ owner: 'faketree', config, token: 't', fetch_: net.fetch_, existing, sleep_: sl.sleep_ });
+  } catch (e) { err = e; }
+  ok(err && /rate limit/i.test(err.message), 'retry: rate-limit 403 still aborts the harvest');
+  eq(net.calls.filter((u) => u.includes('/user/repos')).length, 1, 'retry: rate-limit 403 attempted EXACTLY once — never retried');
+  eq(sl.delays, [], 'retry: rate-limit 403 triggers no backoff sleep at all');
+  ok(!net.calls.some((u) => u.includes('/users/faketree/repos')), 'retry: rate-limit 403 still does not fall back to the public list');
+}
+// a 429 with retry-after is the same story — rate limiting, not a transient blip
+{
+  const net = withFailures(makeFetch(), {
+    pattern: /\/user\/repos/, failTimes: Infinity,
+    reply: () => ({ status: 429, headers: { 'x-ratelimit-remaining': '0', 'retry-after': '60' }, body: { message: 'Too Many Requests' } }),
+  });
+  const sl = fakeSleep();
+  let err = null;
+  try {
+    await harvestRepos({ owner: 'faketree', config, token: 't', fetch_: net.fetch_, existing, sleep_: sl.sleep_ });
+  } catch (e) { err = e; }
+  ok(err && /rate limit/i.test(err.message), 'retry: a 429 rate limit aborts rather than retrying');
+  eq([...net.attempts.values()][0], 1, 'retry: 429 attempted exactly once');
+  eq(sl.delays, [], 'retry: 429 triggers no backoff sleep');
+}
+
+// --- 12f. 401 / 404 / hard-403 are NOT retried either ------------------------
+{
+  const net = withFailures(makeFetch(), {
+    pattern: /\/user\/repos/, failTimes: Infinity, reply: http(401, 'Bad credentials'),
+  });
+  const sl = fakeSleep();
+  let err = null;
+  try {
+    await harvestRepos({ owner: 'faketree', config, token: 't', fetch_: net.fetch_, existing, sleep_: sl.sleep_ });
+  } catch (e) { err = e; }
+  ok(err && /auth failed \(401\)/.test(err.message), 'retry: 401 aborts with the unchanged message');
+  eq([...net.attempts.values()][0], 1, 'retry: 401 attempted exactly once — never retried');
+  eq(sl.delays, [], 'retry: 401 triggers no backoff sleep');
+}
+{
+  // a 404 on the COMMITS path is a real error (repo vanished), not soft-failable
+  const net = withFailures(makeFetch(), {
+    pattern: /\/explicit-repo\/commits\?/, failTimes: Infinity, reply: http(404, 'Not Found'),
+  });
+  const sl = fakeSleep();
+  let err = null;
+  try {
+    await harvestRepos({ owner: 'faketree', config, token: 't', fetch_: net.fetch_, existing, sleep_: sl.sleep_ });
+  } catch (e) { err = e; }
+  ok(err && /GitHub 404 for /.test(err.message), 'retry: 404 aborts with the unchanged message');
+  eq([...net.attempts.values()][0], 1, 'retry: 404 attempted exactly once — never retried');
+  eq(sl.delays, [], 'retry: 404 triggers no backoff sleep');
+}
+{
+  const net = makeFetch({ forbidden: true });
+  const sl = fakeSleep();
+  let err = null;
+  try {
+    await harvestRepos({ owner: 'faketree', config, token: 't', fetch_: net.fetch_, existing, sleep_: sl.sleep_ });
+  } catch (e) { err = e; }
+  ok(err && /GitHub 403/.test(err.message), 'retry: non-integration hard 403 aborts, unchanged');
+  eq(net.calls.filter((u) => u.includes('/user/repos')).length, 1, 'retry: hard 403 attempted exactly once — never retried');
+  eq(sl.delays, [], 'retry: hard 403 triggers no backoff sleep');
+}
+{
+  // the installation-token 403 must still fall through to the public list on the
+  // FIRST attempt — retrying it would just delay the fallback three times over.
+  const net = makeFetch({ installationToken: true });
+  const sl = fakeSleep();
+  const run = await harvestRepos({ owner: 'faketree', config, token: 'ghs_x', fetch_: net.fetch_, existing, sleep_: sl.sleep_ });
+  eq(net.calls.filter((u) => u.includes('/user/repos')).length, 1, 'retry: installation-token 403 attempted exactly once before falling back');
+  eq(sl.delays, [], 'retry: installation-token 403 triggers no backoff sleep');
+  eq(run.events.map((e) => e.id).sort(), run1.events.map((e) => e.id).sort(), 'retry: installation-token fallback still harvests identically');
+}
+
+// --- 12g. 409 "Git Repository is empty." is untouched by the retry logic -----
+{
+  const net = makeFetch();
+  const sl = fakeSleep();
+  const run = await harvestRepos({ owner: 'faketree', config, token: 't', fetch_: net.fetch_, existing, sleep_: sl.sleep_ });
+  eq(net.calls.filter((u) => u.includes('/empty-repo/commits')).length, 1, 'retry: the empty-repo 409 is attempted exactly once — never retried');
+  eq(sl.delays, [], 'retry: the 409 triggers no backoff sleep');
+  ok(!run.events.some((e) => e.project === 'empty-repo'), 'retry: empty repo still yields no events');
+}
+
+// --- 12h. a NETWORK-LEVEL throw from fetch_ is retried too -------------------
+// fetchJson lets DNS failures / socket hangups propagate as thrown Errors. Over
+// a long backfill these are at least as likely as a 5xx, so they are retried on
+// the same terms — and re-thrown UNCHANGED (no .status) once the budget is gone,
+// so they can never be mistaken for a soft-failable 404/403/409.
+{
+  const net = withFailures(makeFetch(), {
+    pattern: /\/explicit-repo\/commits\?/, failTimes: 1,
+    reply: () => { const e = new Error('socket hang up'); e.code = 'ECONNRESET'; throw e; },
+  });
+  const sl = fakeSleep();
+  const logs = [];
+  const run = await harvestRepos({
+    owner: 'faketree', config, token: 't', fetch_: net.fetch_, existing, sleep_: sl.sleep_, log: (m) => logs.push(m),
+  });
+  eq(run.events.map((e) => e.id).sort(), run1.events.map((e) => e.id).sort(), 'retry: a socket hangup on attempt 1 recovers and harvests identically');
+  eq(sl.delays, [500], 'retry: a network throw backs off once before succeeding');
+  ok(logs.some((m) => /socket hang up on .*retrying \(2\/3\)/.test(m)), 'retry: the network-level retry is logged');
+}
+{
+  const net = withFailures(makeFetch(), {
+    pattern: /\/explicit-repo\/commits\?/, failTimes: Infinity,
+    reply: () => { throw new Error('getaddrinfo ENOTFOUND api.github.com'); },
+  });
+  const sl = fakeSleep();
+  let err = null;
+  try {
+    await harvestRepos({ owner: 'faketree', config, token: 't', fetch_: net.fetch_, existing, sleep_: sl.sleep_ });
+  } catch (e) { err = e; }
+  ok(err && /ENOTFOUND/.test(err.message), 'retry: a persistent network failure is re-thrown UNCHANGED after the budget');
+  eq(err?.status, undefined, 'retry: a re-thrown network error carries no .status, so softFail can never swallow it');
+  eq([...net.attempts.values()][0], 3, 'retry: network throws are bounded at 3 attempts too');
+  eq(sl.delays, [500, 1000], 'retry: network throws use the same exponential backoff');
+}
+
+// --- 12i. the suite itself must not have slept ------------------------------
+// Every retry test above injected sleep_, so no real timer ran. Guard the whole
+// file's wall-clock: 2 real backoffs would already cost 1.5s per retry test.
+ok(Date.now() - SUITE_STARTED_AT < 5000, 'retry: the whole suite still runs in well under 5s — no real backoff timers were used');
 
 // ----------------------------------------------------------------------------
 console.log(`\n${failed === 0 ? '✓ all green' : '✗ FAILURES'} — ${passed} passed, ${failed} failed`);
