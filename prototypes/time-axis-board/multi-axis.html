@@ -760,11 +760,15 @@ USAGE
         <div class="sw">
           <span class="chip qquad"></span>
           <span><b>Four quadrants = the four limbs.</b> The box is cut into four
-          wedges, each on <b>its own limb's bearing</b> &mdash; the same direction
-          that limb points in the 9-sector view. A wedge's <b>AREA is that limb's
-          share</b> of the quarter (radius &prop; &radic;share, so area is exactly
-          proportional). The <b>bright arc cap</b> marks the dominant limb, because
-          the area encoding is honest but compresses near-ties.</span>
+          wedges, and a wedge <b>spans exactly the arc its own sectors occupy</b>
+          in the 9-sector view &mdash; <span id="lgArc"></span>. So the wedges are
+          deliberately <b>unequal in width</b>: CREATE covers four of the nine
+          sectors and BUILD one, and the wedge says so. Each is centred on its
+          limb's bearing, the same direction that limb points in the detail view.
+          A wedge's <b>AREA is still that limb's share</b> of the quarter &mdash;
+          the radius carries a width correction, so a wide wedge is not a big one.
+          The <b>bright arc cap</b> marks the dominant limb, because the area
+          encoding is honest but compresses near-ties.</span>
         </div>
         <div class="sw">
           <span class="chip qtall"></span>
@@ -1374,6 +1378,125 @@ const QUAD_DRIFT = QUADS.map((q) => signedDelta(q.az, QUAD_CENTROID[q.id]));
 const QI = new Map(QUADS.map((q, i) => [q.id, i]));
 // sector index -> quadrant index, derived from the id prefix so it cannot drift
 const SEC2QUAD = SECTORS.map((s) => QI.get(s.id.split('.')[0]));
+
+/* --------------------------------------------------------------------------
+   §QARC — EACH LIMB'S ARC, DERIVED FROM ITS OWN SECTORS.
+   --------------------------------------------------------------------------
+   Walter, on the one-box wedges: "the wedges seem to point in the wrong
+   direction. They don't seem to match the categories." He is right, and the
+   cause was that a wedge's width was derived from the WRONG THING.
+
+   The previous rule (§QSECTOR) gave each wedge half the gap to each NEIGHBOUR.
+   That tiles the circle, but the gaps are unequal — 120/80/60/100 under centroid
+   — so a wedge's two half-widths differ and its VISUAL CENTRE drifts off the
+   bearing its ground label sits on:
+
+     limb        bearing   span under the old rule   visual centre   drift
+     create        75          25 .. 135                  80          +5
+     automate     195         135 .. 235                 185         -10
+     distribute   275         235 .. 305                 270          -5
+     build        335         305 .. 385                 345         +10
+
+   Label at the bearing, mass up to 10 degrees away. The shape and the word
+   disagreed, which is exactly what he saw.
+
+   THE FIX IS TO ASK THE SECTORS, NOT THE NEIGHBOURS. Every sector owns the arc
+   running halfway to the sector on either side of it — that is the same
+   ownership rule the nine-sector object already implies, made explicit. A limb's
+   arc is then simply the UNION of its members' arcs. Because the limbs are
+   contiguous blocks of the az-sorted SECTORS, that union runs from the boundary
+   before the limb's first member to the boundary after its last.
+
+     limb        members          arc            width
+     create      15 55 95 135    355 .. 155       160
+     automate    175 215         155 .. 235        80
+     distribute  255 295         235 .. 315        80
+     build       335             315 .. 355        40
+                                          total   360
+
+   Three things fall out, none of them tuned:
+     1. THE ARC MIDPOINT IS THE CIRCULAR CENTROID, exactly. create's arc is
+        centred on 75, automate's on 195, distribute's on 275, build's on 335 —
+        the same numbers QUAD_CENTROID computes independently. So under the
+        default centroid bearings every wedge is centred on its own bearing and
+        the drift above goes to zero. Shape and label agree.
+     2. THE ASYMMETRY IS NOW EARNED AND MUCH LARGER. 160/80/80/40 is a 4x spread
+        against the old rule's 1.6x, and it is the data speaking: CREATE really
+        does own four of the nine sectors and BUILD really does own one.
+     3. THE WEDGE COVERS ITS OWN SECTORS' ARC. create's wedge spans exactly the
+        arc where copy/images/video/3d live, so the "same object at two
+        altitudes" reading becomes literal rather than asserted — you can hold
+        the two views side by side and see the wedge sitting over its sectors.
+
+   Derived from SECTORS, never typed, so adding a sector or moving a bearing
+   moves the wedges with it. The widths must sum to 360 (probe: arcTiles).
+   -------------------------------------------------------------------------- */
+const wrap360 = (a) => ((a % 360) + 360) % 360;
+const fwd360 = (a, b) => wrap360(b - a);
+/* The boundary AFTER sector i: halfway along the forward gap to sector i+1.
+   Uses the forward gap rather than a midpoint of two numbers so the wrap at 360
+   is handled by construction (the last boundary, 355, sits between 335 and 15). */
+const SEC_BOUND = SECTORS.map((s, i) =>
+  wrap360(s.az + fwd360(s.az, SECTORS[(i + 1) % SECTORS.length].az) / 2));
+/* Each limb's arc: from the boundary before its first member to the boundary
+   after its last. Members of a limb are contiguous in the az-sorted SECTORS
+   (they are, by construction of the taxonomy), so this is their exact union. */
+const QUAD_ARC_SECTOR = QUAD_ORDER.map((k) => {
+  const ii = SECTORS.map((s, i) => (s.id.split('.')[0] === k ? i : -1)).filter((i) => i >= 0);
+  const first = ii[0], last = ii[ii.length - 1];
+  const a0 = SEC_BOUND[(first - 1 + SECTORS.length) % SECTORS.length];
+  const a1 = SEC_BOUND[last];
+  const width = ii.length === SECTORS.length ? 360 : fwd360(a0, a1);
+  return { id: k, a0, a1, width, centre: wrap360(a0 + width / 2) };
+});
+
+/* --------------------------------------------------------------------------
+   WHAT ?qbear=even MEANS NOW, and why it is the equal-quarter answer.
+   --------------------------------------------------------------------------
+   The old width rule read the BEARINGS, so `even` got its 90/90/90/90 for free.
+   The new rule reads the SECTORS, which `even` does not move — so the question
+   had to be reopened rather than inherited. Two candidates, and the geometry
+   settles it rather than taste:
+
+     (b) EVEN AS A PURE ROTATION — keep the sector-derived 160/80/80/40 and just
+         swing the bearings to 85/175/265/355. MEASURED, THIS DEGENERATES. Under
+         those bearings BUILD's spoke lands on 355, which is exactly its arc's
+         trailing edge: half-width 40 on one side and 0 on the other. The spoke
+         would sit on the wedge's boundary, and after the 4.2-degree inset the
+         drawn wedge would not contain its own bearing at all. That is a worse
+         version of the very defect this change fixes.
+
+     (b') EVEN AS ROTATION WITH THE WEDGES RE-CENTRED on the rotated bearings,
+         widths kept. ALSO BROKEN, and for a structural reason: four arcs of
+         160/80/80/40 centred 90 degrees apart do not tile. Measured seams are
+         -30/+10/+30/-10 — 30-degree overlaps, which is precisely the
+         interpenetration §QZFIGHT was written to eliminate. Unequal widths and
+         equally-spaced centres are arithmetically incompatible, full stop.
+
+   So (a): UNDER `even` THE WEDGES ARE EQUAL 90-DEGREE QUARTERS. That is not a
+   fallback, it is what "evenly spaced" means once the width is a real quantity —
+   `even` is the mode that says "draw the four limbs as equals", and drawing them
+   as equals is drawing them at equal width. The mode keeps its own meaning, it
+   tiles exactly, every wedge is centred on its own spoke (drift moves to the
+   ALIGNMENT, which is what the panel already reports), and the area correction
+   handles 90/90/90/90 as the angFrac = 0.25 case it was originally written for.
+
+   The two modes now trade cleanly and the trade is the same one as before, one
+   level deeper: centroid gives true arcs and true alignment at the cost of even
+   spacing; even gives even spacing at the cost of both. Default stays centroid.
+   -------------------------------------------------------------------------- */
+const QUAD_ARC_EVEN = QUAD_ORDER.map((k, i) => {
+  const c = (EVEN_PHASE + 90 * i) % 360;
+  return { id: k, a0: wrap360(c - 45), a1: wrap360(c + 45), width: 90, centre: c };
+});
+const QUAD_ARC = QBEAR === 'even' ? QUAD_ARC_EVEN : QUAD_ARC_SECTOR;
+const QARC_SUM = QUAD_ARC.reduce((a, r) => a + r.width, 0);
+const QARC_TILES = Math.abs(QARC_SUM - 360) < 1e-9;
+/* How far each limb's arc centre sits from the bearing the limb is DRAWN on.
+   Under centroid this is 0 for every limb — the wedge is centred on its own
+   spoke. Under even it is the bearing drift, made visible as the wedge sitting
+   off its spoke rather than as a silent widening. */
+const QARC_OFF = QUAD_ARC.map((r, i) => signedDelta(r.centre, QUADS[i].az));
 
 const blankRow = (key, present) => ({
   key, present,
@@ -2138,10 +2261,30 @@ function correspondenceGuides(axes) {
     });
     QUADS.forEach((q) => radial(q.az, R1, R1 + 0.34, q.hue, 1.25));
   } else {
-    // the quadrant object: each limb's arc spans the angular range of its members
+    /* The quadrant object. Each limb still gets its spoke and a tick per member
+       sector, but the limb's arc is now drawn as ITS WEDGE'S ACTUAL SPAN
+       (§QARC) — a0 to a1, the same angles the wedge above is built on. That is
+       the point of the sector-derived rule: the ground mark and the solid it
+       sits under cover the same arc, so "this wedge is these sectors" is drawn
+       rather than asserted. Swept in short steps so the wrap at 360 (create runs
+       355 -> 155, across zero) draws the short way round its own arc. */
     QUADS.forEach((q, i) => {
       const azs = QUAD_MEMBER_AZ[q.id];
+      const r = QUAD_ARC[i];
       radial(q.az, R1, R1 + 0.34, q.hue, 1.25);
+      // the limb's own span, as a bright arc on the outer ring
+      const N = Math.max(2, Math.ceil(r.width / 4));
+      for (let k = 0; k < N; k++) {
+        const b1 = r.a0 + r.width * (k / N), b2 = r.a0 + r.width * ((k + 1) / N);
+        tc.setHex(q.hue);
+        pts.push(Math.cos(deg(b1)) * (R1 + 0.17), 0.005, Math.sin(deg(b1)) * (R1 + 0.17));
+        pts.push(Math.cos(deg(b2)) * (R1 + 0.17), 0.005, Math.sin(deg(b2)) * (R1 + 0.17));
+        for (let z = 0; z < 2; z++) cols.push(tc.r * 0.95, tc.g * 0.95, tc.b * 0.95);
+      }
+      // the arc's two ENDS, ticked, so where one limb hands over to the next is
+      // readable rather than inferred from a colour change
+      radial(r.a0, R1 + 0.04, R1 + 0.30, q.hue, 0.7);
+      radial(r.a1, R1 + 0.04, R1 + 0.30, q.hue, 0.7);
       azs.forEach((a) => { radial(a, R0, R1, q.hue, 0.85); arc(a, q.az, R1, q.hue, 0.55); });
     });
   }
@@ -2611,9 +2754,14 @@ const QONE_OUTER = QONE.maxSpan + QONE.gap + QONE.haloMax + 1.15;
    degrees, and no inset or bevel tuning can rescue that: four wedges were
    claiming 360 degrees of arc out of a circle their bearings did not divide
    evenly. That overlap ran the whole radial depth of the smaller wedge, and
-   inside it the tops were coplanar. See §QSECTOR for the fix — each wedge now
-   takes half the gap to each neighbour, so the four tile the circle exactly once
-   under any bearing arrangement, and reduce to the old +/-45 under `even`.
+   inside it the tops were coplanar. See §QARC/§QSECTOR for the fix — each wedge
+   now owns exactly THE ARC ITS OWN SECTORS OCCUPY (160/80/80/40, summing to 360),
+   so the four tile the circle exactly once. This was first fixed by giving each
+   wedge half the gap to each neighbour, which tiled but left the wedge off-centre
+   from its own bearing; deriving the arc from the sectors tiles AND centres. The
+   probe re-measures it directly: interpenetratingPairs 0, worstOverlap 0, and the
+   check is a sweep of the drawn arcs rather than a claim, so the 4x widening
+   cannot quietly bring the overlap back.
 
    CAUSE 2 — THE BEVEL CROSSED THE INSET GAP near the stem. An angular gap has an
    arc-length that SHRINKS TOWARD THE STEM: at radius r the clear air between two
@@ -2698,29 +2846,26 @@ function buildQuarterOneBox() {
   const markGrp = new THREE.Group();    // -> roseGrp: edges, halos, caps
 
   const edgeP = [], edgeC = [], tc = new THREE.Color();
-  /* §QSECTOR — HOW WIDE A WEDGE IS, and a real bug this fixed.
-     Every wedge used to claim a fixed +/-45 degrees. That is only correct when the
-     four bearings are 90 apart, which is exactly what ?qbear=even produces — but
-     the DEFAULT is centroid, where the bearings are 75/195/275/335 and so the
-     separations are 120/80/60/100. Two 90-wide wedges on bearings only 60 apart
-     MUST overlap, by 30 degrees, no matter what the inset or the bevel do. That
-     is why the inner region interpenetrated: the dominant cause was never the
-     bevel, it was four wedges claiming 360 degrees of arc out of a circle whose
-     bearings did not divide it evenly.
+  /* §QSECTOR — HOW WIDE A WEDGE IS. The rule now comes from §QARC.
+     A wedge used to take HALF THE GAP TO EACH NEIGHBOUR. That tiled the circle,
+     which fixed the interpenetration it was written for, but it derived a limb's
+     width from where its NEIGHBOURS point rather than from what the limb
+     CONTAINS. With unequal gaps (120/80/60/100) the two half-widths differed and
+     the wedge's visual centre drifted up to 10 degrees off the bearing its ground
+     label sits on — Walter: "the wedges seem to point in the wrong direction."
 
-     Each wedge now takes HALF THE GAP TO EACH NEIGHBOUR, so the four tile the
-     circle exactly once: no overlap under either bearing mode, and under `even`
-     this reduces to the old +/-45 exactly, so nothing changes there. The wedges
-     are asymmetric under centroid, which is not a defect — it is the bearing
-     drift made visible, the same drift the correspondence arcs already draw and
-     the bearings panel already prints as "span 120 / 80 / 60 / 100". */
-  const QGAP_NEXT = QUADS.map((q, i) =>
-    deg(((QUADS[(i + 1) % QUADS.length].az - q.az) % 360 + 360) % 360));
-  const QGAP_PREV = QUADS.map((q, i) =>
-    QGAP_NEXT[(i - 1 + QUADS.length) % QUADS.length]);
-  // half-widths on each side of the bearing; they sum to the full separation
-  const HALF_CW  = QGAP_NEXT.map((g) => g / 2);
-  const HALF_CCW = QGAP_PREV.map((g) => g / 2);
+     The width is now the limb's OWN SECTORS' ARC (§QARC): 160/80/80/40, summing
+     to 360, each arc centred exactly on its members' circular centroid. Under
+     the default centroid bearings that centre IS the bearing, so every wedge is
+     centred on its own spoke and the drift is zero. The half-widths below are
+     the arc's two edges expressed RELATIVE TO THE DRAWN BEARING, so every call
+     site downstream — geometry, wafer, dominance cap — keeps working unchanged
+     and automatically follows the arc rather than the neighbour gaps.
+
+     Asymmetry is now 4x (create 160 against build 40) rather than 1.6x, and it
+     is earned: CREATE owns four of the nine sectors, BUILD owns one. */
+  const HALF_CW  = QUAD_ARC.map((r, i) => deg(fwd360(QUADS[i].az, r.a1)));
+  const HALF_CCW = QUAD_ARC.map((r, i) => deg(fwd360(r.a0, QUADS[i].az)));
   /* The angular INSET between neighbouring wedges. Without it the four wedges of
      a quarter fuse into one silhouette from the 3/4 view — the composition was
      only legible from directly overhead, which is half a mark. The gap is angular
@@ -3803,6 +3948,21 @@ document.getElementById('spQuadAvg').innerHTML =
       (QONE_LIMB_MAX / Math.min(...nz)).toFixed(0) + '×';
   }
 }
+/* §QARC — the wedge widths, in the legend, generated from the geometry. Typed
+   numbers here would go stale the moment a sector is added, which is exactly the
+   change this rule was built to survive. */
+{
+  const la = document.getElementById('lgArc');
+  if (la) {
+    la.innerHTML = QBEAR === 'even'
+      ? `<b>even 90&deg; each</b>, because <code>?qbear=even</code> draws the four
+         limbs as equals &mdash; unequal arcs and 90&deg; spacing cannot both hold`
+      : QUAD_ORDER.map((k, i) =>
+          `<b style="color:#cfe0f2">${k} ${QUAD_ARC[i].width.toFixed(0)}&deg;</b>` +
+          `<span style="color:#7f93aa">/${QUAD_MEMBER_AZ[k].length}</span>`
+        ).join(', ') + ` <span style="color:#7f93aa">(sum ${QARC_SUM.toFixed(0)}&deg;)</span>`;
+  }
+}
 /* THE LEGEND MUST DESCRIBE THE BODY ACTUALLY ON SCREEN. The box vocabulary and
    the collar vocabulary are different marks with different encodings, so a
    legend that describes one while the other is drawn is worse than no legend —
@@ -3952,10 +4112,26 @@ document.getElementById('bAll').addEventListener('click', () => { FOCUS = null; 
     (Math.abs(QUAD_DRIFT[i]) < 0.05
       ? `<span class="ok">drift 0</span>`
       : `<span class="off">drift ${QUAD_DRIFT[i] > 0 ? '+' : ''}${QUAD_DRIFT[i].toFixed(0)}&deg;</span>`) +
-    ` <span style="color:#5f7085">span ${spacing[i].toFixed(0)}&deg;</span>`
+    ` <span style="color:#5f7085">gap ${spacing[i].toFixed(0)}&deg;</span>` +
+    /* §QARC — the WEDGE's own width, which is no longer the gap to the next limb.
+       Under centroid it is the limb's sectors' arc (160/80/80/40, n members
+       shown so the 4x spread reads as earned); under even it is a flat 90. */
+    ` <span style="color:#9fd8c4">arc ${QUAD_ARC[i].width.toFixed(0)}&deg;</span>` +
+    `<span style="color:#5f7085">/${QUAD_MEMBER_AZ[q.id].length}s</span>`
   ).join('<br>');
   h += `<br><b>max drift ${maxDrift.toFixed(0)}&deg;</b> ` +
     `<span style="color:#5f7085">(was 60&deg; at the old fixed 45/135/225/315)</span>`;
+  /* The defect Walter reported, as a live number: how far each wedge's arc centre
+     sits from the bearing its ground label sits on. The old half-the-gap rule put
+     this at up to 10 deg; both modes now hold it at 0, so shape and label agree. */
+  h += `<br><b>wedge arcs</b> ${QUAD_ARC.map((r) => r.width.toFixed(0)).join('/')}&deg; ` +
+    `<span style="color:#5f7085">sum ${QARC_SUM.toFixed(0)}</span> ` +
+    (QARC_TILES ? `<span class="ok">tiles</span>` : `<span class="off">DOES NOT TILE</span>`) +
+    `<br>` +
+    (Math.max(...QARC_OFF.map(Math.abs)) < 0.05
+      ? `<span class="ok">every wedge centred on its bearing</span>`
+      : `<span class="off">off-centre by ${Math.max(...QARC_OFF.map(Math.abs)).toFixed(0)}&deg;</span>`) +
+    `<span style="color:#5f7085"> (was +5/-10/-5/+10)</span>`;
   document.getElementById('qdrift').innerHTML = h;
 }
 
@@ -4292,28 +4468,83 @@ window.__probe = () => ({
       bevel: +wedgeBevel(QONE.radius * 0.34, deg(4.2), CORE_R * 0.55).toFixed(4),
       bevelBudget: +(CORE_R * 0.55 * deg(4.2)).toFixed(4),
       bevelOk: wedgeBevel(QONE.radius * 0.34, deg(4.2), CORE_R * 0.55) < CORE_R * 0.55 * deg(4.2),
-      /* §QSECTOR — each wedge's angular width, and the check that the four tile
-         the circle EXACTLY ONCE. sectorSum must be 360: below means gaps, above
-         means the wedges overlap, which is what caused the z-fighting. */
-      sectorWidths: QUADS.map((q, i) =>
-        +((((QUADS[(i + 1) % QUADS.length].az - q.az) % 360 + 360) % 360 / 2 +
-           ((q.az - QUADS[(i - 1 + QUADS.length) % QUADS.length].az) % 360 + 360) % 360 / 2)
-          ).toFixed(3)),
-      sectorSum: +QUADS.map((q, i) =>
-        (((QUADS[(i + 1) % QUADS.length].az - q.az) % 360 + 360) % 360 / 2 +
-         ((q.az - QUADS[(i - 1 + QUADS.length) % QUADS.length].az) % 360 + 360) % 360 / 2)
-        ).reduce((a, b) => a + b, 0).toFixed(3),
-      sectorTiles: Math.abs(QUADS.map((q, i) =>
-        (((QUADS[(i + 1) % QUADS.length].az - q.az) % 360 + 360) % 360 / 2 +
-         ((q.az - QUADS[(i - 1 + QUADS.length) % QUADS.length].az) % 360 + 360) % 360 / 2)
-        ).reduce((a, b) => a + b, 0) - 360) < 1e-9,
-      /* AREA == SHARE still holds after §QSECTOR widened/narrowed the wedges. The
-         radius carries a 0.25/angFrac correction precisely so this stays exact;
+      /* THE INTERPENETRATION CHECK, RE-RUN AGAINST THE §QARC WIDTHS. Builds the
+         arc each wedge is ACTUALLY drawn on — the limb arc inset by 4.2 deg at
+         each end, exactly as wedgeGeometry is called — and tests every pair for
+         angular overlap. Two wedges of a quarter share space only if their arcs
+         overlap, so 0 overlapping pairs means 0 interpenetrating pairs at every
+         radius and every height. worstOverlap is the largest overlap in degrees.
+         Both must be 0. Recomputed from QUAD_ARC, so widening the wedges 4x
+         cannot quietly reintroduce the bug the old rule was written to fix. */
+      wedgeArcs: (() => {
+        const ins = 4.2;
+        return QUAD_ARC.map((r, i) =>
+          [+wrap360(QUADS[i].az - fwd360(r.a0, QUADS[i].az) + ins).toFixed(3),
+           +wrap360(QUADS[i].az + fwd360(QUADS[i].az, r.a1) - ins).toFixed(3)]);
+      })(),
+      ...(() => {
+        const ins = 4.2;
+        /* The drawn arcs, as {start, width} — exactly the angles wedgeGeometry is
+           called with. Sampled rather than solved: walking the circle in fine
+           steps and counting how many arcs cover each step is immune to the
+           sign-and-wrap mistakes an analytic pairwise formula invites, and it
+           also catches a three-way overlap that pairwise tests could miss. */
+        const arcs = QUAD_ARC.map((r, i) => {
+          const half0 = fwd360(r.a0, QUADS[i].az), half1 = fwd360(QUADS[i].az, r.a1);
+          return { s: wrap360(QUADS[i].az - half0 + ins), w: half0 + half1 - 2 * ins };
+        });
+        const covers = (arc, t) => fwd360(arc.s, t) <= arc.w + 1e-12;
+        // pairwise overlap, measured on a fine sweep of the circle
+        const STEP = 0.01;
+        let pairs = 0, worst = 0;
+        for (let a = 0; a < arcs.length; a++) {
+          for (let b = a + 1; b < arcs.length; b++) {
+            let ov = 0;
+            for (let t = 0; t < 360; t += STEP) {
+              if (covers(arcs[a], t) && covers(arcs[b], t)) ov += STEP;
+            }
+            if (ov > 1e-9) pairs++;
+            worst = Math.max(worst, ov);
+          }
+        }
+        return { interpenetratingPairs: pairs, worstOverlap: +worst.toFixed(4) };
+      })(),
+      /* The narrowest wedge after the inset is taken off both ends. BUILD is the
+         binding case at 40 - 8.4 = 31.6 deg; it must stay comfortably positive or
+         the lone-sector limb would degenerate into a sliver. */
+      narrowestDrawnArc: +Math.min(...QUAD_ARC.map((r) => r.width - 2 * 4.2)).toFixed(2),
+      /* §QARC/§QSECTOR — each wedge's angular width, now derived from the limb's
+         OWN SECTORS rather than from the gaps to its neighbours, and the check
+         that the four tile the circle EXACTLY ONCE. arcSum must be 360: below
+         means gaps, above means the wedges overlap (the old z-fight condition). */
+      sectorWidths: QUAD_ARC.map((r) => +r.width.toFixed(3)),
+      arcBounds: QUAD_ARC.map((r) => [+r.a0.toFixed(3), +r.a1.toFixed(3)]),
+      arcMembers: Object.fromEntries(QUAD_ORDER.map((k) => [k, QUAD_MEMBER_AZ[k]])),
+      sectorSum: +QARC_SUM.toFixed(3),
+      sectorTiles: QARC_TILES,
+      arcSum: +QARC_SUM.toFixed(3),
+      arcTiles: QARC_TILES,
+      /* Overlap/gap between CONSECUTIVE limb arcs, measured pairwise rather than
+         inferred from the sum — a sum of 360 could in principle hide an overlap
+         cancelled by a gap elsewhere. Every entry must be 0. */
+      arcSeams: QUAD_ARC.map((r, i) =>
+        +signedDelta(QUAD_ARC[(i + 1) % QUAD_ARC.length].a0, r.a1).toFixed(9)),
+      /* The defect Walter reported, as a number. Offset of each wedge's arc
+         CENTRE from the bearing its ground label sits on. Under centroid this is
+         0 for all four — shape and label agree. Under the old neighbour-gap rule
+         it was +5/-10/-5/+10. */
+      arcCentreOffset: Object.fromEntries(QUAD_ORDER.map((k, i) =>
+        [k, +QARC_OFF[i].toFixed(6)])),
+      maxArcCentreOffset: +Math.max(...QARC_OFF.map(Math.abs)).toFixed(6),
+      // the asymmetry, stated: widest limb arc over narrowest
+      arcAsymmetry: +(Math.max(...QUAD_ARC.map((r) => r.width)) /
+                      Math.max(1e-9, Math.min(...QUAD_ARC.map((r) => r.width)))).toFixed(2),
+      /* AREA == SHARE still holds after §QARC widened/narrowed the wedges much
+         further (4x spread, not 1.6x). The radius carries a 0.25/angFrac
+         correction precisely so this stays exact regardless of the widths;
          areaErr is the largest deviation across all 32 wedges and must be ~0. */
       areaErr: +Math.max(...qrows.flatMap((qr, i) => QUADS.map((q, j) => {
-        const nx = (((QUADS[(j + 1) % QUADS.length].az - q.az) % 360 + 360) % 360);
-        const pv = (((q.az - QUADS[(j - 1 + QUADS.length) % QUADS.length].az) % 360 + 360) % 360);
-        const angFrac = deg(nx / 2 + pv / 2) / (Math.PI * 2);
+        const angFrac = deg(QUAD_ARC[j].width) / (Math.PI * 2);
         const sh = QONE_SHARE[i][j];
         if (sh <= 0) return 0;
         // area fraction of the full footprint = angFrac * (r/span)^2
