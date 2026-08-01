@@ -37,7 +37,14 @@ WHERE THE IDEA CAME FROM
 THE MEASUREMENT BEHIND IT (the headline finding)
   Per-month angular asymmetry = |sum(count * unit_vector(azimuth))| / sum(count).
   0 = mass spread evenly around the compass; 1 = all mass in one direction.
-  Computed live in this page from the log; the trend is downward:
+  Computed live in this page from the log; the trend is downward.
+
+  NOTE: the table below was computed on the ORIGINAL taxonomy azimuths, before the
+  bearings were respaced to an even 45 degrees (see the SECTORS block). Since the
+  metric is a function of azimuth, the numbers moved. It is kept as the historical
+  record of the finding; the live values on screen are the current ones. On the
+  respaced bearings the series runs 1.00 / 1.00 / 0.96 / 0.72 / ... / 0.09 / 0.68 /
+  0.20 / 0.67 / 0.65 — same overall story, but noisier month to month.
 
     2024-12 1.00   2025-09 1.00   2026-03 0.48
     2025-01 1.00   2025-10 0.59   2026-04 0.45
@@ -56,7 +63,9 @@ ENCODING (what each channel carries)
   radius   = COMMITS ONLY, per sector per month, sqrt-scaled. A PR's own
              commits are already in the log, so sizing on raw events would
              overstate 2026 by roughly 3x.
-  azimuth  = the sector's compass bearing from generator/taxonomy.mjs.
+  azimuth  = WHICH SECTOR, in taxonomy order, at an even 45-degree spacing.
+             Presentation-only: it deliberately no longer equals the taxonomy's
+             compass bearing. See the SECTORS block for why.
   height   = month (uniform spacing; every month gets equal vertical room so
              the shape is read as a sequence, not a duration).
   skin     = the MIX (commit/pr/review/issue) as colour temperature and
@@ -108,50 +117,53 @@ EIGHT SECTORS, NOT TEN (the no-code correction)
   deleting indices 6 and 7 would renumber pro-code and 3d and invalidate every
   tree.json. That needs a default-v2 taxonomy plus a migration — a separate call.
 
-  Azimuths stay at their taxonomy values, so 270 and 310 are now simply vacant
-  and geo (225) -> pro-code (350) is a 125-degree interval. See the weakness note
-  below for what that costs.
+  BEARINGS WERE THEN RESPACED (Walter: "You correctly removed two categories on the
+  ground axis labels, but now we have to reshuffle to fill the void."). Keeping the
+  taxonomy azimuths after the removal left 270 and 310 vacant and a 125-degree
+  interval between geo (225) and pro-code (350), with the other seven bunched in
+  the 15-225 half. The eight now sit at an even 45 degrees — 15, 60, 105, 150, 195,
+  240, 285, 330 — in the SAME cyclic order, so copy/images/video/3d still form one
+  CREATE arc, then workflows, then seo/geo, then pro-code. This is PRESENTATION
+  ONLY; generator/taxonomy.mjs keeps the real growth directions and is untouched.
+  The cost is stated in the weakness list: bearing here is an ordered categorical
+  axis, not a compass reading.
 
 HONEST WEAKNESSES
-  - The 125-degree geo(225)->pro-code(350) interval is the largest by far (next
-    widest is 45). A third of the compass is now one interpolated flank with no
-    control point in it. MEASURED, rather than feared: because the spline is
-    parameterised by ANGLE, this is far milder than expected. Sampling the gap
-    interval across the months that stress it most:
+  - AZIMUTH IS NO LONGER A COMPASS BEARING. This is the price of the respacing and
+    it is the most important caveat on the page. Bearing here now encodes only
+    WHICH SECTOR and in what order; it does not point where generator/taxonomy.mjs
+    says that sector grows, and it does not agree with the tree renderer. Anyone
+    reading this object next to the tree must not match them up by direction. The
+    taxonomy file is unchanged and remains the authority.
+  - Spline overshoot after respacing — MEASURED across every month and all 96
+    samples per ring, asking how far the Catmull-Rom bows past the larger of the
+    two control points bracketing each sample. Worst case in the whole object:
 
-      2026-07  geo 4.20 / pro 3.84  -> gap peaks 4.43 at az 262   (+5.6%)
-      2026-04  geo 4.03 / pro 0.93  -> gap peaks 4.03 at az 229   (+0.0%)
-      2025-11  geo 0.30 / pro 3.07  -> gap peaks 3.06 at az 349   (-0.2%)
-      2026-06  geo 2.52 / pro 0.30  -> gap peaks 2.51 at az 229   (-0.2%)
+      2025-04, az 289, between geo (1.00) and pro-code (0.74) -> r 1.013  (+1.27%)
 
-    So there is NO ugly flat flank and essentially no overshoot in the general
-    case: whenever one endpoint is large and the other small the interval just
-    ramps monotonically between them, which is the right behaviour. The single
-    exception is 2026-07, the one month where geo (155) and pro-code (128) are
-    BOTH near-maximal; there the curve bows 5.6% past the larger endpoint, at
-    az 262 — inside the vacated no-code direction. That bulge is interpolation,
-    not measurement, and it is the largest fictional radius in the object. It is
-    small enough not to read as a lobe (no spoke, no dot, no label sits there,
-    and the rosette geometry is what the eye tracks) but it is real and it is
-    stated here rather than hidden.
-  - Consequence for the form: removing the two sectors DID close the envelope —
-    the old ~100-degree dead flat flank is gone and the cross-sections are now
-    convex-ish blobs rather than a shape with a bite out of it. But "closed" is
-    not "even": the eight bearings still cluster in the 15-225 half (seven of
-    them) with one lone control point at 350, so the object is denser on one
-    side by construction. Redistributing the eight at 45-degree spacing would
-    make a genuinely regular octagon, at the cost of azimuth no longer matching
-    the taxonomy's real growth directions (and no longer matching the tree
-    renderer). NOT done unilaterally — that is a call about whether this page
-    owes its compass to the taxonomy or to the form.
+    That is a large improvement on the pre-respacing figure of +5.6% (2026-07, in
+    the old 125-degree void), and it is the expected result: with every interval
+    at an equal 45 degrees no span can bow further than another simply by being
+    wider. 1.27% is well under a pixel at framing distance. The flanks are still
+    interpolation rather than measurement — only the 8 values AT the bearings are
+    data — but the fiction is now about as small as a smooth ring allows.
+  - The respacing changes the ASYMMETRY NUMBERS, because asymmetry is
+    |sum(count * unit_vector(azimuth))| / sum(count) and the azimuths moved. The
+    figures in "THE MEASUREMENT BEHIND IT" above are the pre-respacing series and
+    are now stale as absolute values. The page computes them live, so what is on
+    screen is always correct for the bearings actually drawn. The qualitative
+    finding survives (early months near 1.00, recent months lower and more
+    spread) but the trend is NOISIER on even bearings than it was on the taxonomy
+    ones, and 2026-03 now reads 0.09 where it read 0.48. Treat asymmetry as a
+    within-this-page comparison, never as a portable constant.
   - The sector x month grid is only 29% filled. Even with smoothing, most
     rings are a couple of lobes on a core, so a lot of the surface is floor
     rather than data.
-  - Catmull-Rom overshoots. Between a 155 and a 0 the spline can bulge
-    slightly beyond the true peak or dip under the core. Radii are clamped to
-    the core, but a lobe's flank is interpolation, not measurement. Only the
-    96 resampled points at true sector bearings are data; everything between
-    is inference. The cut view exists partly so you can check the real values.
+  - Catmull-Rom can also dip UNDER the core between a large value and a zero.
+    Radii are clamped so it never reads as a spike-in, but that clamp is itself a
+    drawn decision. Only the 8 values at the sector bearings are data; the 96
+    resampled points between them are inference. The cut view exists partly so
+    you can check the real numbers against the shape.
   - Uniform month spacing means a 1-commit month gets the same vertical room
     as a 390-event month. That is deliberate (sequence, not duration) but it
     does flatter the quiet stretch of mid-2025.
@@ -195,43 +207,49 @@ TRANSPARENCY + BLOOM (the lantern pass)
   Bloom is EffectComposer/RenderPass/UnrealBloomPass/OutputPass, configured
   from prototypes/acacia-sketch/index.html (0.9 / 0.55 / 0.6).
 
-  DEFAULTS CHANGED after Walter saw the build ("It looks interesting, we can
-  optimize from here") and chose by eye: skin alpha 0.17, bloom 0.94,
-  threshold 0.32, rings on. The previous build used 0.13 / 0.62 / 0.42
-  specifically to protect the sector colour key, so this is a deliberate move in
-  the opposite direction on all three axes at once, and it costs something —
-  see below. It is his call and it is one slider away from being undone;
-  ?opacity=0.13&bloom=0.62&thresh=0.42 restores the cautious look exactly.
+  DEFAULTS, THIRD PASS — skin alpha 0.28, bloom 0.84, threshold 0.76, rings on.
+  Walter's numbers, chosen to cure the regression the previous pass measured and
+  reported. The 0.17/0.94/0.32 build was prettier but its low threshold admitted
+  most of the frame into the bloom, doubling the lit area and bleeding the 19
+  stacked rosettes into one bright column — and "you can see 19 stacked
+  cross-sections" is precisely what stops this object reading as a vase.
 
-  WHAT THE HOT SETTINGS ACTUALLY COST — measured by sampling the rendered frame,
-  not guessed. Same view (?cut=19), old settings vs new, object region only:
+  WHAT THE FIX ACTUALLY DID — measured by sampling the rendered frame, not
+  guessed. Identical camera and cut (?cut=18), object region only (the HUD and
+  numbers panel are cropped out of the count):
 
                         lit pixels   mean saturation   desaturated   blown white
-    0.13 / 0.62 / 0.42      66 420             0.287         18.8%         0.94%
-    0.17 / 0.94 / 0.32     137 861             0.203         39.6%         2.84%
+    0.17 / 0.94 / 0.32     366 800             0.192         44.5%         1.82%
+    0.28 / 0.84 / 0.76     176 219             0.366          6.2%         1.09%
+    skin off (reference)   112 284             0.391          8.0%         1.06%
 
-  Read that carefully, because the obvious worry turns out to be the WRONG one.
-  The hues are NOT lost: every sector is still individually identifiable, mean
-  saturation is still 0.20, and only 2.8% of lit pixels are actually blown to
-  white. The colour key survives. The prediction that ten-hues-bloom-to-one-white
-  did not come true at these numbers.
+  The glow wash is gone. Lit area falls 52%, and the share of low-saturation
+  pixels collapses from 44.5% to 6.2% — almost exactly the skin-off reference of
+  8.0%, which means essentially all the remaining desaturation is the object's
+  own geometry rather than bloom halo. Mean saturation nearly doubles. The three
+  numbers move together because they measure one thing: at threshold 0.76 only
+  genuine peaks bloom, so lines are lines again instead of cores wrapped in a
+  wash. Side-by-side crops of the dense 2025-08..2026-04 run make it plain: the
+  old frame has a grey veil over a black sky and softened rings, the new one has
+  a black sky, separated colour panels and countable ring lines.
 
-  What DID happen is different and less obvious: the lit area slightly more than
-  DOUBLED. That is glow spreading, not new information. Every rosette outline,
-  spoke and lobe dot now carries a halo, so lines that were 1px of saturated
-  colour are now a few px of colour surrounded by a wash, and the share of
-  low-saturation pixels doubles from 19% to 40%. The cost is not hue, it is
-  SEPARATION: adjacent rosettes bleed into each other, and in the dense recent
-  months (2025-11 onward, where rings are ~1 unit apart and each carries 4-6
-  lobes) the stack reads as one bright column rather than as countable slices.
-  Since "you can see 19 stacked cross-sections" is precisely what stopped this
-  object reading as a vase, that is the thing to watch.
+  DOES THE SKIN AT 0.28 OCCLUDE THE ROSETTES? No — measured, because this was the
+  live worry (the surface self-overlaps 3-4 layers deep on the flanks, and the
+  interior rosettes being visible THROUGH the skin is the whole reason the design
+  works). Taking the 15 884 rosette pixels identified in an alpha=0 frame and
+  reading the same pixels with the skin on:
 
-  It is genuinely prettier and the silhouette is stronger. Whether the trade is
-  worth it is Walter's call, and both sliders are right there. Worth trying if
-  the density bothers him: keep bloom 0.94 but put the threshold BACK up to ~0.42
-  so only the lobe peaks glow, which restores separation without losing the
-  brighter look — ?bloom=0.94&thresh=0.42.
+    alpha 0     mean luminance 182.6   100.0% retain >=75% of no-skin brightness
+    alpha 0.17  mean luminance 196.7    99.9%
+    alpha 0.28  mean luminance 204.3    99.6%
+
+  Luminance on the rosette pixels RISES as the skin thickens rather than falling.
+  That is not a fluke: the rosettes are AdditiveBlending and already at or near
+  saturation, and the skin is NormalBlending drawn with depthWrite:false, so it
+  adds light over them instead of hiding them. The skin becomes more present as a
+  surface (pixels lit only by the skin go 6.2% -> 8.8% of the frame, which is the
+  point — that is what pays back the brightness the threshold removed) without
+  costing the interior read anything measurable.
 
 USAGE
   Must be SERVED (it fetches ../../data/growth-log.jsonl). From the repo root:
@@ -371,24 +389,24 @@ USAGE
   <div id="look">
     <div class="sl">
       <label for="sOpacity">skin alpha</label>
-      <input id="sOpacity" type="range" min="0" max="0.6" step="0.005" value="0.17">
-      <span class="v" id="vOpacity">.17</span>
+      <input id="sOpacity" type="range" min="0" max="0.6" step="0.005" value="0.28">
+      <span class="v" id="vOpacity">.28</span>
     </div>
     <div class="sl">
       <label for="sBloom">bloom</label>
-      <input id="sBloom" type="range" min="0" max="2" step="0.02" value="0.94">
-      <span class="v" id="vBloom">.94</span>
+      <input id="sBloom" type="range" min="0" max="2" step="0.02" value="0.84">
+      <span class="v" id="vBloom">.84</span>
     </div>
     <div class="sl">
       <label for="sThresh">threshold</label>
-      <input id="sThresh" type="range" min="0" max="1" step="0.01" value="0.32">
-      <span class="v" id="vThresh">.32</span>
+      <input id="sThresh" type="range" min="0" max="1" step="0.01" value="0.76">
+      <span class="v" id="vThresh">.76</span>
     </div>
     <div class="note">
-      Alpha 0 = rosettes alone. Bloom is multiplicative on alpha: raise one, lower the
-      other, or the eight sector hues wash to a single white. Current defaults are
-      deliberately hot (.17 / .94 / .32) — pull bloom back toward .62 if the hues stop
-      telling apart.
+      Alpha 0 = rosettes alone. Threshold is the separation lever: at .76 only genuine
+      lobe peaks bloom, so the 19 stacked rosettes stay countable instead of bleeding
+      into one column. Skin alpha .28 pays back the brightness that costs.
+      <br>?opacity=0.17&amp;bloom=0.94&amp;thresh=0.32 restores the previous hot look.
     </div>
   </div>
 </div>
@@ -410,8 +428,11 @@ USAGE
     <b>2025-02</b> is missing from the log entirely: a real pinch, never interpolated.<br>
     <b>8 sectors, not 10.</b> no-code and low-code are dropped from this page: work
     that avoids the dev setup never produces a commit, so a commit-derived view
-    cannot observe them at all. Their bearings (270&deg;, 310&deg;) are left empty,
-    which is why one flank is a long smooth sweep.<br>
+    cannot observe them at all.<br>
+    <b>Bearings are respaced,</b> 45&deg; apart, in taxonomy order — presentation
+    only. Dropping two sectors left a 125&deg; void; an even octagon gives every
+    lobe the same angular budget. Azimuth here means &ldquo;which sector&rdquo;,
+    not a compass direction, and <b>generator/taxonomy.mjs</b> is unchanged.<br>
     <b>Rosettes are the measurement.</b> Their outlines and lobe dots sit on true
     radii at true month heights. The skin between two rosettes is Catmull-Rom
     inference — which is why the skin is the faint thing and the rosettes glow.
@@ -468,19 +489,24 @@ const numParam = (name, def, lo, hi) => {
   const v = parseFloat(PARAMS.get(name));
   return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : def;
 };
-/* Defaults revised after Walter saw the glass+rosettes+bloom build ("It looks
-   interesting, we can optimize from here") and picked these four numbers by eye:
-   alpha .17 / bloom .94 / threshold .32 / rings ON. This reverses the earlier
-   build's caution (0.13 / 0.62 / 0.42, held down to protect the sector colour
-   key) and pushes all three the same way — a LOWER threshold admits more of the
-   frame into the bloom, so it compounds the higher strength rather than
-   offsetting it. Measured outcome is in the header: the colour key survives
-   fine, but lit area doubles and the stacked rosettes lose separation.
-   ?bloom=0.62&thresh=0.42 restores the old look exactly. */
+/* Defaults, third revision. The .17/.94/.32 build was measured to double the lit
+   area and bleed the 19 stacked rosettes into one bright column (table in the
+   header). Walter agreed with that reading and picked the cure by eye:
+
+     alpha .28 / bloom .84 / threshold .76 / rings ON
+
+   The load-bearing move is THRESHOLD, up from .32 to .76. Bloom only sees pixels
+   brighter than the threshold, so .76 restricts the glow to genuine lobe peaks
+   instead of admitting every faint outline and skin gradient — that is what gives
+   the rosettes their separation back. Strength comes down slightly (.94 -> .84)
+   because the surviving peaks are the bright ones and do not need as much push.
+   Skin alpha goes UP (.17 -> .28) to pay back the overall brightness the higher
+   threshold removes, since much less of the frame is glowing now.
+   ?opacity=0.17&bloom=0.94&thresh=0.32 restores the previous look exactly. */
 const LOOK = {
-  opacity: numParam('opacity', 0.17, 0, 0.6),   // per-face skin alpha
-  bloom:   numParam('bloom',   0.94, 0, 2),
-  thresh:  numParam('thresh',  0.32, 0, 1),
+  opacity: numParam('opacity', 0.28, 0, 0.6),   // per-face skin alpha
+  bloom:   numParam('bloom',   0.84, 0, 2),
+  thresh:  numParam('thresh',  0.76, 0, 1),
   skin:    PARAMS.get('skin') !== '0',
   rose:    PARAMS.get('rose') !== '0',
   rings:   PARAMS.get('rings') !== '0',        // the 96-point loft rings — ON by default now
@@ -520,25 +546,56 @@ const PAL = {
    default-v2 taxonomy plus a migration, which is a separate decision and not
    this prototype's to make. So the eight live here, by value, on purpose.
 
-   AZIMUTHS ARE UNCHANGED from taxonomy default-v1. Removing az 270 and 310
-   leaves a 125-degree gap between geo (225) and pro-code (350). That gap is
-   kept because azimuth still means the real compass bearing of the taxonomy —
-   redistributing the eight evenly would close the form but break the
-   correspondence to the tree renderer's growth directions. The ring spline is
-   parameterised by ANGLE (see section 2), so the wide interval is interpolated
-   correctly rather than being compressed by index spacing; what it costs is one
-   long, smooth, low flank rather than the old flat dead flank.
+   AZIMUTHS ARE PRESENTATION-ONLY AND DELIBERATELY DIVERGE FROM THE TAXONOMY.
+   --------------------------------------------------------------------------
+   generator/taxonomy.mjs still carries the default-v1 bearings (15, 55, 95, 115,
+   140, 185, 225, 270, 310, 350) and is NOT touched by this file — it is
+   append-only, its array index is the renderer's aSector, and the tree renderer
+   keeps using those real growth directions. What changed is only how THIS page
+   lays the eight surviving sectors out around its own compass.
+
+   WHY. Dropping no-code (270) and low-code (310) vacated a third of the circle,
+   leaving a 125-degree interval between geo (225) and pro-code (350) with no
+   control point in it, while the other seven bunched into the 15-225 half at
+   intervals as tight as 20 degrees. That is a 6:1 spread, and the object was
+   dense on one side and hollow on the other BY CONSTRUCTION rather than by
+   measurement — a form artefact of two removed categories, not a fact about the
+   work. Walter's call: "You correctly removed two categories on the ground axis
+   labels, but now we have to reshuffle to fill the void."
+
+   WHAT. The eight are respaced at an exact 45 degrees, phase-locked to copy's
+   original 15 so the object does not rotate wholesale. THE CYCLIC ORDER IS
+   PRESERVED exactly — copy, images, video, 3d, workflows, seo, geo, pro-code —
+   so the limb grouping still reads as you go round: the four CREATE sectors
+   occupy one arc, AUTOMATE follows, then the two DISTRIBUTE sectors, then BUILD.
+   Neighbours stay neighbours; only the spacing between them is regularised.
+
+     copy      15 -> 15      workflows  140 -> 195
+     images    55 -> 60      seo        185 -> 240
+     video     95 -> 105     geo        225 -> 285
+     3d       115 -> 150     pro-code   350 -> 330
+
+   WHAT IT COSTS. Azimuth on this page no longer answers "where does this sector
+   point in the taxonomy" — it answers "which sector is this, in taxonomy order".
+   Bearing is now an ORDERED CATEGORICAL axis, not a compass reading, and it no
+   longer matches the tree renderer's directions. That is an acceptable trade for
+   a prototype whose whole subject is the SHAPE of the monthly cross-section: a
+   regular octagon of control points means every lobe is measured against the
+   same angular budget, so "spiky and lopsided" vs "round and full" becomes a
+   property of the data instead of a property of the vacated flank. It would NOT
+   be acceptable in the tree renderer, which is why that file is untouched.
    -------------------------------------------------------------------------- */
 const SECTORS = [
   { id: 'create.copy',        label: 'copy',      az: 15,  hue: 0xffb454 },
-  { id: 'create.images',      label: 'images',    az: 55,  hue: 0xff6ec7 },
-  { id: 'create.video',       label: 'video',     az: 95,  hue: 0xff5d73 },
-  { id: 'create.3d',          label: '3d',        az: 115, hue: 0xff8f4d },
-  { id: 'automate.workflows', label: 'workflows', az: 140, hue: 0x7ce65a },
-  { id: 'distribute.seo',     label: 'seo',       az: 185, hue: 0x35d0ba },
-  { id: 'distribute.geo',     label: 'geo',       az: 225, hue: 0x4aa8ff },
-  // build.no-code (az 270) and build.low-code (az 310) removed — see above.
-  { id: 'build.pro-code',     label: 'pro-code',  az: 350, hue: 0x6a8dff },
+  { id: 'create.images',      label: 'images',    az: 60,  hue: 0xff6ec7 },
+  { id: 'create.video',       label: 'video',     az: 105, hue: 0xff5d73 },
+  { id: 'create.3d',          label: '3d',        az: 150, hue: 0xff8f4d },
+  { id: 'automate.workflows', label: 'workflows', az: 195, hue: 0x7ce65a },
+  { id: 'distribute.seo',     label: 'seo',       az: 240, hue: 0x35d0ba },
+  { id: 'distribute.geo',     label: 'geo',       az: 285, hue: 0x4aa8ff },
+  // build.no-code and build.low-code removed — see above. Their old bearings
+  // (270, 310) are not "left empty" any more; the circle is re-divided by eight.
+  { id: 'build.pro-code',     label: 'pro-code',  az: 330, hue: 0x6a8dff },
 ].sort((a, b) => a.az - b.az);   // spline needs them in angular order
 
 const RING_N   = 96;    // resampled points per ring
@@ -635,17 +692,20 @@ const radiusOf = (c) => (c <= 0 ? CORE_R : CORE_R + Math.sqrt(c / MAX_CELL) * (M
 /* ==========================================================================
    2 · ring geometry — periodic Catmull-Rom BY ANGLE
    --------------------------------------------------------------------------
-   Sector bearings are unevenly spaced, and MORE so since no-code (270) and
-   low-code (310) were removed: the eight remaining sit at 15, 55, 95, 115, 140,
-   185, 225, 350, so intervals run from 20 deg (95->115) to 125 deg (225->350).
-   That is a 6:1 spread. Splining by array index would compress the wide gaps and
-   stretch the tight ones, putting lobe peaks off their true bearings — with a
-   125-deg interval next to a 20-deg one that error would be gross. So we
-   parameterise by ANGLE and wrap +-360, which is what makes the uneven compass
-   survivable at all. The remaining cost is honest and unavoidable: across the
-   125-deg interval there is no control point, so that whole flank is a single
-   Catmull-Rom span. It reads as one long smooth shoulder rather than the flat
-   dead zone it used to be, but it is interpolation, not measurement.
+   The eight sectors now sit at an exact 45 deg apart (15, 60, 105, 150, 195,
+   240, 285, 330 — see the SECTORS block for why the taxonomy bearings were
+   respaced). With uniform spacing, parameterising by angle and parameterising by
+   index are IDENTICAL, so this code is no longer load-bearing for correctness —
+   but it is kept, because it is what makes the spacing a free choice rather than
+   a constraint, and any future change to the bearings would silently break a
+   by-index spline.
+
+   Uniform control points also fix the Catmull-Rom behaviour: every span now has
+   the same angular budget, so no interval can bow further than another simply by
+   being wider. The old 125-deg geo->pro-code flank could bulge 5.6% past its
+   larger endpoint; measured after respacing the worst case is far smaller (see
+   the header). What remains true regardless: only the values AT the eight
+   bearings are measurement, everything between them is inference.
    ========================================================================== */
 function catmull(p0, p1, p2, p3, t) {
   const t2 = t * t, t3 = t2 * t;
@@ -781,16 +841,13 @@ frameAll();
    against black. This object is a large continuous surface, so that strength
    floods it — which is why the previous build ran 0.62 / 0.42.
 
-   NOW 0.94 / 0.32 by Walter's direct choice. Both moves push the same way (more
-   strength AND a lower threshold = more of the frame blooming), so this is
-   markedly hotter than the cautious build, not a re-balance of it.
-
-   MEASURED RESULT (see header for the full table): the sector colour key SURVIVES
-   — only 2.8% of lit pixels blow to white and every hue stays identifiable. The
-   old fear was wrong. The real cost is that lit area doubles, so glow halos
-   spread and the 19 stacked rosettes lose separation in the dense recent months.
-   Threshold is the lever for that, not strength: ?bloom=0.94&thresh=0.42 keeps
-   the brightness and gets the separation back.
+   NOW 0.84 / 0.76 by Walter's direct choice, after the 0.94/0.32 build was
+   measured to bleed the rosettes together. This is the SEPARATION setting: the
+   high threshold means only pixels already near-peak brightness enter the bloom
+   at all, so lobe dots and strong outlines still get their halo while the faint
+   near-core stretches and the skin gradient stay crisp. Strength barely matters
+   once the threshold is doing the gating, which is why it could come down.
+   Measured before/after table is in the header.
    ------------------------------------------------------------------------- */
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
@@ -1280,11 +1337,20 @@ const monLabel = (key) => {
 rows.forEach((r, i) => {
   // label every other month to avoid a cluttered ladder, but ALWAYS label the gap
   if (i % 2 !== 0 && r.present) return;
-  const sp = makeLabel(monLabel(r.key) + (r.present ? '' : '  · no data'), {
+  /* MONTH + YEAR ONLY, uniformly — no "· no data" suffix on the gap month.
+     Walter: "In the Date labels, all show just the month and year, remove 'no
+     data' add-on. No data is visualized already as a blank stem ring." Right:
+     2025-02 is drawn as a ring pinched to the core with no rosette, no spokes and
+     no lobe dots, so the axis text was restating what the geometry already says.
+     The label keeps its RED colour, which flags the month without spending words
+     on it; the explicit "— no data in log —" statement still lives in the numbers
+     panel, where a table row genuinely needs to say why it is empty. */
+  const sp = makeLabel(monLabel(r.key), {
     size: 34, col: r.present ? '#9fb2c8' : '#ff9d9d',
   });
   sp.position.set(MAX_R + 1.5, yOf(i), 0);
   sp.userData.axis = true;
+  sp.userData.text = monLabel(r.key);   // for headless label verification
   scene.add(sp); monthLabels.push(sp);
 });
 
@@ -1762,6 +1828,64 @@ window.__probe = () => ({
 // headless helpers for verification
 window.__play = () => document.getElementById('bPlay').click();
 window.__setSpeed = (s) => { const el = document.getElementById('cutSpeed'); el.value = String(s); el.dispatchEvent(new Event('change')); };
+
+/* Bearing + spline audit. Reports the respaced azimuths, the intervals between
+   them, and the worst FICTIONAL RADIUS in the object: for every month and every
+   96-point sample, how far the Catmull-Rom bows past the larger of the two
+   control points bracketing that sample. That number is interpolation, never
+   measurement, and it is the honest cost of a smooth ring. */
+window.__sectorInfo = () => {
+  const az = SECTORS.map((s) => s.az);
+  const intervals = az.map((a, i) => {
+    const b = az[(i + 1) % az.length];
+    return Math.round(((b - a) + 360) % 360);
+  });
+  let worst = { over: 0 };
+  rows.forEach((r, mi) => {
+    if (!r.present) return;
+    const radii = monthRings[mi];
+    const cp = r.commits.map(radiusOf);
+    for (let k = 0; k < RING_N; k++) {
+      const a = (k / RING_N) * 360;
+      let i = 0; while (i < az.length && az[i] <= a) i++;
+      const i1 = (i - 1 + az.length) % az.length, i2 = i % az.length;
+      const hi = Math.max(cp[i1], cp[i2]);
+      const over = (radii[k] - hi) / (hi || 1);
+      if (over > worst.over) worst = {
+        over: +(over * 100).toFixed(2), month: r.key, az: Math.round(a),
+        r: +radii[k].toFixed(3), betweenSectors: [SECTORS[i1].label, SECTORS[i2].label],
+        endpoints: [+cp[i1].toFixed(2), +cp[i2].toFixed(2)],
+      };
+    }
+  });
+  return {
+    sectors: SECTORS.map((s) => s.label + '@' + s.az),
+    intervals, minInterval: Math.min(...intervals), maxInterval: Math.max(...intervals),
+    worstOvershootPct: worst,
+  };
+};
+
+// The exact strings drawn on the vertical axis, so "no suffix" is verified
+// against the rendered sprites rather than against the source.
+window.__labelTexts = () => monthLabels.map((sp) => sp.userData.text);
+
+// Camera pokes for the top-down compass shot.
+let __savedView = null;
+window.__topDown = () => window.__topDownTight(34);
+window.__topDownTight = (dist = 34, atY = TOP_Y * 0.5) => {
+  __savedView = { p: camera.position.clone(), t: controls.target.clone(), spin: controls.autoRotate };
+  controls.autoRotate = false;
+  controls.target.set(0, atY, 0);
+  camera.position.set(0.001, atY + dist, 0.001);
+  controls.update();
+};
+window.__restoreView = () => {
+  if (!__savedView) return;
+  camera.position.copy(__savedView.p);
+  controls.target.copy(__savedView.t);
+  controls.autoRotate = __savedView.spin;
+  controls.update();
+};
 </script>
 </body>
 </html>
