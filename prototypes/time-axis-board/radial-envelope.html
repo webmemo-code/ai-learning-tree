@@ -88,12 +88,62 @@ HOW THE THREE HARD PROBLEMS WERE SOLVED
      3-commit months visible without letting 2026-07's 155 swallow the page.
      Stated on-screen in the panel.
 
+EIGHT SECTORS, NOT TEN (the no-code correction)
+  Earlier builds drew all ten taxonomy sectors and treated the permanently-flat
+  no-code/low-code flank as "honest emptiness". Walter corrected the premise:
+
+    "I started with a misconception. The whole point of no-code is to avoid the
+     dev setup complexity, e.g. GitHub, so it will obviously never show as a
+     commit and neither does low-code. Let's remove the two categories
+     altogether, they are meaningless in this visualization."
+
+  Right, and stronger than "empty in this dataset": these sectors are
+  UNOBSERVABLE BY CONSTRUCTION here. Their defining property is not touching a
+  dev toolchain, so a commit-derived view can never see them, no matter how much
+  no-code work happens. Drawing a flat flank was a measurement claim about
+  something the instrument cannot measure.
+
+  The list of eight is HARDCODED IN THIS FILE. generator/taxonomy.mjs is NOT
+  touched: it is append-only and its array index IS the renderer's aSector, so
+  deleting indices 6 and 7 would renumber pro-code and 3d and invalidate every
+  tree.json. That needs a default-v2 taxonomy plus a migration — a separate call.
+
+  Azimuths stay at their taxonomy values, so 270 and 310 are now simply vacant
+  and geo (225) -> pro-code (350) is a 125-degree interval. See the weakness note
+  below for what that costs.
+
 HONEST WEAKNESSES
-  - Two of the ten taxonomy sectors (build.no-code, build.low-code) have ZERO
-    events EVER. The surface is permanently flat across roughly 100 degrees of
-    compass. That is truthful, and the page labels those bearings "no events
-    ever" rather than hiding them — but it does mean a big smooth dead zone
-    dominates one flank and unbalances the object.
+  - The 125-degree geo(225)->pro-code(350) interval is the largest by far (next
+    widest is 45). A third of the compass is now one interpolated flank with no
+    control point in it. MEASURED, rather than feared: because the spline is
+    parameterised by ANGLE, this is far milder than expected. Sampling the gap
+    interval across the months that stress it most:
+
+      2026-07  geo 4.20 / pro 3.84  -> gap peaks 4.43 at az 262   (+5.6%)
+      2026-04  geo 4.03 / pro 0.93  -> gap peaks 4.03 at az 229   (+0.0%)
+      2025-11  geo 0.30 / pro 3.07  -> gap peaks 3.06 at az 349   (-0.2%)
+      2026-06  geo 2.52 / pro 0.30  -> gap peaks 2.51 at az 229   (-0.2%)
+
+    So there is NO ugly flat flank and essentially no overshoot in the general
+    case: whenever one endpoint is large and the other small the interval just
+    ramps monotonically between them, which is the right behaviour. The single
+    exception is 2026-07, the one month where geo (155) and pro-code (128) are
+    BOTH near-maximal; there the curve bows 5.6% past the larger endpoint, at
+    az 262 — inside the vacated no-code direction. That bulge is interpolation,
+    not measurement, and it is the largest fictional radius in the object. It is
+    small enough not to read as a lobe (no spoke, no dot, no label sits there,
+    and the rosette geometry is what the eye tracks) but it is real and it is
+    stated here rather than hidden.
+  - Consequence for the form: removing the two sectors DID close the envelope —
+    the old ~100-degree dead flat flank is gone and the cross-sections are now
+    convex-ish blobs rather than a shape with a bite out of it. But "closed" is
+    not "even": the eight bearings still cluster in the 15-225 half (seven of
+    them) with one lone control point at 350, so the object is denser on one
+    side by construction. Redistributing the eight at 45-degree spacing would
+    make a genuinely regular octagon, at the cost of azimuth no longer matching
+    the taxonomy's real growth directions (and no longer matching the tree
+    renderer). NOT done unilaterally — that is a call about whether this page
+    owes its compass to the taxonomy or to the form.
   - The sector x month grid is only 29% filled. Even with smoothing, most
     rings are a couple of lobes on a core, so a lot of the surface is floor
     rather than data.
@@ -143,12 +193,45 @@ TRANSPARENCY + BLOOM (the lantern pass)
      honest geometry on screen.
 
   Bloom is EffectComposer/RenderPass/UnrealBloomPass/OutputPass, configured
-  from prototypes/acacia-sketch/index.html (0.9 / 0.55 / 0.6) and then dialled
-  DOWN. Hard-won lesson from a sibling prototype: bloom is multiplicative on
-  alpha, so a skin bright enough to see is a skin bright enough to wash the
-  whole frame to white and destroy the sector colour key. The defaults here
-  (skin alpha 0.13, bloom 0.62, threshold 0.42) are picked so the ten hues
-  stay TELLABLE APART under glow. If you raise opacity, lower bloom.
+  from prototypes/acacia-sketch/index.html (0.9 / 0.55 / 0.6).
+
+  DEFAULTS CHANGED after Walter saw the build ("It looks interesting, we can
+  optimize from here") and chose by eye: skin alpha 0.17, bloom 0.94,
+  threshold 0.32, rings on. The previous build used 0.13 / 0.62 / 0.42
+  specifically to protect the sector colour key, so this is a deliberate move in
+  the opposite direction on all three axes at once, and it costs something —
+  see below. It is his call and it is one slider away from being undone;
+  ?opacity=0.13&bloom=0.62&thresh=0.42 restores the cautious look exactly.
+
+  WHAT THE HOT SETTINGS ACTUALLY COST — measured by sampling the rendered frame,
+  not guessed. Same view (?cut=19), old settings vs new, object region only:
+
+                        lit pixels   mean saturation   desaturated   blown white
+    0.13 / 0.62 / 0.42      66 420             0.287         18.8%         0.94%
+    0.17 / 0.94 / 0.32     137 861             0.203         39.6%         2.84%
+
+  Read that carefully, because the obvious worry turns out to be the WRONG one.
+  The hues are NOT lost: every sector is still individually identifiable, mean
+  saturation is still 0.20, and only 2.8% of lit pixels are actually blown to
+  white. The colour key survives. The prediction that ten-hues-bloom-to-one-white
+  did not come true at these numbers.
+
+  What DID happen is different and less obvious: the lit area slightly more than
+  DOUBLED. That is glow spreading, not new information. Every rosette outline,
+  spoke and lobe dot now carries a halo, so lines that were 1px of saturated
+  colour are now a few px of colour surrounded by a wash, and the share of
+  low-saturation pixels doubles from 19% to 40%. The cost is not hue, it is
+  SEPARATION: adjacent rosettes bleed into each other, and in the dense recent
+  months (2025-11 onward, where rings are ~1 unit apart and each carries 4-6
+  lobes) the stack reads as one bright column rather than as countable slices.
+  Since "you can see 19 stacked cross-sections" is precisely what stopped this
+  object reading as a vase, that is the thing to watch.
+
+  It is genuinely prettier and the silhouette is stronger. Whether the trade is
+  worth it is Walter's call, and both sliders are right there. Worth trying if
+  the density bothers him: keep bloom 0.94 but put the threshold BACK up to ~0.42
+  so only the lobe peaks glow, which restores separation without losing the
+  brighter look — ?bloom=0.94&thresh=0.42.
 
 USAGE
   Must be SERVED (it fetches ../../data/growth-log.jsonl). From the repo root:
@@ -159,6 +242,7 @@ USAGE
           ?opacity=<0..1> skin alpha (0 = rosettes only, the "drop the solid" test).
           ?bloom=<0..2>   bloom strength.  ?thresh=<0..1> bloom threshold.
           ?skin=0         start with the skin off.  ?rose=0 start with rosettes off.
+          ?rings=0        start with the loft rings off (they are ON by default).
 ================================================================================
 -->
 <html lang="en">
@@ -206,6 +290,13 @@ USAGE
   #cutbar label { font-size: 11px; color: #9fb2c8; white-space: nowrap; }
   #cutMonth { font-size: 12.5px; color: #eef4fb; min-width: 74px; font-variant-numeric: tabular-nums; }
   #cutRange { flex: 1; accent-color: #4fd8c4; }
+  #bPlay { flex: none; min-width: 72px; text-align: left; }
+  #bPlay[aria-pressed="true"] { background: rgba(79, 216, 196, 0.34); border-color: rgba(120, 240, 220, 0.6); }
+  #cutSpeed {
+    font: inherit; font-size: 11px; padding: 3px 4px; border-radius: 6px; flex: none; cursor: pointer;
+    color: #eaf2fb; background: rgba(90, 140, 220, 0.22); border: 1px solid rgba(140, 180, 240, 0.35);
+  }
+  #cutSpeed option { background: #0a1220; color: #eaf2fb; }
   #cutInfo { font-size: 11px; color: #8fa3ba; margin-top: 6px; min-height: 15px; line-height: 1.45; }
   #cutInfo b { color: #cfe0f2; }
   #cutInfo .gap { color: #ff9d9d; }
@@ -269,7 +360,7 @@ USAGE
     <button id="bCut" type="button" aria-pressed="false" title="Slice the solid at one month to read its rosette">&#9986; Cut view</button>
     <button id="bCore" type="button" aria-pressed="true" title="Show the baseline core radius that zero-commit sectors rest on">&#9711; Core</button>
     <button id="bSpin" type="button" aria-pressed="true">&#9199; Orbit</button>
-    <button id="bWire" type="button" aria-pressed="false" title="Show the 96-point rings the surface is lofted through">&#9638; Rings</button>
+    <button id="bWire" type="button" aria-pressed="true" title="Show the 96-point rings the surface is lofted through">&#9638; Rings</button>
     <button id="bFrame" type="button" title="Reset the camera to frame the whole solid">&#8982; Fit</button>
   </div>
   <div class="btnrow" style="margin-top:6px">
@@ -280,22 +371,24 @@ USAGE
   <div id="look">
     <div class="sl">
       <label for="sOpacity">skin alpha</label>
-      <input id="sOpacity" type="range" min="0" max="0.6" step="0.005" value="0.13">
-      <span class="v" id="vOpacity">.13</span>
+      <input id="sOpacity" type="range" min="0" max="0.6" step="0.005" value="0.17">
+      <span class="v" id="vOpacity">.17</span>
     </div>
     <div class="sl">
       <label for="sBloom">bloom</label>
-      <input id="sBloom" type="range" min="0" max="2" step="0.02" value="0.62">
-      <span class="v" id="vBloom">.62</span>
+      <input id="sBloom" type="range" min="0" max="2" step="0.02" value="0.94">
+      <span class="v" id="vBloom">.94</span>
     </div>
     <div class="sl">
       <label for="sThresh">threshold</label>
-      <input id="sThresh" type="range" min="0" max="1" step="0.01" value="0.42">
-      <span class="v" id="vThresh">.42</span>
+      <input id="sThresh" type="range" min="0" max="1" step="0.01" value="0.32">
+      <span class="v" id="vThresh">.32</span>
     </div>
     <div class="note">
       Alpha 0 = rosettes alone. Bloom is multiplicative on alpha: raise one, lower the
-      other, or the ten sector hues wash to a single white.
+      other, or the eight sector hues wash to a single white. Current defaults are
+      deliberately hot (.17 / .94 / .32) — pull bloom back toward .62 if the hues stop
+      telling apart.
     </div>
   </div>
 </div>
@@ -315,7 +408,10 @@ USAGE
     <b>sqrt scale</b> on radius: 155 commits is ~12x the radius of 1, not 155x.<br>
     <b>Core radius</b> is a drawn floor, not data — every zero rests on it.<br>
     <b>2025-02</b> is missing from the log entirely: a real pinch, never interpolated.<br>
-    <b>no-code / low-code</b> have zero events ever — permanently flat flank.<br>
+    <b>8 sectors, not 10.</b> no-code and low-code are dropped from this page: work
+    that avoids the dev setup never produces a commit, so a commit-derived view
+    cannot observe them at all. Their bearings (270&deg;, 310&deg;) are left empty,
+    which is why one flank is a long smooth sweep.<br>
     <b>Rosettes are the measurement.</b> Their outlines and lobe dots sit on true
     radii at true month heights. The skin between two rosettes is Catmull-Rom
     inference — which is why the skin is the faint thing and the rosettes glow.
@@ -324,9 +420,15 @@ USAGE
 
 <div class="panel" id="cutbar">
   <div class="row">
+    <button id="bPlay" type="button" title="Sweep the cut plane through all 20 months. Any drag of the slider cancels it.">&#9654; Play</button>
     <label for="cutRange">Cut plane</label>
     <span id="cutMonth">—</span>
     <input id="cutRange" type="range" min="0" max="18" step="1" value="18">
+    <select id="cutSpeed" title="Seconds for the whole Dec '24 → Jul '26 sweep">
+      <option value="8">8s</option>
+      <option value="12" selected>12s</option>
+      <option value="20">20s</option>
+    </select>
   </div>
   <div id="cutInfo"></div>
 </div>
@@ -366,12 +468,22 @@ const numParam = (name, def, lo, hi) => {
   const v = parseFloat(PARAMS.get(name));
   return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : def;
 };
+/* Defaults revised after Walter saw the glass+rosettes+bloom build ("It looks
+   interesting, we can optimize from here") and picked these four numbers by eye:
+   alpha .17 / bloom .94 / threshold .32 / rings ON. This reverses the earlier
+   build's caution (0.13 / 0.62 / 0.42, held down to protect the sector colour
+   key) and pushes all three the same way — a LOWER threshold admits more of the
+   frame into the bloom, so it compounds the higher strength rather than
+   offsetting it. Measured outcome is in the header: the colour key survives
+   fine, but lit area doubles and the stacked rosettes lose separation.
+   ?bloom=0.62&thresh=0.42 restores the old look exactly. */
 const LOOK = {
-  opacity: numParam('opacity', 0.13, 0, 0.6),   // per-face skin alpha, DELIBERATELY low
-  bloom:   numParam('bloom',   0.62, 0, 2),
-  thresh:  numParam('thresh',  0.42, 0, 1),
+  opacity: numParam('opacity', 0.17, 0, 0.6),   // per-face skin alpha
+  bloom:   numParam('bloom',   0.94, 0, 2),
+  thresh:  numParam('thresh',  0.32, 0, 1),
   skin:    PARAMS.get('skin') !== '0',
   rose:    PARAMS.get('rose') !== '0',
+  rings:   PARAMS.get('rings') !== '0',        // the 96-point loft rings — ON by default now
 };
 
 // savanna-night palette, lifted from prototypes/acacia-sketch/index.html
@@ -380,9 +492,43 @@ const PAL = {
   star: 0xe8ecff, bark: 0x6b5a48, dead: 0x5c6672, ink: 0xcfd8e3, dim: 0x7f93aa,
 };
 
-// taxonomy default-v1, mirrored from generator/taxonomy.mjs (renderers don't import it).
-// All TEN sectors are here on purpose: no-code and low-code are permanently empty and
-// must stay as real control points so their flank reads as deliberately flat, not absent.
+/* --------------------------------------------------------------------------
+   SECTORS — EIGHT, not the taxonomy's ten. Deliberate, local to this prototype.
+   --------------------------------------------------------------------------
+   build.no-code and build.low-code are GONE from this page. Walter's correction,
+   which is conceptual and not a data observation:
+
+     "I started with a misconception. The whole point of no-code is to avoid the
+      dev setup complexity, e.g. GitHub, so it will obviously never show as a
+      commit and neither does low-code. Let's remove the two categories
+      altogether, they are meaningless in this visualization."
+
+   That is the right call and it is stronger than "they happen to be empty".
+   These two sectors are UNOBSERVABLE BY CONSTRUCTION in a commit-derived view:
+   the defining property of no-code/low-code work is that it does not go through
+   a git repo, so a commit log can never contain evidence of it. Drawing them as
+   permanently-flat control points was not honest emptiness, it was a category
+   error — a measurement claim about something the instrument cannot see. A
+   future no-code panel would need a different data source entirely (tool
+   telemetry, manual logging), not this one.
+
+   SCOPE — this list is HARDCODED HERE and generator/taxonomy.mjs is NOT touched.
+   That file is explicitly append-only ("the array index is the sector's aSector
+   value in the renderer... Never reorder"). Deleting indices 6 and 7 there would
+   silently renumber build.pro-code (8->6) and create.3d (9->7) and invalidate
+   every tree.json ever generated. Dropping the two sectors for real needs a
+   default-v2 taxonomy plus a migration, which is a separate decision and not
+   this prototype's to make. So the eight live here, by value, on purpose.
+
+   AZIMUTHS ARE UNCHANGED from taxonomy default-v1. Removing az 270 and 310
+   leaves a 125-degree gap between geo (225) and pro-code (350). That gap is
+   kept because azimuth still means the real compass bearing of the taxonomy —
+   redistributing the eight evenly would close the form but break the
+   correspondence to the tree renderer's growth directions. The ring spline is
+   parameterised by ANGLE (see section 2), so the wide interval is interpolated
+   correctly rather than being compressed by index spacing; what it costs is one
+   long, smooth, low flank rather than the old flat dead flank.
+   -------------------------------------------------------------------------- */
 const SECTORS = [
   { id: 'create.copy',        label: 'copy',      az: 15,  hue: 0xffb454 },
   { id: 'create.images',      label: 'images',    az: 55,  hue: 0xff6ec7 },
@@ -391,8 +537,7 @@ const SECTORS = [
   { id: 'automate.workflows', label: 'workflows', az: 140, hue: 0x7ce65a },
   { id: 'distribute.seo',     label: 'seo',       az: 185, hue: 0x35d0ba },
   { id: 'distribute.geo',     label: 'geo',       az: 225, hue: 0x4aa8ff },
-  { id: 'build.no-code',      label: 'no-code',   az: 270, hue: 0xb59aff },
-  { id: 'build.low-code',     label: 'low-code',  az: 310, hue: 0x8f7bff },
+  // build.no-code (az 270) and build.low-code (az 310) removed — see above.
   { id: 'build.pro-code',     label: 'pro-code',  az: 350, hue: 0x6a8dff },
 ].sort((a, b) => a.az - b.az);   // spline needs them in angular order
 
@@ -490,10 +635,17 @@ const radiusOf = (c) => (c <= 0 ? CORE_R : CORE_R + Math.sqrt(c / MAX_CELL) * (M
 /* ==========================================================================
    2 · ring geometry — periodic Catmull-Rom BY ANGLE
    --------------------------------------------------------------------------
-   Sector bearings are unevenly spaced (15..350 deg, with a 80-deg jump from
-   225 to 270 and a 40-deg one either side). Splining by array index would
-   compress the wide gaps and stretch the tight ones, putting lobe peaks off
-   their true bearings. So we parameterise by ANGLE and wrap +-360.
+   Sector bearings are unevenly spaced, and MORE so since no-code (270) and
+   low-code (310) were removed: the eight remaining sit at 15, 55, 95, 115, 140,
+   185, 225, 350, so intervals run from 20 deg (95->115) to 125 deg (225->350).
+   That is a 6:1 spread. Splining by array index would compress the wide gaps and
+   stretch the tight ones, putting lobe peaks off their true bearings — with a
+   125-deg interval next to a 20-deg one that error would be gross. So we
+   parameterise by ANGLE and wrap +-360, which is what makes the uneven compass
+   survivable at all. The remaining cost is honest and unavoidable: across the
+   125-deg interval there is no control point, so that whole flank is a single
+   Catmull-Rom span. It reads as one long smooth shoulder rather than the flat
+   dead zone it used to be, but it is interpolation, not measurement.
    ========================================================================== */
 function catmull(p0, p1, p2, p3, t) {
   const t2 = t * t, t3 = t2 * t;
@@ -625,13 +777,20 @@ frameAll();
 /* ---- bloom pipeline ------------------------------------------------------
    Structure copied from prototypes/acacia-sketch/index.html (which took it from
    ai-periodic-cube's bloomComposer): RenderPass -> UnrealBloomPass -> OutputPass.
-   Acacia's numbers are 0.9 / 0.55 / 0.6. Those are tuned for sparse bright
-   fireflies against black. This object is a large continuous surface, so the
-   same strength floods it; strength comes down to 0.62 and the THRESHOLD comes
-   down too (0.42), which sounds backwards but is not — a lower threshold with a
-   lower strength glows the mid-tone lobes gently instead of blowing out only the
-   peaks into white blobs. Keeping the peaks distinguishable is the whole game:
-   ten sector hues that all bloom to white are no colour key at all.
+   Acacia's numbers are 0.9 / 0.55 / 0.6, tuned for sparse bright fireflies
+   against black. This object is a large continuous surface, so that strength
+   floods it — which is why the previous build ran 0.62 / 0.42.
+
+   NOW 0.94 / 0.32 by Walter's direct choice. Both moves push the same way (more
+   strength AND a lower threshold = more of the frame blooming), so this is
+   markedly hotter than the cautious build, not a re-balance of it.
+
+   MEASURED RESULT (see header for the full table): the sector colour key SURVIVES
+   — only 2.8% of lit pixels blow to white and every hue stays identifiable. The
+   old fear was wrong. The real cost is that lit area doubles, so glow halos
+   spread and the 19 stacked rosettes lose separation in the dense recent months.
+   Threshold is the lever for that, not strength: ?bloom=0.94&thresh=0.42 keeps
+   the brightness and gets the separation back.
    ------------------------------------------------------------------------- */
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
@@ -910,7 +1069,7 @@ function buildSurface() {
   wireMesh = new THREE.LineSegments(wg, new THREE.LineBasicMaterial({
     color: PAL.star, transparent: true, opacity: 0.3,
   }));
-  wireMesh.visible = false;
+  wireMesh.visible = LOOK.rings;   // ON by default since the revised look
   surfGroup.add(wireMesh);
 }
 buildSurface();
@@ -1229,6 +1388,20 @@ function buildCut(i) {
   cutGroup.visible = cutOn;
 }
 
+/* Camera framing for the cut, expressed as a GOAL rather than applied directly,
+   so the Play sweep can ease toward it instead of snapping (see applyCut). */
+const camGoal = { y: 0, dist: 20 };
+function applyCamGoal(k) {
+  controls.target.y += (camGoal.y - controls.target.y) * k;
+  controls.target.x = 0; controls.target.z = 0;
+  const dir = camera.position.clone().sub(controls.target);
+  const d = dir.length() || 1;
+  dir.multiplyScalar(1 / d);
+  const nd = d + (camGoal.dist - d) * k;
+  camera.position.copy(controls.target).add(dir.multiplyScalar(nd));
+  controls.update();
+}
+
 function applyCut() {
   clipPlane.constant = yOf(cutIndex) + 0.001;
   const planes = cutOn ? [clipPlane] : [];
@@ -1251,11 +1424,14 @@ function applyCut() {
   // column would leave the remaining slice as a speck at the bottom of the screen.
   if (cutOn) {
     const visTop = yOf(cutIndex);
-    controls.target.set(0, visTop * 0.55, 0);
-    const want = Math.max(9, visTop * 1.5 + MAX_R * 2.4);
-    const dir = camera.position.clone().sub(controls.target).normalize();
-    camera.position.copy(controls.target).add(dir.multiplyScalar(want));
-    controls.update();
+    camGoal.y = visTop * 0.55;
+    camGoal.dist = Math.max(9, visTop * 1.5 + MAX_R * 2.4);
+    // While PLAYING, do not teleport: a hard reframe every month step reads as a
+    // jump-cut roughly twice a second and wrecks the continuity that is the whole
+    // reason to animate. The loop eases toward camGoal instead. A single manual
+    // drag of the slider still snaps, because there is nothing to be continuous
+    // with and lag would just feel unresponsive.
+    if (!playing) applyCamGoal(1);
   }
   syncCutUI();
 }
@@ -1378,14 +1554,85 @@ document.getElementById('bSpin').addEventListener('click', () => {
   controls.autoRotate = !controls.autoRotate; setPressed('bSpin', controls.autoRotate);
 });
 document.getElementById('bWire').addEventListener('click', () => {
-  wireMesh.visible = !wireMesh.visible; setPressed('bWire', wireMesh.visible);
+  LOOK.rings = !LOOK.rings;
+  wireMesh.visible = LOOK.rings; setPressed('bWire', LOOK.rings);
+  pushLookURL();
 });
 document.getElementById('cutRange').addEventListener('input', (e) => {
+  stopPlay();                       // manual drag always wins over playback
   cutIndex = Number(e.target.value);
   if (!cutOn) { cutOn = true; setPressed('bCut', true); }
   applyCut();
 });
 document.getElementById('cutRange').max = String(rows.length - 1);
+
+/* ==========================================================================
+   9b · PLAY — sweep the cut plane through time
+   --------------------------------------------------------------------------
+   The cut readout is where the asymmetry story actually reads (one rosette at a
+   time, with the resultant arrow drawn on the plane), but you had to drag for it.
+   Play walks the plane Dec '24 -> Jul '26 so the shape change tells itself.
+
+   STOPS AT THE END, does not loop. The finding is DIRECTIONAL — spiky/lopsided
+   base becoming rounder/more distributed top — and a loop snapping back to
+   December destroys exactly that reading, turning a trend into a flicker. It also
+   leaves you parked on 2026-07, the richest cross-section, which is where you
+   want to be when it finishes. Press Play again to replay from the start.
+
+   Driven off the EXISTING setAnimationLoop tick (section 10), not a second timer:
+   one clock, and it cannot drift from the render.
+
+   Motion is CONTINUOUS in month-space but the cut plane can only sit on real
+   month rings, so we advance a float and rebuild only when the rounded index
+   changes. Rebuilding buildCut() 60x a second would be pointless churn — 20
+   rebuilds over the whole sweep is the honest resolution of the data anyway.
+   ========================================================================== */
+let playing = false;
+let playPos = 0;              // fractional month index while playing
+let playSecs = 12;            // whole-sweep duration in seconds
+
+function setPlayLabel() {
+  const b = document.getElementById('bPlay');
+  b.innerHTML = playing ? '&#10074;&#10074; Pause' : '&#9654; Play';
+  b.setAttribute('aria-pressed', String(playing));
+}
+function stopPlay() {
+  if (!playing) return;
+  playing = false; setPlayLabel();
+}
+function startPlay() {
+  // restart from the beginning if we are parked at (or past) the end
+  playPos = (cutIndex >= rows.length - 1) ? 0 : cutIndex;
+  cutIndex = Math.round(playPos);
+  if (!cutOn) { cutOn = true; setPressed('bCut', true); }   // Play implies the cut view
+  playing = true; setPlayLabel();
+  applyCut();
+}
+document.getElementById('bPlay').addEventListener('click', () => {
+  if (playing) stopPlay(); else startPlay();
+});
+document.getElementById('cutSpeed').addEventListener('change', (e) => {
+  playSecs = Number(e.target.value) || 12;
+});
+// Turning the cut view off by hand also ends playback — otherwise the plane
+// keeps marching invisibly and Play looks broken when you turn it back on.
+document.getElementById('bCut').addEventListener('click', () => { if (!cutOn) stopPlay(); });
+
+// called once per rendered frame from the animation loop
+function tickPlay(dt) {
+  if (!playing) return;
+  const span = rows.length - 1;
+  playPos += (span / playSecs) * dt;
+  if (playPos >= span) {
+    playPos = span;
+    playing = false; setPlayLabel();          // stop at the end, see comment above
+  }
+  const want = Math.round(playPos);
+  if (want !== cutIndex) { cutIndex = want; applyCut(); }
+  else document.getElementById('cutRange').value = String(cutIndex);
+  // ease the framing toward the goal applyCut() set (frame-rate independent)
+  applyCamGoal(1 - Math.pow(0.06, dt));
+}
 
 document.getElementById('bFrame').addEventListener('click', frameAll);
 
@@ -1398,8 +1645,9 @@ function pushLookURL() {
   p.set('opacity', LOOK.opacity.toFixed(3));
   p.set('bloom', LOOK.bloom.toFixed(2));
   p.set('thresh', LOOK.thresh.toFixed(2));
-  if (LOOK.skin) p.delete('skin'); else p.set('skin', '0');
-  if (LOOK.rose) p.delete('rose'); else p.set('rose', '0');
+  if (LOOK.skin)  p.delete('skin');  else p.set('skin', '0');
+  if (LOOK.rose)  p.delete('rose');  else p.set('rose', '0');
+  if (LOOK.rings) p.delete('rings'); else p.set('rings', '0');
   history.replaceState(null, '', location.pathname + '?' + p.toString());
 }
 
@@ -1422,6 +1670,8 @@ function applyLook(push = true) {
   document.getElementById('sThresh').value = String(LOOK.thresh);
   setPressed('bSkin', LOOK.skin);
   setPressed('bRose', LOOK.rose);
+  setPressed('bWire', LOOK.rings);
+  if (wireMesh) wireMesh.visible = LOOK.rings;
   if (push) pushLookURL();
 }
 
@@ -1464,7 +1714,18 @@ applyCut();
 /* ==========================================================================
    10 · loop
    ========================================================================== */
+let lastT = performance.now();
 renderer.setAnimationLoop(() => {
+  const now = performance.now();
+  // Clamp dt: a backgrounded tab returns a multi-second delta and would teleport
+  // the cut plane to the end the moment you look at it again. 0.25s (= 4fps) is
+  // the ceiling rather than something tighter because the clamp silently SLOWS
+  // playback on any machine whose frames are longer than it — measured on a
+  // SwiftShader software renderer at ~2fps, a 0.1 clamp stretched the 12s sweep
+  // to roughly a minute. Anything above 4fps now plays at true wall-clock speed.
+  const dt = Math.min(0.25, (now - lastT) / 1000);
+  lastT = now;
+  tickPlay(dt);
   controls.update();
   // keep month labels off the far side of the solid so the ladder stays readable
   const camAz = Math.atan2(camera.position.z, camera.position.x);
@@ -1488,9 +1749,19 @@ window.__probe = () => ({
   look: {
     opacity: LOOK.opacity, bloom: bloomPass.strength, thresh: bloomPass.threshold,
     skin: surfGroup.visible, rose: roseGroup.visible,
+    rings: wireMesh ? wireMesh.visible : null,
+    ringsPressed: document.getElementById('bWire').getAttribute('aria-pressed'),
     skinAlphaUniform: skinUniforms.uOpacity.value,
   },
+  cut: { on: cutOn, index: cutIndex, month: rows[cutIndex].key,
+         info: document.getElementById('cutInfo').textContent,
+         monthLabel: document.getElementById('cutMonth').textContent },
+  play: { playing, pos: Number(playPos.toFixed(3)), secs: playSecs,
+          label: document.getElementById('bPlay').textContent.trim() },
 });
+// headless helpers for verification
+window.__play = () => document.getElementById('bPlay').click();
+window.__setSpeed = (s) => { const el = document.getElementById('cutSpeed'); el.value = String(s); el.dispatchEvent(new Event('change')); };
 </script>
 </body>
 </html>
