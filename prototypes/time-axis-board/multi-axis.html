@@ -2723,6 +2723,77 @@ const QONE_DOM = QONE_SHARE.map((sh) => {
 });
 const QONE_OUTER = QONE.maxSpan + QONE.gap + QONE.haloMax + 1.15;
 
+/* --------------------------------------------------------------------------
+   §QSCAFF — THE SCAFFOLDING IS SIZED BY THE QUARTER IT DESCRIBES.
+   --------------------------------------------------------------------------
+   Walter, third report on the same corner of the object: "The wedges now point
+   in the right direction, but the stray label on the ground persists."
+
+   Two earlier diagnoses were wrong and are recorded so they are not retried.
+   (1) "2024Q4 collapses to minSpan" — false, its span is 1.196, comfortably
+   above the 0.95 floor. (2) "QY(0)=0 puts it on the ground plane" — true, and
+   §QLIFT fixed it, but lifting the ladder by 0.57 addressed HEIGHT when the
+   defect is FOOTPRINT. It helped and it did not cure.
+
+   The actual defect is a MISMATCH OF WEIGHT between a quarter's measurement and
+   a quarter's decoration. Every per-quarter mark that is not itself a
+   measurement was drawn at a CONSTANT size taken from the BIGGEST quarter:
+
+     tick ring radius   QONE.maxSpan + gap + haloMax + 0.4  = 5.87, all eight
+     ladder label x     QONE_OUTER + 0.55                   = 6.62, all eight
+     ladder label size  28px                                        all eight
+
+   For 2026Q2 (477 commits, span 4.05, halo out to 5.17) a 5.87 ring hugs the
+   box and reads as that box's own base line. For 2024Q4 (3 commits, span 1.196,
+   halo out to 1.59) the SAME 5.87 ring stands off by 4.3 units of empty floor
+   and the SAME label sits 5.0 units past the last thing it could be labelling.
+   The quarter's own drawing is three commits' worth; its scaffolding is four
+   hundred and seventy-seven commits' worth. So the eye does the only reasonable
+   thing with a big empty arc and a bright caption and nothing in between, and
+   reads "a stray label on the ground" — which is precisely what it is.
+
+   THE RULE: every per-quarter mark that annotates a box is anchored to THAT
+   BOX'S OWN OUTER EDGE, and its ink is scaled by that box's own size. Nothing
+   here keys off the index, so it is general — a quarter is quiet because it is
+   small, not because it is at the bottom. If 2024Q4 grew to 400 commits its
+   scaffolding would grow with it, and if 2026Q2 shrank its scaffolding would
+   shrink. Deliberately NOT a hiding rule: the ring is still drawn, the label is
+   still drawn, still says "(1 mo)", still names 3 commits on the probe and in
+   the table. The quarter is not concealed, it is put in proportion.
+
+   WHY THE SPAN AND NOT THE EFFORT. Span is already sqrt(effort) with the
+   legibility floor applied — it IS the quarter's drawn size. Keying the
+   scaffolding to the drawn size rather than to the raw count keeps decoration
+   and measurement in step by construction, including through the floor: a
+   quarter that got floored up to stay visible also gets its scaffolding floored
+   up, so it never ends up with a box it cannot annotate. */
+// Each quarter's own outer edge: box, clear air, and its own halo. This is the
+// last radius at which anything belonging to the quarter is actually drawn.
+const qoneEdge = (qi) => qoneSpan(QONE_EFF[qi]) + QONE.gap
+  + (QONE_GHOST[qi] > 0 ? qoneHalo(QONE_GHOST[qi]) : 0);
+// The tick ring sits just outside that edge by a CONSTANT margin, so the ring
+// always reads as this box's base line and can never become a free-standing
+// circle on the floor. The margin is constant, not scaled, so the ring is not a
+// second (redundant, misreadable) encoding of effort — it is a fixed offset from
+// a mark that already encodes it.
+const QSCAFF_MARGIN = 0.40;
+const qoneTickR = (qi) => qoneEdge(qi) + QSCAFF_MARGIN;
+/* Ink weight in [0,1], from the quarter's drawn size against the largest. The
+   biggest quarter keeps today's full-strength scaffolding; smaller ones fade
+   toward a floor that is still plainly legible. sqrt again so the fade is gentle
+   — this is emphasis, not another quantity, and it must never be read as one. */
+const QSCAFF_EDGE_MAX = Math.max(1e-9, ...qrows.map((_, i) => qoneEdge(i)));
+const qoneWeight = (qi) => Math.sqrt(qoneEdge(qi) / QSCAFF_EDGE_MAX);
+/* Label size and opacity ride that weight between a floor and today's values.
+   The floor matters: 2024Q4 must stay READABLE at a normal orbit distance, so
+   the small end is 20px at 0.62 alpha — quieter than its neighbours, never
+   faint. */
+const qoneLabelSize = (qi) => Math.round(20 + qoneWeight(qi) * 8);   // 20..28
+const qoneLabelAlpha = (qi) => 0.62 + qoneWeight(qi) * 0.38;         // .62..1
+// Tick opacity likewise: the ring stays countable on every level, but a small
+// quarter's ring does not compete with a large quarter's box.
+const qoneTickAlpha = (qi) => 0.10 + qoneWeight(qi) * 0.12;          // .10...22
+
 /* An annular WEDGE footprint, extruded: the limb's quadrant of the box. Built in
    local space around the stem so a wedge is positioned by bearing alone and its
    inner point is exactly on the axis — the box is threaded ON the trunk, not
@@ -3160,17 +3231,32 @@ function buildQuarterOneBox() {
   }));
   edges.renderOrder = 3; markGrp.add(edges);
 
-  /* ---- one faint tick ring per quarter, so the eight levels stay countable ---- */
+  /* ---- one faint tick ring per quarter, so the eight levels stay countable.
+         PER-QUARTER RADIUS since §QSCAFF: the ring is that box's own base line,
+         sitting a constant margin outside the box's own halo, instead of one
+         5.87-unit circle repeated at all eight levels. At the top of the stack
+         this changes almost nothing (2026Q2's edge is 5.17, so its ring moves in
+         by 0.30); at the bottom it is the whole fix, pulling 2024Q4's ring from
+         5.87 down to 1.99 so it hugs the box it belongs to rather than standing
+         off across four units of empty floor.
+         Opacity rides the same weight, so a small quarter's ring is also quieter
+         in ink and not just smaller in extent. Built as ONE geometry still, with
+         per-vertex colour carrying the per-quarter alpha (the material's opacity
+         is 1.0 and additive blending does the rest), so the eight rings stay a
+         single draw call. ---- */
   {
     const tp = [], tcol = [];
-    const R = QONE.maxSpan + QONE.gap + QONE.haloMax + 0.4;
     qrows.forEach((qr, qi) => {
       const y = QY(qi), N = 72;
+      const R = qoneTickR(qi);
+      // pre-multiplied into the vertex colour: additive blending means a dimmer
+      // colour IS a fainter line, and that keeps all eight rings in one buffer
+      const a = qoneTickAlpha(qi);
       for (let k = 0; k < N; k++) {
         const a1 = (k / N) * Math.PI * 2, a2 = ((k + 1) / N) * Math.PI * 2;
         tp.push(Math.cos(a1) * R, y, Math.sin(a1) * R);
         tp.push(Math.cos(a2) * R, y, Math.sin(a2) * R);
-        for (let z = 0; z < 2; z++) tcol.push(0.30, 0.38, 0.50);
+        for (let z = 0; z < 2; z++) tcol.push(0.30 * a * 4.5, 0.38 * a * 4.5, 0.50 * a * 4.5);
       }
     });
     const tg = new THREE.BufferGeometry();
@@ -3197,17 +3283,35 @@ function buildQuarterOneBox() {
   /* ---- bearing spokes + the correspondence guides. THEY STILL APPLY: the
          composition is radial, so every limb still has a bearing and the
          sector->limb arcs still land on something real. Nothing is disabled for
-         this body — see §QBEAR-ONE. ---- */
-  QUADS.forEach((q) => {
-    const a = deg(q.az);
-    const lg = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(Math.cos(a) * CORE_R, 0.01, Math.sin(a) * CORE_R),
-      new THREE.Vector3(Math.cos(a) * (MAX_R + 0.7), 0.01, Math.sin(a) * (MAX_R + 0.7)),
-    ]);
-    grp.add(new THREE.Line(lg, new THREE.LineBasicMaterial({
-      color: q.hue, transparent: true, opacity: 0.2,
-    })));
-  });
+         this body — see §QBEAR-ONE.
+
+         MOVED OFF THE GROUND PLANE (§QSCAFF). These four ran at y=0.01 out to
+         MAX_R + 0.7 = 4.9, in full limb hue. Since §QLIFT the whole stack starts
+         at y=0.57, so the spokes were the ONLY thing drawn on the floor —  four
+         bright coloured rays under the smallest quarter, reaching three times
+         further than that quarter's box, and reading as ground decoration that
+         the bottom label appeared to belong to. Together with the old 5.87 tick
+         ring they are what made "a stray label on the ground".
+
+         They now sit at the BOTTOM QUARTER'S OWN LEVEL and stop at that
+         quarter's own tick ring, so a bearing ray is a bearing ray for the box
+         it passes under and not a floor graphic. Dimmer too: the wedges
+         themselves carry the bearings at full strength now that the labels are
+         mirrored correctly, so the spokes only have to hint. ---- */
+  {
+    const spokeY = QY(0);
+    const spokeR = qoneTickR(0);
+    QUADS.forEach((q) => {
+      const a = deg(q.az);
+      const lg = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(Math.cos(a) * CORE_R, spokeY, Math.sin(a) * CORE_R),
+        new THREE.Vector3(Math.cos(a) * spokeR, spokeY, Math.sin(a) * spokeR),
+      ]);
+      grp.add(new THREE.Line(lg, new THREE.LineBasicMaterial({
+        color: q.hue, transparent: true, opacity: 0.14,
+      })));
+    });
+  }
   grp.add(correspondenceGuides(QUADS));
 
   grp.userData = { model: 'Q', dimU, skinGrp: solidGrp, roseGrp: markGrp,
@@ -3599,8 +3703,25 @@ shown.forEach((m, i) => {
          rather than as one month of a bucket that holds three. */
       const partial = QPARTIAL.find((p) => p.quarter === qr.key);
       const txt = partial ? `${qr.key} (${partial.months} mo)` : qr.key;
-      const sp = makeLabel(txt, { size: 28, col: partial ? '#ffcf6e' : '#9fb2c8' });
-      sp.position.set(x + (env.userData.onebox ? QONE_OUTER : QOUTER) + 0.55, QY(qi), 0);
+      /* ANCHORED TO ITS OWN BOX (§QSCAFF), not to the stack's outer column.
+         Parked at the shared QONE_OUTER (6.62) every label sat at the radius of
+         the BIGGEST quarter, which for 2026Q2 is a caption beside its box and
+         for 2024Q4 was a caption five units out over empty floor with nothing
+         between it and the stem — the "stray label" itself. Riding each
+         quarter's own tick radius means a label is always the next thing
+         outboard of the box it names, at every size, so it cannot float free.
+         Size and alpha ride the same weight so a three-commit quarter is
+         labelled without being announced. The one-box body sizes per quarter;
+         the collars keep their shared column, which is correct for them because
+         a collar's reach is a per-LIMB quantity and has no single outer edge. */
+      const onebox = !!env.userData.onebox;
+      const sp = makeLabel(txt, {
+        size: onebox ? qoneLabelSize(qi) : 28,
+        col: partial ? '#ffcf6e' : '#9fb2c8',
+      });
+      if (onebox) sp.material.opacity = qoneLabelAlpha(qi);
+      const lx = onebox ? qoneTickR(qi) + 0.55 : QOUTER + 0.55;
+      sp.position.set(x + lx, QY(qi), 0);
       scene.add(sp);
     });
   }
@@ -4610,6 +4731,30 @@ window.__probe = () => ({
                minH: QONE.minH, maxH: QONE.maxH, zeroH: QONE.zeroH,
                gap: QONE.gap, haloMin: QONE.haloMin, haloMax: QONE.haloMax,
                haloH: QONE.haloH, outer: +QONE_OUTER.toFixed(3) },
+      /* §QSCAFF — the per-quarter scaffolding, so "decoration is proportional to
+         measurement" is a checkable claim and not a comment. edge is the last
+         radius at which anything of the quarter is drawn; tickR is its ring;
+         standoff is the empty gap between the two and MUST be the constant
+         QSCAFF_MARGIN on every quarter — a standoff that grows for small
+         quarters is the exact bug this section fixes. */
+      scaffold: {
+        margin: QSCAFF_MARGIN,
+        edge: qrows.map((_, i) => +qoneEdge(i).toFixed(3)),
+        tickR: qrows.map((_, i) => +qoneTickR(i).toFixed(3)),
+        standoff: qrows.map((_, i) => +(qoneTickR(i) - qoneEdge(i)).toFixed(4)),
+        weight: qrows.map((_, i) => +qoneWeight(i).toFixed(3)),
+        labelSize: qrows.map((_, i) => qoneLabelSize(i)),
+        labelAlpha: qrows.map((_, i) => +qoneLabelAlpha(i).toFixed(3)),
+        labelX: qrows.map((_, i) => +(qoneTickR(i) + 0.55).toFixed(3)),
+        // the ring must never cut into the box+halo it annotates, on any quarter
+        ringClearsBox: qrows.every((_, i) => qoneTickR(i) > qoneEdge(i)),
+        // and the standoff must not itself encode size — constant by construction
+        standoffConstant: new Set(qrows.map((_, i) =>
+          (qoneTickR(i) - qoneEdge(i)).toFixed(6))).size === 1,
+        // the old constants, kept so the change is legible on the probe
+        wasTickR: +(QONE.maxSpan + QONE.gap + QONE.haloMax + 0.4).toFixed(3),
+        wasLabelX: +(QONE_OUTER + 0.55).toFixed(3),
+      },
       // §QHOVER — pickable marks, so "you can read it off the object" is checkable
       hoverPicks: (envelopes.Q && envelopes.Q.userData.hover)
         ? envelopes.Q.userData.hover.length : 0,
