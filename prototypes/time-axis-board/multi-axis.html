@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+  AI Learning Tree — MULTI-AXIS ATTRIBUTION (3 models, side by side)
+  prototypes/time-axis-board/multi-axis.html
+================================================================================
+
+WHAT THIS PAGE IS FOR
+  Three radial envelopes, rendered simultaneously from the SAME log, differing
+  only in HOW A COMMIT IS ATTRIBUTED TO SECTORS. Choose by looking, the same way
+  the rest of this board works. Walter's brief:
+
+    "All three add different value. Give me a preview of all three to judge them
+     by the visual look. Fractional weights are enticing, but how do we
+     systematically assign the distribution per classification? What ruleset
+     could be applied? Whole commit per axis is the simplest conceptually.
+     Primary + secondary tags might offer the richest visual appeal"
+
+WHY IT EXISTS — the classification error that forced the question
+  The radial-envelope prototype exposed a real defect, not a rendering nit. 394
+  commits of image work are ALL filed under automate.workflows:
+
+    flickr-to-instagram-automation   208
+    lightroom-metadata-translator    188
+    flickr-lightroom-publisher         6
+
+  so create.images sits at ONE commit for the whole 19-month history and the
+  images flank is permanently flat. Walter's diagnosis: "Probably we rated them
+  as workflow work because we analyze the images with agents but don't actually
+  work on the images." Exactly — and note what that sentence contains: THREE
+  sectors (images, workflows, agents) describing one repo. Single-sector
+  classification cannot hold that, so it drops two thirds of it.
+
+  Measured effect of fixing it (numbers computed live in this page, not typed):
+  inequality across sectors falls from Gini 0.515 today to 0.375 under model A,
+  create.images goes 1 -> 136, and automate.agents arrives at 184.
+
+THE THREE MODELS
+  A · FRACTIONAL WEIGHTS   one commit is split across sectors, weights sum to
+      1.0. Totals stay honest — 1749 commits stays 1749 — radius means
+      "attributed effort", and counts become non-integers (136.2 images).
+  B · WHOLE COMMIT PER AXIS  one commit counts FULLY on every sector it touches.
+      Integers survive, it reads naturally ("this commit was image work AND
+      agent work"), but the total inflates 1749 -> 3405 (+95%), so no
+      cross-sector sum means anything any more.
+  C · PRIMARY + SECONDARY  ONE primary sector (identical in kind to today's
+      model, fully backwards compatible) plus optional secondary tags drawn as a
+      ghost contribution. Two visual weights: solid lobe = primary, faint lobe =
+      secondary.
+
+  All three run off ONE weight table. They are three READINGS of the same
+  assignment, not three assignments — which is why they can be compared fairly.
+
+THE RULESET — Walter's actual question, answered from evidence
+  "How do we systematically assign the distribution per classification?"
+  Hand-guessed fractions would be indefensible, so the primary rule is derived
+  from data Walter already maintains: GITHUB REPO TOPICS.
+
+    weight(sector) = share of that repo's topics that map to that sector
+
+  Worked example, flickr-to-instagram-automation, 16 topics:
+    flickr-photos, gpt-4-vision, vision-api                 -> create.images      3/16
+    workflow-automation, scheduler, content-automation,
+      github-actions, devops, flickr-api, flickr-integration,
+      instagram-api, instagram-automation                   -> automate.workflows 9/16
+    gpt-4-api, openai-api, gpt-4o-mini, generative-ai       -> automate.agents    4/16
+
+  That is systematic, auditable, and it EXTENDS the topic-map mechanism already
+  in tree.config.yml rather than inventing a parallel one. Every topic->sector
+  line in the TOPIC_MAP below is a candidate line for that config file.
+
+  THE GAP, STATED HONESTLY AND MEASURED. Of Walter's 34 committed repos, only
+  SIX carry any topics at all. Everything else is bare — including
+  lightroom-metadata-translator, which is 188 of the 394 mis-filed image
+  commits and therefore the single repo the ruleset most needed to reach.
+  Topic-derived weights simply cannot work there, so there is a documented
+  three-step fallback chain and the page LABELS which step each repo used:
+
+    1. "topics"    topic shares, where topics exist          6 repos, 1034 commits (59%)
+    2. "authored"  explicit multi-weights, hand-written     19 repos,  632 commits (36%)
+    3. "single"    100% to today's sector — always safe      9 repos,   83 commits ( 5%)
+
+  Read that honestly: only 59% of commits get an EVIDENCE-DERIVED distribution.
+  36% are asserted by hand — better than today's single-sector assertion, since
+  they at least admit a mix, but still a judgement call. The badge column exists
+  so Walter can see exactly which repos are guesses; the "authored" rows are the
+  ones to argue with. The cheapest way to move mass from step 2 to step 1 is not
+  code, it is ADDING TOPICS TO THE REPOS ON GITHUB.
+
+  TOPIC DATA CAPTURED 2026-08-01 via `gh api repos/webmemo-code/<name> --jq .topics`
+  and BAKED IN below. The page never calls the API at runtime.
+
+THE NEW `agents` SECTOR
+  automate.agents, under AUTOMATE alongside workflows — Walter's call, because
+  agent work is the modern form of automation and that is where the mis-filed
+  work already sits. Hue 0xc9a2ff (violet) so it separates from workflows'
+  green at a glance while staying inside the AUTOMATE arc. NINE sectors here,
+  not eight: the eight the radial-envelope page kept (no-code/low-code remain
+  dropped as unobservable-by-construction in a commit log) plus agents.
+  generator/taxonomy.mjs is NOT touched — same reasoning as radial-envelope:
+  that file is append-only and its array index is the renderer's aSector.
+
+WHAT IS INHERITED FROM radial-envelope.html
+  Deliberately a sibling, not a stranger: monthly bucketing with 2025-02 kept as
+  a real pinched gap, sectors respaced to even bearings (now 40 deg for nine),
+  periodic Catmull-Rom rings by angle, glass skin (two-pass back/front fresnel)
+  + interior rosettes + bloom, and the same defaults — skin .28 / bloom .84 /
+  threshold .76. Three envelopes share one bloom composer and one camera rig, so
+  they stay visually comparable frame for frame.
+
+HONEST WEAKNESSES
+  - THE WEIGHTS ARE ONLY AS GOOD AS THE TOPICS, AND 41% OF COMMITS HAVE NO
+    TOPICS. This is the big one. The "authored" fallback is me asserting a
+    distribution for 632 commits; it is transparent but it is not evidence.
+  - TOPIC COUNTS ARE NOT EFFORT. Three of sixteen topics saying "image" does not
+    mean 3/16 of the work was image work. Topics are a vocabulary, casually
+    maintained, and a repo can carry nine near-synonyms for one idea (this one
+    does: flickr-api / flickr-integration / instagram-api / instagram-automation
+    all collapse to "workflow plumbing"). Topic share is a PROXY, and a
+    duplicate-prone one that systematically over-weights whatever the author
+    happened to be verbose about.
+  - WEIGHTS ARE PER-REPO, NOT PER-COMMIT. Every commit in a repo gets the same
+    split, so a commit that genuinely only touched the scheduler still books
+    19% to create.images. Real per-commit attribution needs file paths or diffs,
+    which the harvester deliberately does not collect (docs/03 §6 privacy).
+  - MODEL B'S TOTALS ARE NOT COMPARABLE TO ANYTHING. 3405 axis-hits from 1749
+    commits. The shape is legitimate; every number printed beside it is a
+    different unit from every other panel on the page and cannot be summed.
+  - MODEL C UNDERSELLS AGENTS BY CONSTRUCTION, and this turned out to be the
+    most interesting finding on the page. agents is almost never the LARGEST
+    share of a repo's topics, so it wins primary in only 8 commits while
+    appearing as a secondary in 686. Model C's solid geometry therefore looks
+    nearly identical to today's tree — which is either its great virtue
+    (backwards compatible, no migration) or its fatal flaw (the thing you were
+    trying to reveal stays a ghost), depending on what the tree is for.
+  - MODEL A'S NON-INTEGERS. "136.2 commits" is not a thing that happened. The
+    quantity is real (attributed effort) but the unit invites misreading as a
+    count, and every tooltip on this page has to say ".2" to stay honest.
+  - THE ENVELOPES ARE SMALLER THAN THE SINGLE-OBJECT PAGE. Three-up costs
+    roughly two thirds of the linear resolution each. Use ?solo=A|B|C for a
+    full-size look once the comparison has done its job.
+  - Every caveat radial-envelope.html carries still applies: bearing is an
+    ordered categorical axis and NOT a compass direction, only the 9 values at
+    the bearings are measurement (the 96 resampled ring points are inference),
+    the core radius is a drawn floor, and uniform month spacing flatters quiet
+    months.
+
+USAGE
+  Must be SERVED (it fetches ../../data/growth-log.jsonl):
+    python -m http.server 8123      (from the repo root)
+  then open /prototypes/time-axis-board/multi-axis.html
+  Params: ?model=A|B|C   highlight one model (dims the other two)
+          ?solo=A|B|C    render ONLY that model, full size
+          ?seed=<n>      deterministic surface noise
+          ?opacity= ?bloom= ?thresh=   same look levers as radial-envelope
+          ?rose=0 ?skin=0 ?spin=0
+================================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Learning Tree — Multi-axis attribution (A/B/C)</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #05070d; font-family: "Segoe UI", system-ui, sans-serif; }
+  #app { position: fixed; inset: 0; }
+
+  .panel {
+    position: fixed; color: #cfd8e3; background: rgba(10, 16, 28, 0.66);
+    border: 1px solid rgba(120, 160, 230, 0.18); border-radius: 10px;
+    backdrop-filter: blur(7px); padding: 12px 14px; z-index: 10;
+  }
+
+  #hud { top: 14px; left: 16px; width: 322px; max-height: calc(100vh - 28px); overflow-y: auto; }
+  #hud h1 { font-size: 15px; margin: 0 0 2px; font-weight: 600; color: #eef4fb; letter-spacing: 0.02em; }
+  #hud .sub { color: #8fa3ba; font-size: 11.5px; margin-bottom: 9px; line-height: 1.5; }
+  #hud .enc { font-size: 11px; color: #9fb2c8; line-height: 1.6; margin-bottom: 9px; }
+  #hud .enc b { color: #cfe0f2; font-weight: 600; }
+  #hud .warn { color: #ffb08a; }
+
+  .btnrow { display: flex; flex-wrap: wrap; gap: 6px; }
+  button {
+    font: inherit; font-size: 11.5px; padding: 4px 9px; border-radius: 7px; cursor: pointer;
+    color: #eaf2fb; background: rgba(90, 140, 220, 0.22); border: 1px solid rgba(140, 180, 240, 0.35);
+  }
+  button:hover { background: rgba(120, 170, 245, 0.34); }
+  button[aria-pressed="true"] { background: rgba(120, 200, 245, 0.4); border-color: rgba(170, 220, 255, 0.65); }
+
+  #look { margin-top: 10px; border-top: 1px solid rgba(120, 160, 230, 0.16); padding-top: 9px; }
+  #look .sl { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  #look .sl label { font-size: 10.5px; color: #9fb2c8; width: 62px; flex: none; }
+  #look .sl input[type="range"] { flex: 1; accent-color: #ffcf6e; height: 14px; }
+  #look .sl .v { font-size: 10.5px; color: #cfe0f2; width: 30px; text-align: right;
+                 font-variant-numeric: tabular-nums; flex: none; }
+
+  /* ---- the ruleset / derivation block ---- */
+  #rules { margin-top: 10px; border-top: 1px solid rgba(120, 160, 230, 0.16); padding-top: 9px; font-size: 10.5px; }
+  #rules b.hd { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 6px; font-size: 11.5px; }
+  #rules p { margin: 0 0 7px; color: #9fb2c8; line-height: 1.55; }
+  #rules code { background: rgba(120, 160, 230, 0.14); padding: 1px 4px; border-radius: 4px; color: #dbe8f7; font-size: 10px; }
+  #rules table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  #rules td { padding: 1px 0 1px 4px; color: #9fb2c8; font-size: 10px; }
+  #rules td.l { text-align: left; color: #cfd8e3; padding-left: 0; }
+  #rules td.n { text-align: right; }
+
+  .badge {
+    display: inline-block; padding: 0 5px; border-radius: 4px; font-size: 9px;
+    letter-spacing: 0.03em; font-weight: 600; line-height: 15px;
+  }
+  .badge.topics   { background: rgba(80, 220, 180, 0.22); color: #7ff0d2; border: 1px solid rgba(80, 220, 180, 0.4); }
+  .badge.authored { background: rgba(255, 190, 100, 0.20); color: #ffd08a; border: 1px solid rgba(255, 190, 100, 0.4); }
+  .badge.single   { background: rgba(150, 165, 190, 0.18); color: #a9b8cc; border: 1px solid rgba(150, 165, 190, 0.35); }
+
+  /* ---- side panel: per-sector totals under each model ---- */
+  #numbers {
+    top: 14px; right: 16px; width: 340px; max-height: calc(100vh - 28px);
+    overflow-y: auto; font-size: 11px;
+  }
+  #numbers b.hd { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 7px; font-size: 11.5px; }
+  #numbers table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  #numbers th { color: #7f93aa; font-weight: 500; text-align: right; padding: 0 0 4px 4px; font-size: 9.5px; }
+  #numbers th.l { text-align: left; }
+  #numbers td { text-align: right; padding: 1.5px 0 1.5px 4px; color: #9fb2c8; }
+  #numbers td.l { text-align: left; color: #cfd8e3; }
+  #numbers td.z { color: #3d4757; }
+  #numbers td.sec { color: #6f8398; font-size: 10px; }
+  #numbers .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  #numbers tr.sum td { border-top: 1px solid rgba(120, 160, 230, 0.2); padding-top: 4px; color: #cfe0f2; }
+  #numbers tr.gini td { color: #ffcf6e; }
+  #numbers .foot { color: #7f93aa; margin-top: 9px; line-height: 1.55; font-size: 10.5px; }
+  #numbers .foot b { color: #a8bccf; }
+  #numbers .rep { margin-top: 10px; border-top: 1px solid rgba(120, 160, 230, 0.16); padding-top: 8px; }
+  #numbers .rep table td { font-size: 10px; }
+  #numbers .rep td.l { max-width: 168px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  #err {
+    position: fixed; inset: 0; display: none; place-items: center; z-index: 50;
+    background: rgba(5, 7, 13, 0.94); color: #cfd8e3; text-align: center; padding: 24px;
+  }
+  #err.on { display: grid; }
+  #err .box { max-width: 540px; }
+  #err h2 { color: #ff9d9d; font-size: 18px; margin: 0 0 10px; }
+  #err p { font-size: 13.5px; line-height: 1.65; color: #aab8c9; }
+  #err code { background: rgba(120, 160, 230, 0.16); padding: 2px 6px; border-radius: 5px; color: #eaf2fb; }
+
+  @media (max-width: 1200px) {
+    #numbers { width: 250px; font-size: 10px; padding: 9px 10px; }
+    #hud { width: 250px; }
+    #rules p, #numbers .foot { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div class="panel" id="hud">
+  <h1>Multi-axis attribution</h1>
+  <div class="sub">
+    Three envelopes, one log, three ways of attributing a commit to sectors.
+    Same geometry, same look settings, same camera — only the assignment differs.
+  </div>
+  <div class="enc">
+    <b>A fractional</b> weights sum to 1.0 &middot; totals honest &middot; non-integer<br>
+    <b>B whole</b> full commit per axis &middot; integers &middot; total inflates<br>
+    <b>C primary+secondary</b> solid lobe = primary, ghost lobe = secondary<br>
+    <span class="warn">new sector: <b>agents</b> under AUTOMATE</span>
+  </div>
+  <div class="btnrow">
+    <button id="bA" type="button" data-m="A">A fractional</button>
+    <button id="bB" type="button" data-m="B">B whole</button>
+    <button id="bC" type="button" data-m="C">C prim+sec</button>
+    <button id="bAll" type="button" aria-pressed="true">All three</button>
+  </div>
+  <div class="btnrow" style="margin-top:6px">
+    <button id="bSpin" type="button" aria-pressed="true">&#9199; Orbit</button>
+    <button id="bSkin" type="button" aria-pressed="true">&#9673; Skin</button>
+    <button id="bRose" type="button" aria-pressed="true">&#10052; Rosettes</button>
+    <button id="bFrame" type="button">&#8982; Fit</button>
+    <button id="bShare" type="button">&#128279; Link</button>
+  </div>
+  <div id="look">
+    <div class="sl">
+      <label for="sOpacity">skin alpha</label>
+      <input id="sOpacity" type="range" min="0" max="0.6" step="0.005" value="0.28">
+      <span class="v" id="vOpacity">.28</span>
+    </div>
+    <div class="sl">
+      <label for="sBloom">bloom</label>
+      <input id="sBloom" type="range" min="0" max="2" step="0.02" value="0.84">
+      <span class="v" id="vBloom">.84</span>
+    </div>
+    <div class="sl">
+      <label for="sThresh">threshold</label>
+      <input id="sThresh" type="range" min="0" max="1" step="0.01" value="0.76">
+      <span class="v" id="vThresh">.76</span>
+    </div>
+  </div>
+  <div id="rules">
+    <b class="hd">The ruleset &mdash; where the weights come from</b>
+    <p>
+      <b style="color:#cfe0f2">weight(sector) = share of that repo's GitHub
+      topics mapping to it.</b> Systematic, auditable, and an extension of the
+      <code>topic-map</code> already in tree.config.yml &mdash; not a parallel
+      mechanism. Topics captured <b>2026-08-01</b> and baked in; no API call at
+      runtime.
+    </p>
+    <p style="color:#8fa3ba">
+      Worked example &mdash; <code>flickr-to-instagram-automation</code>, 16 topics:
+      3 image (flickr-photos, gpt-4-vision, vision-api), 9 workflow, 4 agent
+      &rarr; <b>.19 / .56 / .25</b>. That single repo moves 208 commits off a
+      pure workflow reading.
+    </p>
+    <p>
+      <b style="color:#ffb08a">Only 6 of 34 repos have any topics.</b> Fallback
+      chain, and every repo below is badged with which step it used:
+    </p>
+    <table id="chainTbl"></table>
+    <p style="margin-top:7px; color:#8fa3ba">
+      <b style="color:#ffb08a">Read that honestly:</b> the derived rule reaches
+      59% of commits. The <span class="badge authored">authored</span> rows are
+      asserted by hand &mdash; better than today's single-sector assertion, but
+      still judgement. The cheapest fix is not code: <b>add topics to those
+      repos on GitHub</b> and they promote themselves to
+      <span class="badge topics">topics</span>.
+    </p>
+  </div>
+</div>
+
+<div class="panel" id="numbers">
+  <b class="hd">Per-sector totals under each model</b>
+  <table id="tbl"></table>
+  <div class="rep">
+    <b class="hd">Per-repo derivation (top 20 by commits)</b>
+    <table id="repTbl"></table>
+  </div>
+  <div class="foot">
+    <b>Gini</b> is inequality across the 9 sectors: 0 = every sector equal,
+    1 = one sector has everything. Lower means the tree grows in more
+    directions, which is the whole reason to do this.<br>
+    <b>Model B's total is a different unit.</b> 3405 axis-hits from 1749
+    commits &mdash; the shape is fine, the sums are not comparable to A, C
+    or today.<br>
+    <b>2025-02</b> is missing from the log entirely: a real pinch in all three
+    solids, never interpolated.<br>
+    <b>9 sectors.</b> The 8 from radial-envelope plus <b>agents</b>; no-code and
+    low-code stay dropped (unobservable in a commit log by construction).
+    <b>generator/taxonomy.mjs is untouched.</b><br>
+    <b>Bearings respaced</b> to an even 40&deg;. Azimuth means &ldquo;which
+    sector&rdquo;, not a compass direction.
+  </div>
+</div>
+
+<div id="err"><div class="box">
+  <h2>Couldn't load the growth log</h2>
+  <p id="errMsg"></p>
+  <p>This page fetches <code>../../data/growth-log.jsonl</code>, so it must be served over
+  http(s). Opening the file directly (<code>file://</code>) blocks the fetch.
+  From the repo root run <code>python -m http.server 8123</code> and visit
+  <code>/prototypes/time-axis-board/multi-axis.html</code>.</p>
+</div></div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.181/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.181/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+/* ==========================================================================
+   0 · constants, params, palette
+   ========================================================================== */
+const PARAMS = new URLSearchParams(location.search);
+const SEED = (() => { const v = parseInt(PARAMS.get('seed'), 10); return Number.isFinite(v) ? v : 7; })();
+const numParam = (name, def, lo, hi) => {
+  const v = parseFloat(PARAMS.get(name));
+  return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : def;
+};
+// Defaults inherited verbatim from radial-envelope.html — Walter's chosen
+// numbers. Keeping them identical is what makes the two pages comparable.
+const LOOK = {
+  opacity: numParam('opacity', 0.28, 0, 0.6),
+  bloom:   numParam('bloom',   0.84, 0, 2),
+  thresh:  numParam('thresh',  0.76, 0, 1),
+  skin:    PARAMS.get('skin') !== '0',
+  rose:    PARAMS.get('rose') !== '0',
+};
+const SOLO = (() => { const v = (PARAMS.get('solo') || '').toUpperCase(); return 'ABC'.includes(v) && v ? v : null; })();
+let FOCUS = (() => { const v = (PARAMS.get('model') || '').toUpperCase(); return 'ABC'.includes(v) && v ? v : null; })();
+
+const PAL = { sky: 0x05070d, dead: 0x5c6672, star: 0xe8ecff };
+
+/* --------------------------------------------------------------------------
+   SECTORS — NINE. The eight radial-envelope.html kept, plus automate.agents.
+   --------------------------------------------------------------------------
+   no-code / low-code remain dropped for the same reason as on that page: their
+   defining property is not touching a dev toolchain, so a commit-derived view
+   cannot observe them at all. Drawing them would be a measurement claim about
+   something this instrument cannot see.
+
+   automate.agents is NEW and is Walter's decision: it belongs under AUTOMATE
+   alongside workflows, because agent work is the modern form of automation and
+   because that is precisely where the mis-filed work already sits (every one of
+   the 394 image commits is currently automate.workflows). Hue 0xc9a2ff — violet,
+   chosen to read against workflows' green while staying visually inside the
+   AUTOMATE arc rather than jumping to the CREATE side of the wheel.
+
+   PROTOTYPE-LOCAL. generator/taxonomy.mjs is append-only and its array index IS
+   the renderer's aSector, so adding a sector there is a real migration with real
+   consequences for every tree.json ever generated. Not this page's call to make.
+
+   BEARINGS respaced to an even 40 degrees for nine sectors (radial-envelope used
+   45 for eight), phase-locked to copy at 15 so the object does not rotate
+   wholesale, cyclic order preserved: the CREATE arc, then AUTOMATE (workflows
+   then agents, adjacent on purpose — they are the pair the reclassification
+   moves mass between), then DISTRIBUTE, then BUILD.
+   -------------------------------------------------------------------------- */
+const SECTORS = [
+  { id: 'create.copy',        label: 'copy',      az: 15,  hue: 0xffb454 },
+  { id: 'create.images',      label: 'images',    az: 55,  hue: 0xff6ec7 },
+  { id: 'create.video',       label: 'video',     az: 95,  hue: 0xff5d73 },
+  { id: 'create.3d',          label: '3d',        az: 135, hue: 0xff8f4d },
+  { id: 'automate.workflows', label: 'workflows', az: 175, hue: 0x7ce65a },
+  { id: 'automate.agents',    label: 'agents',    az: 215, hue: 0xc9a2ff },   // NEW
+  { id: 'distribute.seo',     label: 'seo',       az: 255, hue: 0x35d0ba },
+  { id: 'distribute.geo',     label: 'geo',       az: 295, hue: 0x4aa8ff },
+  { id: 'build.pro-code',     label: 'pro-code',  az: 335, hue: 0x6a8dff },
+].sort((a, b) => a.az - b.az);
+
+const SI = new Map(SECTORS.map((s, i) => [s.id, i]));
+
+/* ==========================================================================
+   0b · THE WEIGHT TABLE — the answer to "what ruleset could be applied?"
+   ==========================================================================
+   Three data structures and one function. The function is the whole ruleset.
+
+   TOPICS — captured 2026-08-01 with
+     gh api repos/webmemo-code/<name> --jq '.topics|join(",")'
+   for all 34 repos that appear in the growth log. BAKED IN deliberately: a page
+   that phones GitHub at load time is a page that renders differently tomorrow
+   and cannot be screenshotted as evidence. Only these six came back non-empty.
+   The other 28 returned an EMPTY LIST — that is a measured fact about the repos,
+   not a failed request, and it is the reason the fallback chain exists.
+   ========================================================================== */
+const TOPIC_CAPTURED = '2026-08-01';
+const TOPICS = {
+  'entity-map': ['json-ld', 'ontology', 'schema', 'taxonomy'],
+  'flickr-to-instagram-automation': [
+    'content-automation', 'devops', 'flickr-api', 'flickr-integration', 'flickr-photos',
+    'generative-ai', 'github-actions', 'gpt-4-api', 'gpt-4-vision', 'gpt-4o-mini',
+    'instagram-api', 'instagram-automation', 'openai-api', 'scheduler', 'vision-api',
+    'workflow-automation'],
+  'wp-rm-tm-translation': ['deepl', 'translation', 'wordpress', 'wordpress-api'],
+  'ai-periodic-cube': ['3d', '3d-visualization', 'ai', 'ai-assessment', 'ai-visualization',
+    'ai-visualizer', 'self-assessment'],
+  'obsidian-ai': ['obsidian', 'pkm'],
+  'google-knowledge-graph-retriever': ['firestore', 'google-cloud', 'google-knowledge-graph',
+    'python3', 'terraform'],
+};
+
+/* TOPIC_MAP — topic -> sector. Every line here is a candidate line for the
+   `topic-map:` block in tree.config.yml, which today holds only five entries
+   (seo, geo, comfyui, wordpress, 3d). That is the point: this is not a new
+   mechanism, it is the existing one filled in.
+
+   NOTE the duplication problem this exposes, which is a genuine weakness of the
+   ruleset and not a bug in the table: flickr-api, flickr-integration,
+   instagram-api and instagram-automation are four topics for one idea ("move
+   photos between two services"), so they contribute four workflow votes where a
+   tidier vocabulary would contribute one. Topic SHARE therefore over-weights
+   whatever the author was verbose about. Stated, not hidden. */
+const TOPIC_MAP = {
+  'flickr-photos': 'create.images', 'gpt-4-vision': 'create.images', 'vision-api': 'create.images',
+  'workflow-automation': 'automate.workflows', 'scheduler': 'automate.workflows',
+  'content-automation': 'automate.workflows', 'github-actions': 'automate.workflows',
+  'devops': 'automate.workflows', 'flickr-api': 'automate.workflows',
+  'flickr-integration': 'automate.workflows', 'instagram-api': 'automate.workflows',
+  'instagram-automation': 'automate.workflows', 'terraform': 'automate.workflows',
+  'obsidian': 'automate.workflows', 'pkm': 'automate.workflows',
+  'gpt-4-api': 'automate.agents', 'openai-api': 'automate.agents',
+  'gpt-4o-mini': 'automate.agents', 'generative-ai': 'automate.agents', 'ai': 'automate.agents',
+  'json-ld': 'distribute.geo', 'ontology': 'distribute.geo', 'schema': 'distribute.geo',
+  'taxonomy': 'distribute.geo',
+  'google-knowledge-graph': 'distribute.seo',
+  'deepl': 'create.copy', 'translation': 'create.copy', 'wordpress': 'create.copy',
+  'wordpress-api': 'create.copy',
+  '3d': 'create.3d', '3d-visualization': 'create.3d', 'ai-visualization': 'create.3d',
+  'ai-visualizer': 'create.3d',
+  'ai-assessment': 'build.pro-code', 'self-assessment': 'build.pro-code',
+  'firestore': 'build.pro-code', 'google-cloud': 'build.pro-code', 'python3': 'build.pro-code',
+};
+
+/* AUTHORED — step 2 of the chain. Hand-written multi-weights for repos with no
+   topics. THESE ARE ASSERTIONS, and the page badges them amber so Walter can
+   argue with them individually. They are still an improvement on today's model,
+   which asserts a SINGLE sector with the same confidence and no way to disagree
+   in degrees — but they are not evidence and must not be presented as such.
+
+   The most consequential row by far is lightroom-metadata-translator: 188
+   commits, no topics, and the second half of the 394-commit image problem. If
+   one row on this page is wrong, it is most likely that one. */
+const AUTHORED = {
+  'lightroom-metadata-translator':             { 'create.images': 0.5, 'automate.agents': 0.3, 'automate.workflows': 0.2 },
+  'flickr-lightroom-publisher':                { 'create.images': 0.4, 'automate.workflows': 0.6 },
+  'ai-learning-tree':                          { 'build.pro-code': 0.5, 'create.3d': 0.3, 'automate.agents': 0.2 },
+  'ai-knowledge-base-visualizer':              { 'build.pro-code': 0.4, 'create.3d': 0.4, 'distribute.geo': 0.2 },
+  'ai-skills-assessment-wordpress':            { 'build.pro-code': 0.6, 'create.copy': 0.4 },
+  'claude-memory-template':                    { 'build.pro-code': 0.5, 'automate.agents': 0.5 },
+  'claude-code-global-config':                 { 'automate.agents': 0.6, 'build.pro-code': 0.4 },
+  'claude-flow':                               { 'automate.agents': 0.7, 'build.pro-code': 0.3 },
+  'cryptoprice360':                            { 'create.3d': 0.7, 'build.pro-code': 0.3 },
+  'texture-generator':                         { 'create.images': 0.8, 'build.pro-code': 0.2 },
+  'programmatic-video':                        { 'create.video': 0.7, 'automate.workflows': 0.3 },
+  'markdown-wp-rm-post-publisher':             { 'create.copy': 0.6, 'automate.workflows': 0.4 },
+  'markdown-wp-wm-linkedin-article-publisher': { 'create.copy': 0.6, 'automate.workflows': 0.4 },
+  'android-app-seerenbachfaelle':              { 'build.pro-code': 0.6, 'automate.workflows': 0.4 },
+  'batch-rename-files-powershell-script':      { 'automate.workflows': 1.0 },
+  'my-ai-learning-journey':                    { 'automate.workflows': 0.5, 'create.copy': 0.5 },
+  'vrml-converter-viewer':                     { 'create.3d': 0.8, 'build.pro-code': 0.2 },
+  'github-intro-skill':                        { 'build.pro-code': 0.7, 'create.copy': 0.3 },
+  'copywriting-style-guide':                   { 'create.copy': 1.0 },
+};
+
+/* THE RULESET ITSELF — three steps, first match wins, exactly parallel in shape
+   to the classification priority chain already documented in tree.config.yml.
+   Returns { w: {sector: weight}, badge: 'topics'|'authored'|'single' }.
+   The badge is not decoration: it is how much of the picture is derived vs
+   asserted, and it is surfaced per repo in the side panel. */
+function deriveWeights(project, singleSector) {
+  // 1 · topic shares, where topics exist
+  const tp = TOPICS[project];
+  if (tp && tp.length) {
+    const hits = new Map();
+    for (const t of tp) {
+      const s = TOPIC_MAP[t];
+      if (s) hits.set(s, (hits.get(s) || 0) + 1);
+    }
+    if (hits.size) {
+      let tot = 0; for (const v of hits.values()) tot += v;
+      const w = {};
+      for (const [k, v] of hits) w[k] = v / tot;
+      return { w, badge: 'topics', evidence: tp.length + ' topics' };
+    }
+  }
+  // 2 · explicit hand-authored multi-weights
+  if (AUTHORED[project]) return { w: { ...AUTHORED[project] }, badge: 'authored', evidence: 'hand-written' };
+  // 3 · today's behaviour — 100% to the single sector. Always safe, never wrong
+  //     in the sense that it is exactly what the tree already believes.
+  return { w: { [singleSector]: 1 }, badge: 'single', evidence: 'current sector' };
+}
+
+const RING_N = 96, SUB_V = 8, CORE_R = 0.30, MAX_R = 4.2, BAND_H = 1.05;
+const deg = (d) => d * Math.PI / 180;
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const fatal = (msg) => {
+  document.getElementById('errMsg').textContent = msg;
+  document.getElementById('err').classList.add('on');
+};
+
+/* ==========================================================================
+   1 · data — the real log, monthly buckets, nothing invented
+   ========================================================================== */
+const LOG_PATH = '../../data/growth-log.jsonl';
+let RAW = [];
+try {
+  const res = await fetch(LOG_PATH, { cache: 'no-cache' });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching ' + LOG_PATH);
+  const text = await res.text();
+  RAW = text.split(/\r?\n/).filter(Boolean).map((l, i) => {
+    try { return JSON.parse(l); }
+    catch { throw new Error('malformed JSON on line ' + (i + 1) + ' of growth-log.jsonl'); }
+  });
+  if (!RAW.length) throw new Error('growth-log.jsonl is empty');
+} catch (e) { fatal(e.message || String(e)); throw e; }
+
+function monthKey(ts) { return ts.slice(0, 7); }
+function addMonth(key) {
+  let [y, m] = key.split('-').map(Number);
+  m += 1; if (m > 12) { m = 1; y += 1; }
+  return y + '-' + String(m).padStart(2, '0');
+}
+const seenMonths = new Set(RAW.map((e) => monthKey(e.ts)));
+const sortedSeen = [...seenMonths].sort();
+const MONTHS = [];
+for (let k = sortedSeen[0]; ; k = addMonth(k)) {
+  MONTHS.push(k);
+  if (k === sortedSeen[sortedSeen.length - 1]) break;
+}
+const MI = new Map(MONTHS.map((k, i) => [k, i]));
+
+/* --------------------------------------------------------------------------
+   THE THREE MODELS, built in ONE pass over the commits.
+   --------------------------------------------------------------------------
+   Critically: all three read the SAME weight table. They differ only in how a
+   weight vector becomes a per-sector number, which is the whole point — any
+   visual difference you see is caused by the MODEL, never by a different
+   assignment sneaking in underneath.
+
+     A  += w                                (fractional; column sums to 1749)
+     B  += 1 for every sector with w > 0    (whole; column sums to 3405)
+     C  primary = argmax(w), += 1           (integer, backwards compatible)
+        secondary = every other sector with w > 0, tracked separately and drawn
+        as a ghost lobe at a fixed fraction of full radius
+   -------------------------------------------------------------------------- */
+const MODELS = ['A', 'B', 'C'];
+const MODEL_META = {
+  A: { key: 'A', name: 'A · Fractional', tag: 'weights sum to 1.0', tint: 0x7ff0d2 },
+  B: { key: 'B', name: 'B · Whole commit', tag: 'full count per axis', tint: 0xffd08a },
+  C: { key: 'C', name: 'C · Primary + secondary', tag: 'solid = primary, ghost = secondary', tint: 0xc9a2ff },
+};
+
+const blankRow = (key, present) => ({
+  key, present,
+  A: new Array(SECTORS.length).fill(0),
+  B: new Array(SECTORS.length).fill(0),
+  C: new Array(SECTORS.length).fill(0),
+  Cs: new Array(SECTORS.length).fill(0),   // C's secondaries, drawn as ghosts
+  totals: { A: 0, B: 0, C: 0 },
+  commits: 0,
+});
+const rows = MONTHS.map((key) => blankRow(key, seenMonths.has(key)));
+
+const repoInfo = new Map();     // project -> { w, badge, evidence, commits }
+const weightCache = new Map();
+let TOTAL_COMMITS = 0;
+
+for (const e of RAW) {
+  if (e.kind !== 'commit') continue;                 // size is COMMITS ONLY (see radial-envelope)
+  const r = rows[MI.get(monthKey(e.ts))];
+  if (!r) continue;
+  const project = e.project || '(unknown)';
+  let d = weightCache.get(project);
+  if (!d) {
+    d = deriveWeights(project, e.sector);
+    weightCache.set(project, d);
+    repoInfo.set(project, { ...d, commits: 0, single: e.sector });
+  }
+  repoInfo.get(project).commits++;
+  TOTAL_COMMITS++;
+  r.commits++;
+
+  let primary = null, pw = -1;
+  for (const [sid, w] of Object.entries(d.w)) {
+    const si = SI.get(sid);
+    if (si === undefined) continue;                  // sector not drawn here (no-code etc.)
+    r.A[si] += w;  r.totals.A += w;
+    r.B[si] += 1;  r.totals.B += 1;
+    if (w > pw) { pw = w; primary = si; }
+  }
+  if (primary !== null) {
+    r.C[primary] += 1; r.totals.C += 1;
+    for (const [sid, w] of Object.entries(d.w)) {
+      const si = SI.get(sid);
+      if (si === undefined || si === primary || w <= 0) continue;
+      r.Cs[si] += 1;
+    }
+  }
+}
+
+// Today's single-sector baseline, for the "what changes" column.
+const BASE = new Array(SECTORS.length).fill(0);
+for (const e of RAW) {
+  if (e.kind !== 'commit') continue;
+  const si = SI.get(e.sector);
+  if (si !== undefined) BASE[si]++;
+}
+
+// Grand totals per model + the ghost track.
+const TOT = { A: new Array(SECTORS.length).fill(0), B: new Array(SECTORS.length).fill(0),
+              C: new Array(SECTORS.length).fill(0), Cs: new Array(SECTORS.length).fill(0) };
+for (const r of rows) SECTORS.forEach((_, i) => {
+  TOT.A[i] += r.A[i]; TOT.B[i] += r.B[i]; TOT.C[i] += r.C[i]; TOT.Cs[i] += r.Cs[i];
+});
+
+/* Gini across sectors: 0 = perfectly even growth in every direction, 1 = one
+   sector owns everything. This is the QUANTITATIVE companion to the visual
+   judgement — a rounder envelope should show a lower number, and if it does not,
+   the shape is lying to you. */
+function gini(vals) {
+  const v = [...vals].sort((a, b) => a - b);
+  const n = v.length, s = v.reduce((a, b) => a + b, 0);
+  if (s <= 0) return 0;
+  let cum = 0;
+  for (let i = 0; i < n; i++) cum += (i + 1) * v[i];
+  return (2 * cum) / (n * s) - (n + 1) / n;
+}
+const GINI = { base: gini(BASE), A: gini(TOT.A), B: gini(TOT.B), C: gini(TOT.C) };
+
+// badge rollup — how much of the picture is derived vs asserted
+const BADGE = { topics: 0, authored: 0, single: 0 };
+const BADGE_REPOS = { topics: 0, authored: 0, single: 0 };
+for (const info of repoInfo.values()) { BADGE[info.badge] += info.commits; BADGE_REPOS[info.badge]++; }
+
+/* Per-model max cell, used for the radius scale. Each model is normalised by its
+   OWN maximum on purpose: the question is "what SHAPE does this model give",
+   and a shared scale would shrink A and C to nothing next to B's inflated
+   numbers, making the comparison about magnitude instead of form. The side
+   panel carries the absolute numbers so nothing is lost. */
+const MAXCELL = {};
+for (const m of MODELS) MAXCELL[m] = Math.max(1, ...rows.map((r) => Math.max(...r[m])));
+MAXCELL.Cs = Math.max(1, ...rows.map((r) => Math.max(...r.Cs)));
+
+const radiusOf = (c, max) => (c <= 0 ? CORE_R : CORE_R + Math.sqrt(c / max) * (MAX_R - CORE_R));
+
+/* ==========================================================================
+   2 · ring geometry — periodic Catmull-Rom by angle (from radial-envelope)
+   ========================================================================== */
+function catmull(p0, p1, p2, p3, t) {
+  const t2 = t * t, t3 = t2 * t;
+  return 0.5 * ((2 * p1) + (-p0 + p2) * t +
+    (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
+    (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+}
+const AZ = SECTORS.map((s) => s.az);
+function ringRadii(radii) {
+  const n = SECTORS.length;
+  const out = new Float32Array(RING_N);
+  for (let k = 0; k < RING_N; k++) {
+    const a = (k / RING_N) * 360;
+    let i = 0; while (i < n && AZ[i] <= a) i++;
+    const i1 = (i - 1 + n) % n, i2 = i % n;
+    const i0 = (i1 - 1 + n) % n, i3 = (i2 + 1) % n;
+    let a1 = AZ[i1], a2 = AZ[i2];
+    if (a2 <= a1) a2 += 360;
+    let aa = a; if (aa < a1) aa += 360;
+    const t = (aa - a1) / (a2 - a1 || 1);
+    out[k] = Math.max(CORE_R, catmull(radii[i0], radii[i1], radii[i2], radii[i3], t));
+  }
+  return out;
+}
+
+const yOf = (i) => i * BAND_H;
+const TOP_Y = yOf(rows.length - 1);
+
+// contiguous runs of PRESENT months — the vertical spline must not cross 2025-02
+const runs = [];
+{
+  let cur = null;
+  rows.forEach((r, i) => {
+    if (r.present) { if (!cur) { cur = { i0: i, i1: i }; runs.push(cur); } else cur.i1 = i; }
+    else cur = null;
+  });
+}
+
+function buildLevels(monthRings) {
+  const levels = [];
+  for (const run of runs) {
+    const len = run.i1 - run.i0;
+    if (len === 0) {
+      levels.push({ y: yOf(run.i0) - BAND_H * 0.32, radii: monthRings[run.i0], mi: run.i0 });
+      levels.push({ y: yOf(run.i0) + BAND_H * 0.32, radii: monthRings[run.i0], mi: run.i0 });
+      continue;
+    }
+    const steps = len * SUB_V;
+    for (let s = 0; s <= steps; s++) {
+      const f = run.i0 + (s / steps) * len;
+      const i1 = Math.min(run.i1, Math.floor(f)), t = f - i1;
+      const i2 = Math.min(run.i1, i1 + 1);
+      const i0 = Math.max(run.i0, i1 - 1), i3 = Math.min(run.i1, i2 + 1);
+      const radii = new Float32Array(RING_N);
+      for (let k = 0; k < RING_N; k++) {
+        radii[k] = Math.max(CORE_R, catmull(
+          monthRings[i0][k], monthRings[i1][k], monthRings[i2][k], monthRings[i3][k], t));
+      }
+      levels.push({ y: yOf(f), radii, mi: f });
+    }
+  }
+  rows.forEach((r, i) => {
+    if (r.present) return;
+    levels.push({ y: yOf(i), radii: new Float32Array(RING_N).fill(CORE_R), mi: i, gap: true });
+  });
+  levels.sort((a, b) => a.y - b.y);
+  return levels;
+}
+
+/* ==========================================================================
+   3 · scene
+   ========================================================================== */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(PAL.sky);
+scene.fog = new THREE.FogExp2(PAL.sky, 0.0035);   // gentler than the single-object
+                                                 // page: the group is ~3x wider,
+                                                 // so the outer two would grey out.
+
+const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 0.1, 400);
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.getElementById('app').appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.autoRotate = PARAMS.get('spin') !== '0';
+controls.autoRotateSpeed = 0.42;
+controls.minDistance = 6;
+controls.maxDistance = 200;
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), LOOK.bloom, 0.5, LOOK.thresh);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
+
+scene.add(new THREE.HemisphereLight(0x9fc4ff, 0x1a2418, 0.85));
+const kl = new THREE.DirectionalLight(0xfff0d6, 1.1); kl.position.set(6, 14, 8); scene.add(kl);
+const rl = new THREE.DirectionalLight(0x6ea8ff, 0.5); rl.position.set(-9, 5, -7); scene.add(rl);
+
+/* ==========================================================================
+   4 · one envelope, built for a given model — the reusable unit
+   ==========================================================================
+   Same construction as radial-envelope.html: glass skin in two passes
+   (BackSide then FrontSide, both depthWrite:false) so the lantern does not tear,
+   plus interior rosettes at TRUE radii, plus optional ghost rosettes for model C.
+   ========================================================================== */
+const rnd = mulberry32(SEED);
+const noiseTable = Array.from({ length: 512 }, () => rnd() - 0.5);
+const sectorColors = SECTORS.map((s) => new THREE.Color(s.hue));
+const neutral = new THREE.Color(PAL.dead);
+
+function hueAt(k, counts) {
+  const a = (k / RING_N) * 360;
+  let wr = 0, wg = 0, wb = 0, wsum = 0;
+  SECTORS.forEach((s, i) => {
+    let d = Math.abs(((a - s.az + 540) % 360) - 180);
+    d = 180 - d;
+    const prox = Math.exp(-(d * d) / (2 * 24 * 24));
+    const w = prox * counts[i];
+    if (w > 0) { const c = sectorColors[i]; wr += c.r * w; wg += c.g * w; wb += c.b * w; wsum += w; }
+  });
+  if (wsum <= 0) return neutral;
+  return new THREE.Color(wr / wsum, wg / wsum, wb / wsum);
+}
+
+const skinAlpha = { value: LOOK.opacity };
+const skinDim = { value: 1.0 };   // per-envelope dimming when one model is focused
+function makeSkinMaterial(side, back, dimUniform) {
+  return new THREE.ShaderMaterial({
+    uniforms: { uOpacity: skinAlpha, uBack: { value: back ? 1 : 0 }, uDim: dimUniform },
+    vertexColors: true, transparent: true, depthWrite: false, depthTest: true,
+    side, blending: THREE.NormalBlending,
+    vertexShader: `
+      varying vec3 vCol; varying vec3 vNrm; varying vec3 vView;
+      void main() {
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        vCol = color;
+        vNrm = normalize(normalMatrix * normal);
+        vView = normalize(-mvPosition.xyz);
+        gl_Position = projectionMatrix * mvPosition;
+      }`,
+    fragmentShader: `
+      uniform float uOpacity; uniform float uBack; uniform float uDim;
+      varying vec3 vCol; varying vec3 vNrm; varying vec3 vView;
+      void main() {
+        float f = pow(1.0 - clamp(abs(dot(normalize(vNrm), normalize(vView))), 0.0, 1.0), 2.4);
+        float dim = mix(1.0, 0.55, uBack);
+        float a = uOpacity * dim * uDim * (0.32 + 2.15 * f);
+        vec3 c = mix(vCol, vCol * 0.45 + vec3(0.55, 0.72, 0.95) * 0.55, f * 0.55);
+        gl_FragColor = vec4(c * (0.85 + f * 1.5) * uDim, clamp(a, 0.0, 1.0));
+      }`,
+  });
+}
+
+function buildEnvelope(model) {
+  const meta = MODEL_META[model];
+  const grp = new THREE.Group();
+  const dimU = { value: 1.0 };
+  const max = MAXCELL[model];
+
+  // per-month rings at TRUE radii for this model
+  const monthRings = rows.map((r) => ringRadii(r[model].map((c) => radiusOf(c, max))));
+  const levels = buildLevels(monthRings);
+
+  /* ---- the glass skin ---- */
+  const pos = [], col = [], idx = [], tmp = new THREE.Color();
+  for (let li = 0; li < levels.length; li++) {
+    const lev = levels[li];
+    const mi1 = Math.max(0, Math.min(rows.length - 1, Math.round(lev.mi)));
+    const counts = rows[mi1][model];
+    for (let k = 0; k < RING_N; k++) {
+      const a = (k / RING_N) * (Math.PI * 2);
+      const n = noiseTable[(k * 7 + li * 13) % noiseTable.length];
+      const r = lev.radii[k] * (1 + n * 0.012);
+      pos.push(Math.cos(a) * r, lev.y, Math.sin(a) * r);
+      tmp.copy(hueAt(k, counts));
+      tmp.multiplyScalar(0.80 + 0.34 * (lev.y / (TOP_Y || 1)));
+      if (lev.gap) tmp.setRGB(0.42, 0.16, 0.16);       // 2025-02: a dark scar, never smoothed
+      col.push(tmp.r, tmp.g, tmp.b);
+    }
+  }
+  for (let li = 0; li < levels.length - 1; li++) {
+    for (let k = 0; k < RING_N; k++) {
+      const k2 = (k + 1) % RING_N;
+      const A = li * RING_N + k, B = li * RING_N + k2;
+      const C = (li + 1) * RING_N + k, D = (li + 1) * RING_N + k2;
+      idx.push(A, C, B, B, C, D);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx); g.computeVertexNormals();
+
+  const skinGrp = new THREE.Group();
+  const back = new THREE.Mesh(g, makeSkinMaterial(THREE.BackSide, true, dimU)); back.renderOrder = 1;
+  const front = new THREE.Mesh(g, makeSkinMaterial(THREE.FrontSide, false, dimU)); front.renderOrder = 2;
+  skinGrp.add(back, front);
+  skinGrp.visible = LOOK.skin;
+  grp.add(skinGrp);
+
+  /* ---- interior rosettes: the MEASUREMENT, at true radii and true heights ---- */
+  const roseGrp = new THREE.Group();
+  {
+    const op = [], oc = [];
+    rows.forEach((r, i) => {
+      const y = yOf(i), radii = monthRings[i];
+      for (let k = 0; k < RING_N; k++) {
+        const k2 = (k + 1) % RING_N;
+        const a1 = (k / RING_N) * Math.PI * 2, a2 = (k2 / RING_N) * Math.PI * 2;
+        const r1 = r.present ? radii[k] : CORE_R, r2 = r.present ? radii[k2] : CORE_R;
+        op.push(Math.cos(a1) * r1, y, Math.sin(a1) * r1);
+        op.push(Math.cos(a2) * r2, y, Math.sin(a2) * r2);
+        for (const kk of [k, k2]) {
+          if (!r.present) { oc.push(0.55, 0.16, 0.16); continue; }
+          tmp.copy(hueAt(kk, r[model]));
+          const strength = (radii[kk] - CORE_R) / (MAX_R - CORE_R);
+          tmp.multiplyScalar(0.55 + strength * 1.25);
+          oc.push(tmp.r, tmp.g, tmp.b);
+        }
+      }
+    });
+    const og = new THREE.BufferGeometry();
+    og.setAttribute('position', new THREE.Float32BufferAttribute(op, 3));
+    og.setAttribute('color', new THREE.Float32BufferAttribute(oc, 3));
+    const outlines = new THREE.LineSegments(og, new THREE.LineBasicMaterial({
+      vertexColors: true, transparent: true, opacity: 0.9,
+      depthWrite: false, blending: THREE.AdditiveBlending,
+    }));
+    outlines.renderOrder = 3; roseGrp.add(outlines);
+
+    // spokes to each measured value
+    const sp = [], sc = [];
+    rows.forEach((r, i) => {
+      if (!r.present) return;
+      const y = yOf(i);
+      SECTORS.forEach((s, si) => {
+        const c = r[model][si]; if (c <= 0) return;
+        const a = deg(s.az), rr = radiusOf(c, max), cc = sectorColors[si];
+        sp.push(Math.cos(a) * CORE_R, y, Math.sin(a) * CORE_R);
+        sp.push(Math.cos(a) * rr, y, Math.sin(a) * rr);
+        sc.push(cc.r * 0.20, cc.g * 0.20, cc.b * 0.20);
+        sc.push(cc.r * 1.25, cc.g * 1.25, cc.b * 1.25);
+      });
+    });
+    const sg = new THREE.BufferGeometry();
+    sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
+    sg.setAttribute('color', new THREE.Float32BufferAttribute(sc, 3));
+    const spokes = new THREE.LineSegments(sg, new THREE.LineBasicMaterial({
+      vertexColors: true, transparent: true, opacity: 0.78,
+      depthWrite: false, blending: THREE.AdditiveBlending,
+    }));
+    spokes.renderOrder = 3; roseGrp.add(spokes);
+
+    /* ---- MODEL C ONLY: the ghost track ----------------------------------
+       Secondary tags drawn as a SEPARATE, fainter rosette at their own scale.
+       This is the "two visual weights" the brief asks for, and it is the whole
+       reason C exists: the solid geometry stays exactly what today's tree draws
+       (so nothing migrates, nothing breaks) while the ghost shows what the
+       single-sector model is currently throwing away. Where the ghost is much
+       bigger than the solid — agents, images — that gap IS the lost information,
+       made visible rather than argued about.
+       Drawn at 0.72 of full radius and low opacity so it can never be mistaken
+       for the primary reading.                                              */
+    if (model === 'C') {
+      const gp = [], gc = [];
+      rows.forEach((r, i) => {
+        if (!r.present) return;
+        const y = yOf(i) + 0.03;
+        const ghostRadii = ringRadii(r.Cs.map((c) => radiusOf(c, MAXCELL.Cs) * 0.72));
+        for (let k = 0; k < RING_N; k++) {
+          const k2 = (k + 1) % RING_N;
+          const a1 = (k / RING_N) * Math.PI * 2, a2 = (k2 / RING_N) * Math.PI * 2;
+          gp.push(Math.cos(a1) * ghostRadii[k], y, Math.sin(a1) * ghostRadii[k]);
+          gp.push(Math.cos(a2) * ghostRadii[k2], y, Math.sin(a2) * ghostRadii[k2]);
+          for (const kk of [k, k2]) {
+            tmp.copy(hueAt(kk, r.Cs));
+            tmp.multiplyScalar(0.42);
+            gc.push(tmp.r, tmp.g, tmp.b);
+          }
+        }
+      });
+      const gg = new THREE.BufferGeometry();
+      gg.setAttribute('position', new THREE.Float32BufferAttribute(gp, 3));
+      gg.setAttribute('color', new THREE.Float32BufferAttribute(gc, 3));
+      const ghosts = new THREE.LineSegments(gg, new THREE.LineBasicMaterial({
+        vertexColors: true, transparent: true, opacity: 0.5,
+        depthWrite: false, blending: THREE.AdditiveBlending,
+      }));
+      ghosts.renderOrder = 3; roseGrp.add(ghosts);
+    }
+
+    // lobe dots — the actual measured points
+    const dp = [], dc = [], ds = [];
+    rows.forEach((r, i) => {
+      if (!r.present) return;
+      const y = yOf(i), tot = r.totals[model] || 1;
+      SECTORS.forEach((s, si) => {
+        const c = r[model][si]; if (c <= 0) return;
+        const a = deg(s.az), rr = radiusOf(c, max), cc = sectorColors[si];
+        dp.push(Math.cos(a) * rr, y, Math.sin(a) * rr);
+        const share = c / tot, b = 0.75 + share * 1.05;
+        dc.push(cc.r * b, cc.g * b, cc.b * b);
+        ds.push(4.2 + share * 8.0);
+      });
+    });
+    const dg = new THREE.BufferGeometry();
+    dg.setAttribute('position', new THREE.Float32BufferAttribute(dp, 3));
+    dg.setAttribute('color', new THREE.Float32BufferAttribute(dc, 3));
+    dg.setAttribute('psize', new THREE.Float32BufferAttribute(ds, 1));
+    const dots = new THREE.Points(dg, new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true,
+      uniforms: { uScale: { value: renderer.getPixelRatio() * innerHeight * 0.5 }, uDim: dimU },
+      vertexShader: `
+        attribute float psize; uniform float uScale; varying vec3 vCol;
+        void main() {
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          vCol = color;
+          gl_PointSize = clamp(psize * (uScale / -mvPosition.z) * 0.09, 1.2, 22.0);
+          gl_Position = projectionMatrix * mvPosition;
+        }`,
+      fragmentShader: `
+        varying vec3 vCol; uniform float uDim;
+        void main() {
+          float d = length(gl_PointCoord - vec2(0.5));
+          if (d > 0.5) discard;
+          float a = smoothstep(0.5, 0.06, d);
+          gl_FragColor = vec4(vCol * (0.7 + a * 0.9) * uDim, a * 0.9 * uDim);
+        }`,
+    }));
+    dots.renderOrder = 4; roseGrp.add(dots);
+    dots.userData.scaleU = dots.material.uniforms.uScale;
+  }
+  roseGrp.visible = LOOK.rose;
+  grp.add(roseGrp);
+
+  /* ---- the drawn core: the floor every zero rests on ---- */
+  const cg = new THREE.CylinderGeometry(CORE_R * 0.985, CORE_R * 0.985, TOP_Y, 32, 1, true);
+  const core = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({
+    color: 0x4a3a29, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false,
+  }));
+  core.position.y = TOP_Y / 2; core.renderOrder = 0; grp.add(core);
+
+  /* ---- sector bearing spokes on the ground ---- */
+  SECTORS.forEach((s) => {
+    const a = deg(s.az);
+    const lg = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(Math.cos(a) * CORE_R, 0.01, Math.sin(a) * CORE_R),
+      new THREE.Vector3(Math.cos(a) * (MAX_R + 0.7), 0.01, Math.sin(a) * (MAX_R + 0.7)),
+    ]);
+    grp.add(new THREE.Line(lg, new THREE.LineBasicMaterial({
+      color: s.hue, transparent: true, opacity: 0.2,
+    })));
+  });
+
+  grp.userData = { model, dimU, skinGrp, roseGrp, monthRings, meta };
+  return grp;
+}
+
+/* ==========================================================================
+   5 · labels (canvas sprites, as on the sibling page)
+   ========================================================================== */
+function makeLabel(text, opts = {}) {
+  const { size = 42, col = '#cfd8e3', bold = false, pad = 8 } = opts;
+  const cv = document.createElement('canvas');
+  const ctx = cv.getContext('2d');
+  const font = (bold ? '600 ' : '') + size + 'px "Segoe UI", system-ui, sans-serif';
+  ctx.font = font;
+  const w = Math.ceil(ctx.measureText(text).width) + pad * 2;
+  cv.width = w; cv.height = size + pad * 2;
+  const c2 = cv.getContext('2d');
+  c2.font = font; c2.fillStyle = col; c2.textBaseline = 'middle';
+  c2.shadowColor = 'rgba(0,0,0,.85)'; c2.shadowBlur = 8;
+  c2.fillText(text, pad, cv.height / 2);
+  const tex = new THREE.CanvasTexture(cv); tex.anisotropy = 4;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: tex, transparent: true, depthTest: false, depthWrite: false,
+  }));
+  sp.scale.set(cv.width / 100, cv.height / 100, 1);
+  sp.renderOrder = 6;
+  sp.userData.text = text;
+  return sp;
+}
+
+/* ==========================================================================
+   6 · lay the three out side by side
+   ==========================================================================
+   SPACING is deliberate: 12.6 units between centres against a max radius of 4.2,
+   so the three never intersect even when all three are at full extent, and the
+   eye reads three objects rather than one lumpy one. ?solo= renders one alone.
+   ========================================================================== */
+const SPACING = 12.6;
+const envelopes = {};
+const shown = SOLO ? [SOLO] : MODELS;
+
+shown.forEach((m, i) => {
+  const env = buildEnvelope(m);
+  const x = SOLO ? 0 : (i - 1) * SPACING;
+  env.position.x = x;
+  scene.add(env);
+  envelopes[m] = env;
+
+  const meta = MODEL_META[m];
+  const hexOf = (h) => '#' + h.toString(16).padStart(6, '0');
+  // Title above each envelope + the two headline numbers, so the visual and the
+  // quantitative sit in the same glance rather than in two different places.
+  const t = makeLabel(meta.name, { size: 44, col: hexOf(meta.tint), bold: true });
+  t.position.set(x, TOP_Y + 2.35, 0); scene.add(t);
+  const t2 = makeLabel(meta.tag, { size: 30, col: '#8fa3ba' });
+  t2.position.set(x, TOP_Y + 1.62, 0); scene.add(t2);
+  const totStr = m === 'A'
+    ? TOT.A.reduce((a, b) => a + b, 0).toFixed(0) + ' attributed'
+    : (m === 'B' ? TOT.B.reduce((a, b) => a + b, 0) + ' axis-hits' : TOT.C.reduce((a, b) => a + b, 0) + ' primary');
+  const t3 = makeLabel(totStr + '   ·   Gini ' + GINI[m].toFixed(3), { size: 30, col: '#cfe0f2', bold: true });
+  t3.position.set(x, TOP_Y + 1.0, 0); scene.add(t3);
+});
+
+// sector labels — drawn ONCE, on the left-hand envelope only (or the solo one),
+// because repeating nine labels three times is noise, not information.
+{
+  const anchorX = SOLO ? 0 : -SPACING;
+  SECTORS.forEach((s) => {
+    const empty = TOT.A[SI.get(s.id)] <= 0;
+    const sp = makeLabel(s.label, {
+      size: 32, col: empty ? '#5c6672' : '#' + s.hue.toString(16).padStart(6, '0'), bold: !empty,
+    });
+    const a = deg(s.az), rr = MAX_R + 1.15;
+    sp.position.set(anchorX + Math.cos(a) * rr, 0.12, Math.sin(a) * rr);
+    scene.add(sp);
+  });
+}
+
+// month ladder, once, at the far right
+{
+  const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monLabel = (key) => { const [y, m] = key.split('-'); return MON[Number(m) - 1] + " '" + y.slice(2); };
+  const x = (SOLO ? 0 : SPACING) + MAX_R + 1.6;
+  rows.forEach((r, i) => {
+    if (i % 3 !== 0 && r.present) return;
+    const sp = makeLabel(monLabel(r.key), { size: 30, col: r.present ? '#9fb2c8' : '#ff9d9d' });
+    sp.position.set(x, yOf(i), 0);
+    scene.add(sp);
+  });
+}
+
+/* Framing has to clear THREE title lines that sit above TOP_Y (at +1.0, +1.62 and
+   +2.35) as well as the solids themselves — the first build cropped them off the
+   top of the frame. So the vertical extent runs from the ground plane to
+   TOP_Y + 3.1, and the camera is aimed at the MIDPOINT of that span rather than
+   at TOP_Y * 0.5, which was half an envelope too low once the labels were
+   counted. The 1.14 margin then buys back the room the fixed side panels eat:
+   they cover roughly 360px each of a 1920px frame, so the usable centre is about
+   62% of the width and the outer two envelopes would otherwise sit under them. */
+function frameAll() {
+  const halfW = (SOLO ? MAX_R + 2.4 : SPACING + MAX_R + 3.2);
+  const yTop = TOP_Y + 3.1;             // tallest label, not tallest geometry
+  const halfH = yTop / 2;
+  const vFov = deg(camera.fov);
+  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+  const d = Math.max(halfH / Math.tan(vFov / 2), halfW / Math.tan(hFov / 2)) * 1.14;
+  camera.position.set(0, yTop * 0.5, d);
+  controls.target.set(0, yTop * 0.5, 0);
+  controls.update();
+}
+frameAll();
+
+/* ==========================================================================
+   7 · side panel — the numbers under each model, and the derivation badges
+   ========================================================================== */
+const hexOf = (h) => '#' + h.toString(16).padStart(6, '0');
+const fmtA = (v) => (v === 0 ? '·' : v.toFixed(1));
+const fmtI = (v) => (v === 0 ? '·' : String(v));
+
+{
+  const tbl = document.getElementById('tbl');
+  let html = '<tr><th class="l">sector</th><th title="today\'s single-sector model">now</th>' +
+    '<th title="Model A: fractional weights, sums to 1749">A</th>' +
+    '<th title="Model B: whole commit on every axis">B</th>' +
+    '<th title="Model C: primary count, and secondary count in the second column">C</th>' +
+    '<th title="Model C secondaries — the ghost lobes">+sec</th></tr>';
+  SECTORS.forEach((s, i) => {
+    const isNew = s.id === 'automate.agents';
+    html += `<tr><td class="l"><span class="dot" style="background:${hexOf(s.hue)}"></span>` +
+      `${s.label}${isNew ? ' <span style="color:#c9a2ff;font-size:9px">NEW</span>' : ''}</td>` +
+      `<td class="${BASE[i] ? '' : 'z'}">${fmtI(BASE[i])}</td>` +
+      `<td class="${TOT.A[i] ? '' : 'z'}">${fmtA(TOT.A[i])}</td>` +
+      `<td class="${TOT.B[i] ? '' : 'z'}">${fmtI(TOT.B[i])}</td>` +
+      `<td class="${TOT.C[i] ? '' : 'z'}">${fmtI(TOT.C[i])}</td>` +
+      `<td class="sec">${fmtI(TOT.Cs[i])}</td></tr>`;
+  });
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  html += `<tr class="sum"><td class="l">total</td><td>${sum(BASE)}</td>` +
+    `<td>${sum(TOT.A).toFixed(0)}</td><td>${sum(TOT.B)}</td>` +
+    `<td>${sum(TOT.C)}</td><td class="sec">${sum(TOT.Cs)}</td></tr>`;
+  html += `<tr class="gini"><td class="l" title="inequality across the 9 sectors; lower = growth in more directions">Gini</td>` +
+    `<td>${GINI.base.toFixed(3)}</td><td>${GINI.A.toFixed(3)}</td>` +
+    `<td>${GINI.B.toFixed(3)}</td><td>${GINI.C.toFixed(3)}</td><td class="sec">—</td></tr>`;
+  tbl.innerHTML = html;
+}
+
+// the fallback-chain rollup, in the HUD
+{
+  const t = document.getElementById('chainTbl');
+  const pct = (n) => (n / TOTAL_COMMITS * 100).toFixed(0) + '%';
+  t.innerHTML =
+    `<tr><td class="l"><span class="badge topics">topics</span></td>` +
+      `<td class="n">${BADGE_REPOS.topics} repos</td><td class="n">${BADGE.topics}</td><td class="n">${pct(BADGE.topics)}</td></tr>` +
+    `<tr><td class="l"><span class="badge authored">authored</span></td>` +
+      `<td class="n">${BADGE_REPOS.authored} repos</td><td class="n">${BADGE.authored}</td><td class="n">${pct(BADGE.authored)}</td></tr>` +
+    `<tr><td class="l"><span class="badge single">single</span></td>` +
+      `<td class="n">${BADGE_REPOS.single} repos</td><td class="n">${BADGE.single}</td><td class="n">${pct(BADGE.single)}</td></tr>`;
+}
+
+// per-repo derivation, so every guess is inspectable
+{
+  const t = document.getElementById('repTbl');
+  const list = [...repoInfo.entries()].sort((a, b) => b[1].commits - a[1].commits).slice(0, 20);
+  t.innerHTML = '<tr><th class="l">repo</th><th>commits</th><th class="l" style="padding-left:6px">derived from</th></tr>' +
+    list.map(([p, info]) =>
+      `<tr><td class="l" title="${p} — ${Object.entries(info.w).map(([k, v]) => k + ' ' + v.toFixed(2)).join(', ')}">${p}</td>` +
+      `<td>${info.commits}</td>` +
+      `<td class="l" style="padding-left:6px"><span class="badge ${info.badge}">${info.badge}</span></td></tr>`
+    ).join('');
+}
+
+/* ==========================================================================
+   8 · UI wiring
+   ========================================================================== */
+function setPressed(id, on) { const e = document.getElementById(id); if (e) e.setAttribute('aria-pressed', String(on)); }
+
+function applyFocus() {
+  for (const m of MODELS) {
+    const env = envelopes[m]; if (!env) continue;
+    env.userData.dimU.value = (!FOCUS || FOCUS === m) ? 1.0 : 0.22;
+  }
+  for (const m of MODELS) setPressed('b' + m, FOCUS === m);
+  setPressed('bAll', !FOCUS);
+}
+MODELS.forEach((m) => {
+  const b = document.getElementById('b' + m);
+  if (!b) return;
+  b.addEventListener('click', () => { FOCUS = (FOCUS === m) ? null : m; applyFocus(); pushURL(); });
+});
+document.getElementById('bAll').addEventListener('click', () => { FOCUS = null; applyFocus(); pushURL(); });
+
+document.getElementById('bSpin').addEventListener('click', () => {
+  controls.autoRotate = !controls.autoRotate; setPressed('bSpin', controls.autoRotate);
+});
+document.getElementById('bSkin').addEventListener('click', () => {
+  LOOK.skin = !LOOK.skin;
+  for (const e of Object.values(envelopes)) e.userData.skinGrp.visible = LOOK.skin;
+  setPressed('bSkin', LOOK.skin); pushURL();
+});
+document.getElementById('bRose').addEventListener('click', () => {
+  LOOK.rose = !LOOK.rose;
+  for (const e of Object.values(envelopes)) e.userData.roseGrp.visible = LOOK.rose;
+  setPressed('bRose', LOOK.rose); pushURL();
+});
+document.getElementById('bFrame').addEventListener('click', frameAll);
+
+const fmt = (v) => v.toFixed(2).replace(/^0/, '');
+function applyLook() {
+  skinAlpha.value = LOOK.opacity;
+  bloomPass.strength = LOOK.bloom;
+  bloomPass.threshold = LOOK.thresh;
+  document.getElementById('vOpacity').textContent = fmt(LOOK.opacity);
+  document.getElementById('vBloom').textContent = fmt(LOOK.bloom);
+  document.getElementById('vThresh').textContent = fmt(LOOK.thresh);
+}
+document.getElementById('sOpacity').addEventListener('input', (e) => { LOOK.opacity = parseFloat(e.target.value); applyLook(); pushURL(); });
+document.getElementById('sBloom').addEventListener('input', (e) => { LOOK.bloom = parseFloat(e.target.value); applyLook(); pushURL(); });
+document.getElementById('sThresh').addEventListener('input', (e) => { LOOK.thresh = parseFloat(e.target.value); applyLook(); pushURL(); });
+document.getElementById('sOpacity').value = String(LOOK.opacity);
+document.getElementById('sBloom').value = String(LOOK.bloom);
+document.getElementById('sThresh').value = String(LOOK.thresh);
+
+function pushURL() {
+  const p = new URLSearchParams(location.search);
+  if (FOCUS) p.set('model', FOCUS); else p.delete('model');
+  p.set('opacity', LOOK.opacity.toFixed(3));
+  p.set('bloom', LOOK.bloom.toFixed(2));
+  p.set('thresh', LOOK.thresh.toFixed(2));
+  if (LOOK.skin) p.delete('skin'); else p.set('skin', '0');
+  if (LOOK.rose) p.delete('rose'); else p.set('rose', '0');
+  history.replaceState(null, '', location.pathname + '?' + p.toString());
+}
+document.getElementById('bShare').addEventListener('click', async (e) => {
+  pushURL();
+  const btn = e.currentTarget, was = btn.textContent;
+  try { await navigator.clipboard.writeText(location.href); btn.textContent = 'copied'; }
+  catch { btn.textContent = 'see URL bar'; }
+  setTimeout(() => { btn.textContent = was; }, 1400);
+});
+
+applyLook();
+applyFocus();
+setPressed('bSpin', controls.autoRotate);
+setPressed('bSkin', LOOK.skin);
+setPressed('bRose', LOOK.rose);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+  bloomPass.setSize(innerWidth, innerHeight);
+  scene.traverse((o) => {
+    if (o.material && o.material.uniforms && o.material.uniforms.uScale) {
+      o.material.uniforms.uScale.value = renderer.getPixelRatio() * innerHeight * 0.5;
+    }
+  });
+});
+
+/* ==========================================================================
+   9 · loop
+   ========================================================================== */
+renderer.setAnimationLoop(() => { controls.update(); composer.render(); });
+
+/* ==========================================================================
+   10 · verification probe — so claims about this page can be CHECKED, not
+   asserted. Every number in the header and the panel comes out of here.
+   ========================================================================== */
+window.__probe = () => ({
+  commits: TOTAL_COMMITS,
+  months: rows.map((r) => r.key),
+  present: rows.map((r) => r.present),
+  sectors: SECTORS.map((s) => s.id),
+  baseline: BASE,
+  totals: {
+    A: TOT.A.map((v) => +v.toFixed(2)),
+    B: TOT.B, C: TOT.C, Cs: TOT.Cs,
+  },
+  sums: {
+    base: BASE.reduce((a, b) => a + b, 0),
+    A: +TOT.A.reduce((a, b) => a + b, 0).toFixed(2),
+    B: TOT.B.reduce((a, b) => a + b, 0),
+    C: TOT.C.reduce((a, b) => a + b, 0),
+  },
+  gini: { base: +GINI.base.toFixed(3), A: +GINI.A.toFixed(3), B: +GINI.B.toFixed(3), C: +GINI.C.toFixed(3) },
+  badges: BADGE, badgeRepos: BADGE_REPOS, topicCaptured: TOPIC_CAPTURED,
+  repos: [...repoInfo.entries()].map(([p, i]) => ({
+    project: p, commits: i.commits, badge: i.badge,
+    w: Object.fromEntries(Object.entries(i.w).map(([k, v]) => [k, +v.toFixed(3)])),
+  })).sort((a, b) => b.commits - a.commits),
+  shown, solo: SOLO, focus: FOCUS,
+  look: { opacity: skinAlpha.value, bloom: bloomPass.strength, thresh: bloomPass.threshold,
+          skin: LOOK.skin, rose: LOOK.rose },
+});
+window.__focus = (m) => { const b = document.getElementById('b' + m); if (b) b.click(); };
+window.__spinOff = () => { controls.autoRotate = false; setPressed('bSpin', false); };
+</script>
+</body>
+</html>
