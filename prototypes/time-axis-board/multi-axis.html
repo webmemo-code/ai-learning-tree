@@ -92,18 +92,26 @@ THE ALIGNMENT FIX — §QBEAR
   objects claimed to be one measurement at two altitudes while pointing different
   ways, which makes the claim unreadable.
 
-  The fix has TWO answers because the honest one and the tidy one conflict. The
-  members' circular centroids are 75/195/275/335, spaced 120/80/60/100 and NOT 90
-  — CREATE owns four of nine sectors, BUILD owns one. So exact alignment and even
-  90-degree spacing are mutually exclusive. Both ship, ?qbear= picks:
-    centroid  (DEFAULT) each limb on its members' circular centroid. Drift 0
-              everywhere. Uneven spacing; BUILD's wedge reads thin, which is true.
-    even      90 apart, rotated as a whole to the drift-minimising phase — that
-              phase computes to exactly 85 (85/175/265/355), max drift 20 against
-              the old 60.
+  The honest answer and the tidy one conflict. The members' circular centroids are
+  75/195/275/335, spaced 120/80/60/100 and NOT 90 — CREATE owns four of nine
+  sectors, BUILD owns one. So exact alignment and even 90-degree spacing are
+  mutually exclusive, and this page takes alignment: every limb sits on its
+  members' circular centroid, drift 0 everywhere, spacing uneven. BUILD's wedge
+  reads thin because it genuinely is one sector of nine.
+  An ?qbear=even lever offering the 90-degree cross was built and then REMOVED on
+  Walter's call ("the asymmetric wedges are clearer"). §QBEAR records why it could
+  not survive §QARC's real widths, so it is not reinvented.
   Ground arcs sweep from each sector's bearing to its parent limb's bearing on
-  BOTH objects, so the correspondence is drawn rather than asserted; under
-  centroid they converge exactly, under even they miss by the drift.
+  BOTH objects, so the correspondence is drawn rather than asserted, and they
+  converge exactly.
+
+  A SECOND DEFECT, same symptom, different cause — §QMIRROR. Walter reported the
+  wedges still pointing away from their labels after the above. They were: the
+  wedge shape is authored in XY and laid flat with rotateX(-90), which maps shape
+  +Y to world -Z and reflected every wedge across the x-axis while the labels,
+  spokes and arcs were never reflected. The bearings going in were right and the
+  geometry coming out was mirrored, which is why the arithmetic kept checking out.
+  window.__align() measures the DRAWN meshes against the DRAWN labels.
 
 THE QUARTERLY BOXES — §QBOX
   Walter: "Since in the quadrant view we are synthesizing to a management
@@ -147,7 +155,7 @@ THE QUARTERLY BOXES — §QBOX
   COMPOSITION = four footprint QUADRANTS, each on its limb's own bearing. Chosen
   over stacked layers (which would put composition on the time axis) and over a
   banded skin (arc length with no baseline is the hardest read there is) for one
-  decisive reason: quadrants KEEP EVERY LIMB ON ITS BEARING, so ?qbear= and the
+  decisive reason: quadrants KEEP EVERY LIMB ON ITS BEARING, so the bearings and
   sector->limb correspondence arcs keep working and the "same object at two
   altitudes" reading survives. Wedge radius goes as sqrt(share) so wedge AREA is
   exactly the limb's share — verified to <1e-12. The sqrt is honest and it
@@ -293,12 +301,14 @@ HONEST WEAKNESSES
     available to it at quarterly resolution. The boxes are not wrong; they are
     less able, and the page has to keep saying so.
   - centroid BEARINGS MAKE BUILD LOOK THIN, AND THAT IS THE POINT AND ALSO A
-    HAZARD. Under ?qbear=centroid the four limbs cover 120/80/60/100 degrees,
-    which correctly encodes that CREATE owns four sectors and BUILD owns one. But
-    angular span is now carrying information that nothing on the page measures —
-    a viewer may read the wide CREATE wedge as "more effort" when it only means
-    "more sub-categories". Under ?qbear=even that confusion disappears and the
-    alignment becomes approximate instead. There is no option without a cost.
+    HAZARD. The four limbs cover 120/80/60/100 degrees and their wedges 160/80/
+    80/40, which correctly encodes that CREATE owns four sectors and BUILD owns
+    one. But angular span is carrying information that nothing on the page
+    measures — a viewer may read the wide CREATE wedge as "more effort" when it
+    only means "more sub-categories". The equal-90 alternative removed that
+    confusion at the price of the alignment, and was dropped (§QBEAR); this is
+    now a cost the page carries rather than a lever, so the legend prints each
+    wedge's arc and its member count side by side to keep the two readings apart.
   - 2026Q3 IS ONE MONTH, NOT A QUARTER. The log ends at 2026-07, so the top
     collar covers 2026-07 alone (390 commits) while every collar below it covers
     three months. Its fins are therefore NOT comparable to the rest of the
@@ -368,10 +378,9 @@ USAGE
           ?evidence=1        also show A, B and C alone (the comparison that
                              produced the choice). Default off — the decision is
                              made; the evidence is one click away, not in the way.
-          ?qbear=centroid|even   where the four quadrant limbs point. centroid
-                             (default) = exact alignment with the sector view,
-                             uneven spacing. even = 90 apart at the drift-
-                             minimising phase 85. See §QBEAR.
+          (?qbear= is GONE. The limbs always sit on their members' circular
+                             centroid — exact alignment, uneven spacing. The
+                             even-90 alternative was dropped; see §QBEAR.)
           ?qstyle=boxes|collars|envelope  how the QUADRANT object is drawn.
                              boxes (default) = ONE rounded box per quarter, area
                              = effort, four footprint quadrants = the four limbs.
@@ -650,16 +659,11 @@ USAGE
     <button id="bC" type="button" data-m="C">C prim+sec</button>
   </div>
   <!-- ===== QUADRANT-VIEW CONTROLS =====
-       Two decisions Walter asked to make by eye rather than by argument, so both
-       options exist and neither is hidden behind a rebuild-and-hope. -->
+       The body is a decision Walter asked to make by eye rather than by argument,
+       so the options exist and none is hidden behind a rebuild-and-hope. The
+       BEARINGS row that sat here is gone — "we can disregard the 'even' option,
+       the asymmetric wedges are clearer" — so there is one answer, not a toggle. -->
   <div id="qctl">
-    <div class="qrow">
-      <span class="qlab" title="where the four quadrant limbs point">Q bearings</span>
-      <button id="bQBearC" type="button" data-qb="centroid"
-        title="each limb on its members' circular centroid — exact alignment, uneven spacing">centroid</button>
-      <button id="bQBearE" type="button" data-qb="even"
-        title="90 degrees apart, rotated as a whole to minimise drift — even spacing, approximate alignment">even 90&deg;</button>
-    </div>
     <div class="qrow">
       <span class="qlab" title="how the quadrant object is drawn">Q body</span>
       <button id="bQStyleB" type="button" data-qs="boxes"
@@ -804,9 +808,9 @@ USAGE
       <div class="sw">
         <span class="chip guide"></span>
         <span><b>Ground arcs</b> &mdash; each sector's bearing swept to its parent
-        limb's bearing, in the limb's hue. Under <b>centroid</b> bearings they
-        converge exactly; under <b>even 90&deg;</b> they land short or long, and
-        that residual is what even spacing costs.</span>
+        limb's bearing, in the limb's hue. They <b>converge exactly</b>, because
+        every limb sits on its members' circular centroid &mdash; the alignment
+        claim drawn rather than asserted.</span>
       </div>
       <div class="sw">
         <span class="chip gap"></span>
@@ -1008,15 +1012,15 @@ const LOOK = {
   // watch, not the slider's max.
   ghost:   numParam('ghost', 0.62, 0, 1.6),
 };
-/* ---- QUADRANT-VIEW-ONLY LEVERS (both new; neither touches the 9-sector view) --
-   qbear   how the four quadrant bearings are placed. See §QBEAR below.
+/* ---- QUADRANT-VIEW-ONLY LEVER (does not touch the 9-sector view) -------------
    qstyle  how the quadrant view is DRAWN: the inherited monthly lofted envelope,
-           or the quarterly abstracted boxes. See §QBOX below. */
+           or the quarterly abstracted boxes. See §QBOX below.
+   ?qbear= is GONE — the limbs always sit on their members' circular centroid.
+   See §QBEAR for what `even` was and why removing it was a simplification. */
 const enumParam = (name, allowed, def) => {
   const v = (PARAMS.get(name) || '').toLowerCase();
   return allowed.includes(v) ? v : def;
 };
-let QBEAR  = enumParam('qbear',  ['centroid', 'even'],            'centroid');
 let QSTYLE = enumParam('qstyle', ['boxes', 'collars', 'envelope'], 'boxes');
 // the sector<->quadrant correspondence guides on the ground plane
 let GUIDES = PARAMS.get('guides') !== '0';
@@ -1301,7 +1305,7 @@ const MODEL_META = {
    wears copy's amber (its largest member), AUTOMATE wears workflows' green,
    DISTRIBUTE wears seo's teal, BUILD wears coding's blue (its only member).
 
-   §QBEAR — BEARINGS. THE BUG THAT WAS HERE, AND WHY THE FIX HAS TWO ANSWERS.
+   §QBEAR — BEARINGS. THE BUG THAT WAS HERE, AND THE ANSWER THAT SURVIVED.
    --------------------------------------------------------------------------
    The quadrants used to sit at a hard-coded 45/135/225/315 while their member
    sectors sit at 15..335 in 40-degree steps. Walter: "Rotate the quadrant view to
@@ -1322,23 +1326,30 @@ const MODEL_META = {
    — spaced 120/80/60/100, NOT 90. That is not sloppiness; it is the data: CREATE
    owns four of the nine sectors and BUILD owns one, so the arc each limb covers
    is genuinely unequal. "Aligned with the detail view" and "evenly spaced at 90
-   degrees" are therefore MUTUALLY EXCLUSIVE. Both are implemented; ?qbear= picks.
+   degrees" are MUTUALLY EXCLUSIVE, and this page chooses alignment:
 
      centroid  each limb sits exactly on its members' circular centroid. Perfect
                alignment — a spoke in the quadrant view points where its sectors
                actually are. Cost: uneven spacing, and BUILD's lone wedge reads
                thin because it genuinely covers one sector out of nine.
-     even      90 degrees apart, rotated AS A WHOLE to the phase that minimises
-               total squared drift from the centroids. That phase is exactly 85
-               (85/175/265/355), max drift 20 against the old 60. Cost: alignment
-               is approximate, not exact.
 
-   DEFAULT centroid — the ask was alignment, the alignment claim is what the two
-   views' comparability rests on, and "evenly spaced" is a cosmetic property that
-   actively misrepresents how the nine sectors distribute across four limbs.
-
-   The even phase is COMPUTED here, not typed, so it cannot go stale if a sector
-   is ever added or a bearing moves. -------------------------------------------- */
+   THERE WAS A SECOND MODE, ?qbear=even — the four limbs forced to 90 degrees
+   apart at the drift-minimising phase 85. IT IS GONE, removed on Walter's call:
+   "I think we can disregard the 'even' option? The asymmetric wedges are
+   clearer." Recorded here so it is not reinvented, because the reason it failed
+   is structural rather than cosmetic. Once a wedge's WIDTH became a real
+   quantity (§QARC: 160/80/80/40, read off the sectors), `even` had no coherent
+   geometry left to offer. Rotating the bearings without re-centring put BUILD's
+   spoke on its own arc boundary — the drawn wedge would not have contained its
+   own bearing. Re-centring the arcs on equally-spaced bearings does not tile:
+   four arcs of 160/80/80/40 centred 90 apart overlap by 30 degrees, which is
+   exactly the interpenetration §QZFIGHT exists to eliminate. Unequal widths and
+   equally-spaced centres are arithmetically incompatible, full stop. The only
+   self-consistent `even` was "draw all four as equal 90-degree quarters", which
+   throws away the one thing the rollup has to say — that CREATE owns four of the
+   nine sectors and BUILD owns one. Dropping it removed the whole QUAD_ARC_EVEN
+   branch, the phase solver, and every two-armed conditional downstream.
+   -------------------------------------------------------------------------- */
 const QUAD_MEMBER_AZ = {
   create: [], automate: [], distribute: [], build: [],
 };
@@ -1356,25 +1367,11 @@ const signedDelta = (a, b) => (((a - b + 180) % 360) + 360) % 360 - 180;
 const QUAD_ORDER = ['create', 'automate', 'distribute', 'build'];
 const QUAD_CENTROID = {};
 for (const k of QUAD_ORDER) QUAD_CENTROID[k] = circMean(QUAD_MEMBER_AZ[k]);
-// the even-mode phase: circular mean of (centroid_i - 90*i), which is the exact
-// minimiser of sum of squared circular drift for a rigid 90-degree cross.
-const EVEN_PHASE = (() => {
-  let x = 0, y = 0;
-  QUAD_ORDER.forEach((k, i) => {
-    const a = deg(QUAD_CENTROID[k] - 90 * i);
-    x += Math.cos(a); y += Math.sin(a);
-  });
-  return ((Math.atan2(y, x) * 180 / Math.PI) % 360 + 360) % 360;
-})();
-const quadAz = (id, i) => (QBEAR === 'even'
-  ? (EVEN_PHASE + 90 * i) % 360
-  : QUAD_CENTROID[id]);
 
 const QUAD_HUE = { create: 0xffb454, automate: 0x7ce65a, distribute: 0x35d0ba, build: 0x6a8dff };
-const QUADS = QUAD_ORDER.map((id, i) => ({ id, label: id, az: quadAz(id, i), hue: QUAD_HUE[id] }));
-// drift of each limb from its centroid, printed in the panel so the trade-off is
-// a number on screen rather than a claim in a comment.
-const QUAD_DRIFT = QUADS.map((q) => signedDelta(q.az, QUAD_CENTROID[q.id]));
+// Every limb sits ON its members' circular centroid — that IS the bearing rule
+// now that `even` is gone, so there is nothing left to switch on.
+const QUADS = QUAD_ORDER.map((id) => ({ id, label: id, az: QUAD_CENTROID[id], hue: QUAD_HUE[id] }));
 const QI = new Map(QUADS.map((q, i) => [q.id, i]));
 // sector index -> quadrant index, derived from the id prefix so it cannot drift
 const SEC2QUAD = SECTORS.map((s) => QI.get(s.id.split('.')[0]));
@@ -1441,7 +1438,7 @@ const SEC_BOUND = SECTORS.map((s, i) =>
 /* Each limb's arc: from the boundary before its first member to the boundary
    after its last. Members of a limb are contiguous in the az-sorted SECTORS
    (they are, by construction of the taxonomy), so this is their exact union. */
-const QUAD_ARC_SECTOR = QUAD_ORDER.map((k) => {
+const QUAD_ARC = QUAD_ORDER.map((k) => {
   const ii = SECTORS.map((s, i) => (s.id.split('.')[0] === k ? i : -1)).filter((i) => i >= 0);
   const first = ii[0], last = ii[ii.length - 1];
   const a0 = SEC_BOUND[(first - 1 + SECTORS.length) % SECTORS.length];
@@ -1449,53 +1446,18 @@ const QUAD_ARC_SECTOR = QUAD_ORDER.map((k) => {
   const width = ii.length === SECTORS.length ? 360 : fwd360(a0, a1);
   return { id: k, a0, a1, width, centre: wrap360(a0 + width / 2) };
 });
-
-/* --------------------------------------------------------------------------
-   WHAT ?qbear=even MEANS NOW, and why it is the equal-quarter answer.
-   --------------------------------------------------------------------------
-   The old width rule read the BEARINGS, so `even` got its 90/90/90/90 for free.
-   The new rule reads the SECTORS, which `even` does not move — so the question
-   had to be reopened rather than inherited. Two candidates, and the geometry
-   settles it rather than taste:
-
-     (b) EVEN AS A PURE ROTATION — keep the sector-derived 160/80/80/40 and just
-         swing the bearings to 85/175/265/355. MEASURED, THIS DEGENERATES. Under
-         those bearings BUILD's spoke lands on 355, which is exactly its arc's
-         trailing edge: half-width 40 on one side and 0 on the other. The spoke
-         would sit on the wedge's boundary, and after the 4.2-degree inset the
-         drawn wedge would not contain its own bearing at all. That is a worse
-         version of the very defect this change fixes.
-
-     (b') EVEN AS ROTATION WITH THE WEDGES RE-CENTRED on the rotated bearings,
-         widths kept. ALSO BROKEN, and for a structural reason: four arcs of
-         160/80/80/40 centred 90 degrees apart do not tile. Measured seams are
-         -30/+10/+30/-10 — 30-degree overlaps, which is precisely the
-         interpenetration §QZFIGHT was written to eliminate. Unequal widths and
-         equally-spaced centres are arithmetically incompatible, full stop.
-
-   So (a): UNDER `even` THE WEDGES ARE EQUAL 90-DEGREE QUARTERS. That is not a
-   fallback, it is what "evenly spaced" means once the width is a real quantity —
-   `even` is the mode that says "draw the four limbs as equals", and drawing them
-   as equals is drawing them at equal width. The mode keeps its own meaning, it
-   tiles exactly, every wedge is centred on its own spoke (drift moves to the
-   ALIGNMENT, which is what the panel already reports), and the area correction
-   handles 90/90/90/90 as the angFrac = 0.25 case it was originally written for.
-
-   The two modes now trade cleanly and the trade is the same one as before, one
-   level deeper: centroid gives true arcs and true alignment at the cost of even
-   spacing; even gives even spacing at the cost of both. Default stays centroid.
-   -------------------------------------------------------------------------- */
-const QUAD_ARC_EVEN = QUAD_ORDER.map((k, i) => {
-  const c = (EVEN_PHASE + 90 * i) % 360;
-  return { id: k, a0: wrap360(c - 45), a1: wrap360(c + 45), width: 90, centre: c };
-});
-const QUAD_ARC = QBEAR === 'even' ? QUAD_ARC_EVEN : QUAD_ARC_SECTOR;
 const QARC_SUM = QUAD_ARC.reduce((a, r) => a + r.width, 0);
 const QARC_TILES = Math.abs(QARC_SUM - 360) < 1e-9;
 /* How far each limb's arc centre sits from the bearing the limb is DRAWN on.
-   Under centroid this is 0 for every limb — the wedge is centred on its own
-   spoke. Under even it is the bearing drift, made visible as the wedge sitting
-   off its spoke rather than as a silent widening. */
+   It is 0 for every limb BY CONSTRUCTION — the arc runs from the boundary before
+   the limb's first member to the boundary after its last, and with the sectors
+   evenly spaced that midpoint is exactly the circular centroid the bearing is
+   set to. Kept as a live assertion rather than a comment: if a sector is ever
+   added off-grid this goes non-zero and the panel says so.
+   NOTE it is NOT a check on where the wedge is DRAWN — it compares QUAD_ARC with
+   QUADS, both of which are inputs to the geometry. A mirror introduced inside
+   wedgeGeometry left this at 0 while the wedges were visibly 150 degrees out;
+   see §QMIRROR. window.__align() is the probe that reads the drawn result. */
 const QARC_OFF = QUAD_ARC.map((r, i) => signedDelta(r.centre, QUADS[i].az));
 
 const blankRow = (key, present) => ({
@@ -2224,9 +2186,9 @@ function buildEnvelope(model) {
    whole angular range its members occupy, so the quadrant's wedge visibly covers
    its sectors' arc rather than merely claiming to.
 
-   Under ?qbear=centroid the sector arcs converge exactly on the quadrant marks.
-   Under ?qbear=even they land short or long by the drift, and that residual is
-   the honest visual statement of what even spacing costs.
+   The sector arcs converge EXACTLY on the quadrant marks, because every limb sits
+   on its members' circular centroid. That convergence is the alignment claim made
+   visible: if a bearing ever drifted, these arcs would visibly miss.
 
    These are DRAWN AIDS at ground level, not measurement. They carry no radius
    information and sit at y=0.005 so they never mix with the lobes above. ------ */
@@ -2425,9 +2387,44 @@ const QBOX = {
    quarter ladder and the tick rings all have to agree on this or the outermost
    fin crops or the ladder lands on top of it — one constant, three readers. */
 const QOUTER = QBOX.inner + QBOX.maxReach + QBOX.gap + 1.15;
+/* §QLIFT — WHY THE STACK DOES NOT START ON THE FLOOR.
+   ---------------------------------------------------------------------------
+   Walter: "there is a new stray '2024Q4 (1 mo)' label with its own arc on the
+   floor." It was not a stray. It was the FIRST QUARTER, sitting at exactly y=0.
+
+   2024Q4 is the smallest bucket on the page — 3 commits of 1749, 0.17% — and at
+   y=0 everything that makes it a box disappeared into the ground plane:
+     - its ghost halo is 0.30 units tall and centred on the level, so half of it
+       (y -0.15 .. 0) rendered BELOW the floor and the visible half read as a
+       ring painted on it;
+     - its own tick ring landed exactly on the ground plane, on top of the
+       correspondence arcs and the bearing spokes, which live at y 0.01;
+     - two of its four limbs are measured zeros, drawn as 0.055 wafers, so there
+       was almost no vertical mass left to say "this is an object".
+   The result was a floating label beside some floor decoration — scene furniture,
+   not the smallest quarter. Every ingredient was individually correct, which is
+   why it read as a stray rather than as a bug.
+
+   THE FIX IS TO LIFT THE WHOLE LADDER, not to special-case 2024Q4. Shrinking or
+   hiding the smallest bucket would break the honesty rule that it is a real
+   quarter and must stay visible and labelled. Lifting costs nothing: the time
+   axis is an ORDERING, its zero carries no meaning, and every quarter moves by
+   the same amount so the spacing that encodes time is untouched.
+
+   The lift is the deepest any mark reaches BELOW its own level — half the halo's
+   0.30 thickness — plus clear air for the ground furniture underneath. QONE is
+   declared further down (it needs the quarterly rollup), so the halo height is
+   named here and asserted against QONE.haloH at the point of use rather than
+   read forward into the temporal dead zone. */
+const QHALO_H = 0.30;
+const QLIFT = QHALO_H / 2 + 0.42;
 // quarters are spaced up the same time axis the monthly view uses, so the two
 // renderings of the Q view occupy the same height and can be swapped in place.
-const QY = (i) => (QUARTERS.length > 1 ? (i / (QUARTERS.length - 1)) * TOP_Y : TOP_Y / 2);
+// The span is compressed by the lift rather than pushed through the titles, so
+// the object still tops out at TOP_Y and framing is unchanged.
+const QY = (i) => (QUARTERS.length > 1
+  ? QLIFT + (i / (QUARTERS.length - 1)) * (TOP_Y - QLIFT)
+  : TOP_Y / 2);
 /* REACH IS LINEAR IN EFFORT. Deliberately not sqrt: the previous build encoded
    effort as footprint area and needed sqrt to undo the eye's bias, but length
    from a shared origin has no such bias, so applying sqrt here would actively
@@ -2554,11 +2551,11 @@ const GHOST_SLOTS = qrows.reduce((a, qr) => a + qr.Qs.filter((v) => v > 0).lengt
    one repo's SEO work, with almost nothing reaching past it.
 
    ------------------------------------------------------------------------
-   §QBEAR-ONE — WHAT HAPPENS TO THE BEARING LEVERS. They keep working, in full.
+   §QBEAR-ONE — WHAT HAPPENS TO THE BEARINGS. They keep working, in full.
    ------------------------------------------------------------------------
    This was the open question the one-box design raised, and the answer is the
    good one: because the composition is arranged RADIALLY, every limb still has a
-   bearing, so ?qbear=centroid|even and the sector->limb correspondence arcs stay
+   bearing, so the centroid bearings and the sector->limb correspondence arcs stay
    meaningful and stay ON. The wedge boundaries and the ground arcs are computed
    from the same QUADS bearings the collar and envelope bodies use. Nothing had to
    be disabled, and the "same object at two altitudes" reading survives the
@@ -2581,8 +2578,10 @@ const QONE = {
   gap:     0.12,        // clear air between the box edge and its ghost halo
   haloMin: 0.18,        // thinnest halo (fewest ghost appearances)
   haloMax: 1.30,        // thickest halo (most ghost appearances)
-  haloH:   0.30,        // the halo is FLATTER than any wedge: a different shape
-                        // family, so it cannot be misread as more box
+  // the halo is FLATTER than any wedge: a different shape family, so it cannot
+  // be misread as more box. Shared with §QLIFT, which sizes the stack's lift off
+  // half this value — the deepest a mark reaches below its own level.
+  haloH:   QHALO_H,
 };
 /* Per-quarter totals. Effort is model A re-bucketed by quarter — identical
    weights, identical grand total — and equals the quarter's commit count
@@ -2747,9 +2746,10 @@ const QONE_OUTER = QONE.maxSpan + QONE.gap + QONE.haloMax + 1.15;
 
    CAUSE 1, THE DOMINANT ONE — WEDGES CLAIMED MORE ARC THAN THE CIRCLE HAS.
    Every wedge was built at a fixed +/-45 degrees about its bearing. That tiles a
-   circle exactly ONLY IF the four bearings are 90 apart, which is precisely what
-   ?qbear=even produces — and even is not the default. Under the default centroid
-   bearings the limbs sit at 75/195/275/335, so the separations are 120/80/60/100.
+   circle exactly ONLY IF the four bearings are 90 apart, which they are not: the
+   limbs sit on their centroids at 75/195/275/335, so the separations are
+   120/80/60/100. (An equal-90 mode existed at the time and did tile — but it was
+   never the default, and it has since been removed entirely; see §QBEAR.)
    Two 90-wide wedges whose bearings are only 60 apart MUST overlap, by a full 30
    degrees, and no inset or bevel tuning can rescue that: four wedges were
    claiming 360 degrees of arc out of a circle their bearings did not divide
@@ -2804,6 +2804,44 @@ const QONE_OUTER = QONE.maxSpan + QONE.gap + QONE.haloMax + 1.15;
 function wedgeBevel(corner, inset, innerR) {
   return Math.max(0, Math.min(corner * 0.5, innerR * inset * 0.72));
 }
+/* §QMIRROR — WHY THE SHAPE ANGLE IS NEGATED, and the bug that was here.
+   ----------------------------------------------------------------------------
+   Walter, twice: "the wedges don't point in the same direction as the ground
+   label." Both times the arithmetic was checked and found correct — QARC_OFF is
+   0 for every limb under centroid, the arcs are centred exactly on their
+   bearings — and the residual was written off as a mirrored debug camera
+   (__topdown sets camera.up to (0,0,-1), which really does flip the plan shot).
+   THAT EXPLANATION WAS WRONG. The defect was in this function, in world space,
+   visible from any angle.
+
+   A THREE.Shape is authored in the XY plane and this geometry is laid flat with
+   rotateX(-PI/2). That rotation maps shape +Y onto world -Z. So a vertex written
+   at shape angle t lands at WORLD azimuth -t: the whole wedge is reflected across
+   the x-axis. Everything else on the page — the ground labels, the bearing
+   spokes, the correspondence arcs, the collar fins — places itself with
+   (cos a, sin a) straight into world x/z and is therefore NOT reflected. The
+   wedges alone were mirrored, so a limb on bearing 275 drew its mass at 85.
+
+   Measured in the live scene before the fix (window.__align, which walks the
+   real meshes rather than re-reading the formulas that built them):
+
+     limb        label az   wedge az   error
+     create           75      283.8    +151.2
+     automate        195      160.4     +34.6
+     distribute      275       75.1    -160.1
+     build           335       25.4     -50.4
+
+   Each wedge sits at -bearing, the residual being only the asymmetry of its own
+   arc about that bearing. This is why the earlier probe could not see it: it
+   compared QUAD_ARC against QUADS, both of which are INPUTS to this function.
+   The mirror was introduced downstream of everything it checked.
+
+   THE FIX is to negate the angle going into the shape, so that the rotateX
+   undoes it and shape-space maps to world azimuth identically to every other
+   call site on the page. Negating BOTH bounds preserves the traversal direction,
+   so the polygon winding — and with it the extrude's face normals — is unchanged.
+   Verified after the fix: label azimuth == wedge azimuth for all four limbs to
+   within 0.01 degrees. -------------------------------------------------------- */
 function wedgeGeometry(a0, a1, span, h, corner, inner, bevel) {
   const seg = 26;
   const sh = new THREE.Shape();
@@ -2813,12 +2851,14 @@ function wedgeGeometry(a0, a1, span, h, corner, inner, bevel) {
     const n = 4.2;                                  // squircle exponent
     return span / Math.pow(Math.pow(c, n) + Math.pow(s, n), 1 / n);
   };
-  sh.moveTo(Math.cos(a0) * inner, Math.sin(a0) * inner);
+  /* §QMIRROR: shape-space y becomes world -z, so author at -t to land on +t. */
+  const sx = (t, r) => Math.cos(t) * r, sy = (t, r) => -Math.sin(t) * r;
+  sh.moveTo(sx(a0, inner), sy(a0, inner));
   for (let i = 0; i <= seg; i++) {
     const t = a0 + (a1 - a0) * (i / seg);
-    sh.lineTo(Math.cos(t) * prof(t), Math.sin(t) * prof(t));
+    sh.lineTo(sx(t, prof(t)), sy(t, prof(t)));
   }
-  sh.lineTo(Math.cos(a1) * inner, Math.sin(a1) * inner);
+  sh.lineTo(sx(a1, inner), sy(a1, inner));
   sh.closePath();
   /* HEIGHT IS NOW A QUANTITY, so the bevel must not silently add to it. A bevelled
      extrude is (depth + 2 * bevelThickness) tall, which under §QHEIGHT would make
@@ -2896,9 +2936,10 @@ function buildQuarterOneBox() {
          longer makes area equal share: a limb on a 60-degree bearing gap would
          under-report against one on 120. The radius is therefore divided by the
          wedge's share OF THE CIRCLE, which cancels the width exactly and restores
-         area == share for any bearing arrangement. Under ?qbear=even every width
-         is 90 degrees, angFrac is 0.25 for all four, and this reduces to the
-         original span*sqrt(share). Verified on the probe to <1e-12. */
+         area == share for any bearing arrangement. (With four equal 90-degree
+         wedges angFrac would be 0.25 throughout and this reduces to the original
+         span*sqrt(share) — the case it was first written for.) Verified on the
+         probe to <1e-12. */
       const angFrac = (HALF_CW[j] + HALF_CCW[j]) / (Math.PI * 2);
       const wspan = share > 0
         ? Math.max(inner + 0.06, span * Math.sqrt(share * 0.25 / angFrac)) : 0;
@@ -3541,6 +3582,7 @@ shown.forEach((m, i) => {
     });
     const a = deg(s.az), rr = MAX_R + 1.15;
     sp.position.set(x + Math.cos(a) * rr, 0.12, Math.sin(a) * rr);
+    sp.userData.axisLabel = s.label;    // so §QALIGN-PROBE can find it by limb
     scene.add(sp);
   });
 
@@ -3900,11 +3942,8 @@ document.getElementById('spQuadAvg').innerHTML =
 {
   const fb = document.getElementById('footBear');
   if (fb) {
-    fb.textContent = QBEAR === 'centroid'
-      ? 'their members’ circular centroids (' + QUADS.map((q) => q.az.toFixed(0)).join('/') + '°, drift 0)'
-      : 'an even 90° at the drift-minimising phase ' + EVEN_PHASE.toFixed(0) + '° ('
-        + QUADS.map((q) => q.az.toFixed(0)).join('/') + '°, max drift '
-        + Math.max(...QUAD_DRIFT.map(Math.abs)).toFixed(0) + '°)';
+    fb.textContent = 'their members’ circular centroids ('
+      + QUADS.map((q) => q.az.toFixed(0)).join('/') + '°, drift 0)';
   }
 }
 
@@ -3954,13 +3993,10 @@ document.getElementById('spQuadAvg').innerHTML =
 {
   const la = document.getElementById('lgArc');
   if (la) {
-    la.innerHTML = QBEAR === 'even'
-      ? `<b>even 90&deg; each</b>, because <code>?qbear=even</code> draws the four
-         limbs as equals &mdash; unequal arcs and 90&deg; spacing cannot both hold`
-      : QUAD_ORDER.map((k, i) =>
-          `<b style="color:#cfe0f2">${k} ${QUAD_ARC[i].width.toFixed(0)}&deg;</b>` +
-          `<span style="color:#7f93aa">/${QUAD_MEMBER_AZ[k].length}</span>`
-        ).join(', ') + ` <span style="color:#7f93aa">(sum ${QARC_SUM.toFixed(0)}&deg;)</span>`;
+    la.innerHTML = QUAD_ORDER.map((k, i) =>
+        `<b style="color:#cfe0f2">${k} ${QUAD_ARC[i].width.toFixed(0)}&deg;</b>` +
+        `<span style="color:#7f93aa">/${QUAD_MEMBER_AZ[k].length}</span>`
+      ).join(', ') + ` <span style="color:#7f93aa">(sum ${QARC_SUM.toFixed(0)}&deg;)</span>`;
   }
 }
 /* THE LEGEND MUST DESCRIBE THE BODY ACTUALLY ON SCREEN. The box vocabulary and
@@ -4083,55 +4119,49 @@ document.getElementById('bAll').addEventListener('click', () => { FOCUS = null; 
     history.replaceState(null, '', location.pathname + '?' + p.toString());
     location.reload();
   };
-  document.getElementById('bQBearC').addEventListener('click', () => setQ('qbear', 'centroid'));
-  document.getElementById('bQBearE').addEventListener('click', () => setQ('qbear', 'even'));
   document.getElementById('bQStyleB').addEventListener('click', () => setQ('qstyle', 'boxes'));
   document.getElementById('bQStyleC').addEventListener('click', () => setQ('qstyle', 'collars'));
   document.getElementById('bQStyleE').addEventListener('click', () => setQ('qstyle', 'envelope'));
-  setPressed('bQBearC', QBEAR === 'centroid');
-  setPressed('bQBearE', QBEAR === 'even');
   setPressed('bQStyleB', QSTYLE === 'boxes');
   setPressed('bQStyleC', QSTYLE === 'collars');
   setPressed('bQStyleE', QSTYLE === 'envelope');
 
-  /* The drift readout. This is the whole tension in four rows: under centroid
-     every drift is 0 and the SPACING column is uneven; under even the spacing is
-     90 everywhere and the drift column is not zero. Printing both makes the
-     choice a look-at-the-numbers decision rather than a preference. */
+  /* The bearing readout. With `even` gone there is no drift column left to
+     print — every limb sits ON its centroid by construction, so drift is 0 for
+     all four and the only honest thing left to show is the UNEVEN SPACING that
+     buys it, and each limb's earned arc width. */
   const spacing = QUADS.map((q, i) => {
     const nx = QUADS[(i + 1) % QUADS.length];
     return ((nx.az - q.az) % 360 + 360) % 360;
   });
-  const maxDrift = Math.max(...QUAD_DRIFT.map(Math.abs));
-  let h = `<b>bearings</b> ${QBEAR}` +
-    (QBEAR === 'even' ? ` <span style="color:#7f93aa">(phase ${EVEN_PHASE.toFixed(0)}&deg;)</span>` : '') +
-    `<br>`;
+  let h = `<b>bearings</b> centroid <span style="color:#5f7085">(the only mode)</span><br>`;
   h += QUADS.map((q, i) =>
     `${q.label.padEnd(0)} <span style="color:#cfd8e3">${q.az.toFixed(0)}&deg;</span> ` +
     `<span style="color:#5f7085">c${QUAD_CENTROID[q.id].toFixed(0)}</span> ` +
-    (Math.abs(QUAD_DRIFT[i]) < 0.05
-      ? `<span class="ok">drift 0</span>`
-      : `<span class="off">drift ${QUAD_DRIFT[i] > 0 ? '+' : ''}${QUAD_DRIFT[i].toFixed(0)}&deg;</span>`) +
-    ` <span style="color:#5f7085">gap ${spacing[i].toFixed(0)}&deg;</span>` +
-    /* §QARC — the WEDGE's own width, which is no longer the gap to the next limb.
-       Under centroid it is the limb's sectors' arc (160/80/80/40, n members
-       shown so the 4x spread reads as earned); under even it is a flat 90. */
+    `<span style="color:#5f7085">gap ${spacing[i].toFixed(0)}&deg;</span>` +
+    /* §QARC — the WEDGE's own width, which is not the gap to the next limb: it is
+       the limb's sectors' arc (160/80/80/40), n members shown so the 4x spread
+       reads as earned rather than as a styling choice. */
     ` <span style="color:#9fd8c4">arc ${QUAD_ARC[i].width.toFixed(0)}&deg;</span>` +
     `<span style="color:#5f7085">/${QUAD_MEMBER_AZ[q.id].length}s</span>`
   ).join('<br>');
-  h += `<br><b>max drift ${maxDrift.toFixed(0)}&deg;</b> ` +
+  h += `<br><b>drift 0&deg;</b> ` +
     `<span style="color:#5f7085">(was 60&deg; at the old fixed 45/135/225/315)</span>`;
-  /* The defect Walter reported, as a live number: how far each wedge's arc centre
-     sits from the bearing its ground label sits on. The old half-the-gap rule put
-     this at up to 10 deg; both modes now hold it at 0, so shape and label agree. */
   h += `<br><b>wedge arcs</b> ${QUAD_ARC.map((r) => r.width.toFixed(0)).join('/')}&deg; ` +
     `<span style="color:#5f7085">sum ${QARC_SUM.toFixed(0)}</span> ` +
-    (QARC_TILES ? `<span class="ok">tiles</span>` : `<span class="off">DOES NOT TILE</span>`) +
-    `<br>` +
-    (Math.max(...QARC_OFF.map(Math.abs)) < 0.05
-      ? `<span class="ok">every wedge centred on its bearing</span>`
-      : `<span class="off">off-centre by ${Math.max(...QARC_OFF.map(Math.abs)).toFixed(0)}&deg;</span>`) +
-    `<span style="color:#5f7085"> (was +5/-10/-5/+10)</span>`;
+    (QARC_TILES ? `<span class="ok">tiles</span>` : `<span class="off">DOES NOT TILE</span>`);
+  /* THE DEFECT WALTER REPORTED, MEASURED OFF THE DRAWN SCENE. The line above is
+     an input-vs-input check and read "centred" throughout the period when the
+     wedges were mirrored 150 degrees away from their labels (§QMIRROR). This one
+     walks the real meshes and the real label sprites, so it can actually fail. */
+  const al = (typeof window.__align === 'function') ? window.__align() : null;
+  if (Array.isArray(al) && al.every((e) => e.labelVsWedge !== null)) {
+    const worst = Math.max(...al.map((e) => Math.abs(e.labelVsWedge)));
+    h += `<br>` + (worst < 1
+      ? `<span class="ok">label = wedge on all four</span> ` +
+        `<span style="color:#5f7085">(max ${worst.toFixed(2)}&deg;, measured on the drawn mesh)</span>`
+      : `<span class="off">LABEL/WEDGE OFF BY ${worst.toFixed(1)}&deg;</span>`);
+  }
   document.getElementById('qdrift').innerHTML = h;
 }
 
@@ -4191,7 +4221,8 @@ function pushURL() {
   if (LEGEND_OPEN) p.delete('legend'); else p.set('legend', '0');
   if (LOOK.skin) p.delete('skin'); else p.set('skin', '0');
   if (LOOK.rose) p.delete('rose'); else p.set('rose', '0');
-  p.set('qbear', QBEAR); p.set('qstyle', QSTYLE);
+  p.delete('qbear');            // dropped lever — strip it from shared links
+  p.set('qstyle', QSTYLE);
   if (GUIDES) p.delete('guides'); else p.set('guides', '0');
   history.replaceState(null, '', location.pathname + '?' + p.toString());
 }
@@ -4398,15 +4429,15 @@ window.__probe = () => ({
     secSat: +ASYM.secSat.toFixed(3), quadSat: +ASYM.quadSat.toFixed(3),
     secLevels: ASYM.secLevels, quadLevels: ASYM.quadLevels,
   },
-  // §QBEAR — the alignment fix, checkable
+  /* §QBEAR — the alignment fix, checkable. `mode` and `drift` are gone with the
+     `even` lever: every limb is on its centroid by construction, so drift is
+     identically 0 and a field that can only ever print one value is noise.
+     For where the wedges are ACTUALLY DRAWN, call window.__align() — this block
+     reports the bearings that go IN, not the geometry that comes out. */
   qbear: {
-    mode: QBEAR,
-    evenPhase: +EVEN_PHASE.toFixed(3),
     centroids: Object.fromEntries(QUAD_ORDER.map((k) => [k, +QUAD_CENTROID[k].toFixed(3)])),
     memberAz: QUAD_MEMBER_AZ,
     bearings: Object.fromEntries(QUADS.map((q) => [q.id, +q.az.toFixed(3)])),
-    drift: Object.fromEntries(QUADS.map((q, i) => [q.id, +QUAD_DRIFT[i].toFixed(3)])),
-    maxDrift: +Math.max(...QUAD_DRIFT.map(Math.abs)).toFixed(3),
     spacing: QUADS.map((q, i) => +((((QUADS[(i + 1) % QUADS.length].az - q.az) % 360) + 360) % 360).toFixed(3)),
   },
   // §QBOX — the quarterly buckets, checkable against the raw log
@@ -4621,6 +4652,131 @@ window.__closeup = (qi = 6, dist = 5.2, az = 38, elev = 22) => {
   controls.update();
 };
 window.__spinOff = () => { controls.autoRotate = false; setPressed('bSpin', false); };
+/* Screen position of one named wedge, so a test can put the real cursor on a
+   known mark instead of sweeping pixels and hoping. §QHOVER is a pointer
+   behaviour; verifying it any other way verifies something else. */
+window.__wedgeAt = (quarter, limb) => {
+  scene.updateMatrixWorld(true);
+  let hit = null;
+  scene.traverse((o) => {
+    const pk = o.isMesh && o.userData && o.userData.pick;
+    if (pk && !pk.zero && pk.quarter === quarter && pk.limb === limb) hit = o;
+  });
+  if (!hit) return null;
+  hit.geometry.computeBoundingBox();
+  const c = hit.geometry.boundingBox.getCenter(new THREE.Vector3());
+  hit.localToWorld(c);
+  c.project(camera);
+  return { x: (c.x * 0.5 + 0.5) * innerWidth, y: (-c.y * 0.5 + 0.5) * innerHeight };
+};
+/* §QLIFT probe — the lowest point the quarterly object actually draws. The claim
+   is that nothing sinks into the ground plane any more, and that is a statement
+   about drawn vertices, not about QY(). Positive means the whole stack floats
+   clear of the floor and its furniture. */
+window.__floor = () => {
+  scene.updateMatrixWorld(true);
+  let qg = null;
+  scene.traverse((o) => { if (o.userData && o.userData.model === 'Q') qg = o; });
+  if (!qg) return { err: 'no Q object on screen' };
+  const org = new THREE.Vector3(); qg.getWorldPosition(org);
+  let min = Infinity, who = '';
+  let minNC = Infinity, whoNC = '';       // NC = excluding the core cylinder
+  const v = new THREE.Vector3();
+  qg.traverse((o) => {
+    const pa = o.isMesh && o.geometry && o.geometry.getAttribute
+      && o.geometry.getAttribute('position');
+    if (!pa) return;
+    /* The drawn core is SUPPOSED to reach the floor — the stack is threaded on
+       it and it is the same axis every other object on the page stands on. It is
+       the marks that must not sink, so measure them separately. */
+    let isCore = true;
+    for (let i = 0; i < pa.count && isCore; i++) {
+      v.set(pa.getX(i), pa.getY(i), pa.getZ(i)); o.localToWorld(v);
+      if (Math.hypot(v.x - org.x, v.z - org.z) > CORE_R * 1.2) isCore = false;
+    }
+    const name = o.userData.pick
+      ? `wedge ${o.userData.pick.limb} ${o.userData.pick.quarter}` : 'halo/ring/other';
+    for (let i = 0; i < pa.count; i++) {
+      v.set(pa.getX(i), pa.getY(i), pa.getZ(i));
+      o.localToWorld(v);
+      if (v.y < min) { min = v.y; who = isCore ? 'core stem' : name; }
+      if (!isCore && v.y < minNC) { minNC = v.y; whoNC = name; }
+    }
+  });
+  return { lowestY: +min.toFixed(4), what: who,
+           lowestMarkY: +minNC.toFixed(4), whatMark: whoNC,
+           lift: +QLIFT.toFixed(4),
+           q0Y: +QY(0).toFixed(4), topY: +QY(QUARTERS.length - 1).toFixed(4) };
+};
+/* §QALIGN-PROBE — the alignment claim, measured off the SCENE rather than
+   recomputed from the formulas that built it. An earlier round "verified" the
+   label/wedge alignment by reading arcCentreOffset out of __probe(), which is
+   computed from QUAD_ARC and QUADS — the inputs, not the output. It was 0, and
+   the drawn wedges were still mirrored, because the mirror entered downstream in
+   wedgeGeometry's rotateX. A probe that reads its own inputs cannot catch that.
+   This one walks the real meshes and sprites and reports world azimuths, so the
+   claim is falsifiable. */
+window.__align = () => {
+  scene.updateMatrixWorld(true);
+  let qgrp = null;
+  scene.traverse((o) => { if (o.userData && o.userData.model === 'Q') qgrp = o; });
+  if (!qgrp) return { err: 'no Q object on screen' };
+  const org = new THREE.Vector3(); qgrp.getWorldPosition(org);
+  const azOf = (p) => ((Math.atan2(p.z - org.z, p.x - org.x) * 180 / Math.PI) % 360 + 360) % 360;
+  const out = {};
+  // the drawn wedge: radius-weighted circular mean of its own world vertices
+  const v = new THREE.Vector3();
+  scene.traverse((o) => {
+    const pk = o.isMesh && o.userData && o.userData.pick;
+    if (!pk || !pk.limb || pk.zero) return;
+    const pos = o.geometry.getAttribute('position');
+    /* The wedge's angular CENTRE is the midpoint of its two angular EDGES, not
+       the centroid of its mass. The outer profile is a squircle, so radius
+       varies across the arc and a radius- or area-weighted mean is pulled toward
+       whichever edge happens to sit nearer a squircle corner — a bias of up to
+       10 degrees that has nothing to do with where the wedge points. Take the
+       extreme bearings instead, measured about the limb's own bearing so the
+       360 wrap cannot split the arc. */
+    let lo = Infinity, hi = -Infinity;
+    const ref = deg(QUADS.find((qq) => qq.label === pk.limb).az);
+    for (let i = 0; i < pos.count; i++) {
+      v.set(pos.getX(i), pos.getY(i), pos.getZ(i));
+      o.localToWorld(v);
+      const dx = v.x - org.x, dz = v.z - org.z, rr = Math.hypot(dx, dz);
+      if (rr < CORE_R) continue;              // the inner apex carries no bearing
+      let d = Math.atan2(dz, dx) - ref;       // signed offset from the bearing
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      if (d < lo) lo = d;
+      if (d > hi) hi = d;
+    }
+    /* A wedge whose whole footprint sits inside CORE_R contributes no bearing —
+       skip it rather than letting an infinite bound poison the limb's average. */
+    if (!isFinite(lo) || !isFinite(hi)) return;
+    const c = ((((ref + (lo + hi) / 2) * 180 / Math.PI) % 360) + 360) % 360;
+    (out[pk.limb] = out[pk.limb] || { wedge: [] }).wedge.push(c);
+  });
+  // the ground label sprite, tagged at build time so this needs no text OCR
+  scene.traverse((o) => {
+    if (!o.isSprite || !o.userData.axisLabel) return;
+    const p = new THREE.Vector3(); o.getWorldPosition(p);
+    (out[o.userData.axisLabel] = out[o.userData.axisLabel] || {}).label = azOf(p);
+  });
+  return QUADS.map((q) => {
+    const e = out[q.label] || {};
+    const w = e.wedge && e.wedge.length
+      ? (() => { let sx = 0, sy = 0; e.wedge.forEach((a) => { sx += Math.cos(deg(a)); sy += Math.sin(deg(a)); });
+                 return ((Math.atan2(sy, sx) * 180 / Math.PI) % 360 + 360) % 360; })()
+      : null;
+    return {
+      limb: q.label,
+      bearing: +q.az.toFixed(2),
+      label: e.label === undefined ? null : +e.label.toFixed(2),
+      wedge: w === null ? null : +w.toFixed(2),
+      labelVsWedge: (w === null || e.label === undefined) ? null : +signedDelta(e.label, w).toFixed(2),
+      wedgeVsBearing: w === null ? null : +signedDelta(w, q.az).toFixed(2),
+    };
+  });
+};
 /* Plan view. The alignment claim is an ANGULAR one, and an angular claim seen in
    perspective from the side is not checkable — the eye cannot separate bearing
    from foreshortening. Straight down, the two objects' spokes are directly
