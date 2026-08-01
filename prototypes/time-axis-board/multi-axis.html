@@ -387,8 +387,10 @@ USAGE
                              collars = the previous build, 4 radiating fins per
                              quarter. envelope = the inherited monthly lofted
                              body. The 9-sector view ignores this. See §QBOX.
-          ?guides=0          hide the ground bearing spokes. (The correspondence
-                             ARCS these used to accompany are deleted, §GMARK-D.)
+          ?guides=0          hide the limb arcs — one arc per limb spanning that
+                             limb's own wedge, drawn on BOTH bodies at each
+                             body's own radius and height (§GMARK-D). The bearing
+                             spokes are the body's own axes and stay on.
           ?ghost=<0..1.6>    ghost visual weight. Default .62 (was effectively
                              .40 when the ghost only existed inside model C).
           ?legend=0          collapse the colour legend
@@ -2173,20 +2175,27 @@ function buildEnvelope(model) {
    numbers of spokes has no way to see which spoke belongs to which without being
    told, and being told is exactly the assertion this page tries never to make.
 
-   This used to be answered with correspondence ARCS on the floor — a sweep in
-   the parent limb's hue from each sector's bearing to its quadrant's. They are
-   gone (§GMARK-D): six rounds of reports established that a mark drawn flat on
-   the ground reads as floor decoration no matter how correctly it is sized,
-   because nothing connects it vertically to the solid it annotates.
+   It is answered by two marks at the body's own base level, and BOTH bodies
+   carry the identical pair so the two can be held side by side:
 
-   What is left below a body is the BEARING SPOKE — one ray per axis, from the
-   core out to that body's own edge, in that axis's own hue — plus the axis
-   label at the end of it. The correspondence claim is carried where it can
-   actually be checked: both objects put a spoke at the same bearing, and every
-   quadrant wedge is built from the QUAD_ARC span its member sectors occupy, so
-   the wedge above a quadrant's spoke visibly covers the sector spokes on the
-   other object. If a bearing ever drifted, the two spoke fans would visibly
-   disagree — which is the falsifiability the arcs were there for.
+     THE LIMB ARC — one per limb, spanning that limb's own QUAD_ARC (create 160
+     deg, automate 80, distribute 80, build 40), ticked at both ends where one
+     limb hands over to the next. Four arcs, four angles, drawn at each body's
+     own radius: ~5.0 around the 4.2 envelope, ~2.8 around the 1.99 box stack.
+     The angles are the same and only the scale differs, which IS the page's
+     claim — the same measurement at two altitudes. On the nine-sector body each
+     sector also ticks INWARD off the ring in its parent limb's hue, so the
+     rollup is drawn rather than asserted.
+
+     THE BEARING SPOKE — one ray per axis, from the core out to that body's own
+     edge, in that axis's own hue, with the axis label at the end of it. Both
+     objects put a spoke at the same bearing; if one ever drifted, the two spoke
+     fans would visibly disagree.
+
+   Round 6 deleted the arcs after five rounds of them appearing stranded on the
+   floor, and lost the correspondence evidence with them. The floor was the
+   defect: these marks ride `bodyMarkY(ud)`, so on the lifted box stack they sit
+   at 0.57 with the boxes rather than on the ground beneath them.
 
    These are DRAWN AIDS at the body's own base level, not measurement. They carry
    no radius information beyond "this is how far the body reaches".
@@ -2212,9 +2221,12 @@ function buildEnvelope(model) {
    (C) REDUNDANT MARKS. A radial tick was drawn AT each limb's own bearing while
        the spoke code drew a line at that SAME bearing — two marks saying one
        thing at slightly different radius and height. Walter's "double entries".
-   (D) THE ARCS THEMSELVES. Rounds A-C all assumed the correspondence arcs were
-       a mark that had to be sized right. They were a mark that had to go: see
-       §GMARK-D in groundMarks(). Only bearing spokes and labels remain.
+   (D) THE ARCS' PLACEMENT — not the arcs. Rounds A-C sized them by ever more
+       correct radii while leaving them flat on the FLOOR under a body lifted to
+       0.57; round 6 concluded from that that the arcs themselves had to go, and
+       that over-corrected. They are back, at each body's own radius AND its own
+       height, minus the duplicate centre tick that was the actual complaint.
+       See §GMARK-D in groundMarks().
    (E) A RADIUS PARAMETER. The signature took `outerR` plus an `opts` bag with
        its own `y`, so a caller could supply any radius and any height — and the
        A+C call site supplied the global MAX_R and no opts at all, which is how
@@ -2249,21 +2261,31 @@ function bodyOuterR(ud) {
 function bodyMarkY(ud) {
   return (ud && ud.onebox) ? QY(0) : 0.005;
 }
-/* Ground-mark radii for a body of outer radius R. Only two marks are left below
-   a body (§GMARK-D), so only two radii are named — the arc ring, the member-tick
-   ring and the tick's inner end went with the arcs. Keeping dead radii around is
-   how a deleted mark comes back: the next reader finds `arc: R + 0.79` and
-   assumes something is meant to be drawn there.
+/* Ground-mark radii for a body of outer radius R (§GMARK-F). EVERY number here
+   is R plus a constant, and R is always `bodyOuterR(ud)` — this body's own last
+   drawn radius. That is the whole invariant: a mark's distance from the axis is
+   a small offset from the edge of the object it annotates, so the same code
+   produces a 5.0 ring around a 4.2 body and a 2.8 ring around a 1.99 one WITHOUT
+   either radius appearing anywhere. The failure this replaced was `arc` computed
+   from the global MAX_R and drawn around the 1.99 box stack, stranding it 2.5
+   units out in empty air.
 
-   THE SPOKE NOW STOPS AT THE BODY'S OWN EDGE, not 0.70 past it. That +0.70 was
-   reaching out to meet the guide ring, which no longer exists; without it the
-   overhang is just a bearing ray outrunning the object it belongs to — the
-   §GMARK-A defect at a smaller scale. A spoke ends where its body ends. */
+   THE FRACTIONS ARE OF R, NOT ABSOLUTE. R + 0.79 around a 4.2 body is a 19%
+   standoff; the same 0.79 around a 1.99 body is 40% and the ring stops hugging.
+   So the offsets scale with the body, floored so they never collapse on a small
+   one. `k` is the scale factor a body of radius R gets. */
 const TICK_CLEAR = 0.53;
-const gmarkRadii = (R) => ({
-  spoke: R,                      // bearing spokes stop AT the body's outer edge
-  label: R + 1.15 + TICK_CLEAR,  // ground labels, with their own air past it
-});
+const gmarkRadii = (R) => {
+  const k = Math.max(0.55, Math.min(1, R / MAX_R));  // small bodies get tighter marks
+  return {
+    spoke: R,                    // bearing spokes stop AT the body's outer edge
+    R0: R + 0.34 * k,            // inner end of a member tick
+    R1: R + 0.62 * k,            // where member ticks meet, just inboard of the arc
+    arc: R + 0.79 * k,           // the limb's own bright span arc
+    tickIn: R + 0.53 * k,        // inner end of an arc END tick (arc - 0.26k)
+    label: R + (1.15 + TICK_CLEAR) * k,  // ground labels, clear of everything above
+  };
+};
 /* EVERY CALL SITE PASSES A BODY, NOT A RADIUS (§GMARK-E). The signature used to
    take `outerR` and an `opts` bag, which let a caller hand over any number it
    liked — and one of the three handed over the global MAX_R with no opts at all,
@@ -2280,45 +2302,95 @@ function groundMarks(axes, ud, opts = {}) {
      place that answers "where is this body's base", so no caller can disagree
      with it. `opts` carries LOOK only — alpha — and no geometry at all, so there
      is nothing a call site can pass that moves or resizes a mark. */
-  const spokeR = gmarkRadii(bodyOuterR(ud)).spoke;
-  const spokeY = bodyMarkY(ud) + 0.005;
+  const RR = gmarkRadii(bodyOuterR(ud));
+  const spokeR = RR.spoke;
+  const gy = bodyMarkY(ud);            // the arcs sit ON the body's base plane
+  const spokeY = gy + 0.005;
   const spokeAlpha = opts.spokeAlpha !== undefined ? opts.spokeAlpha : 0.2;
   const spokes = new THREE.Group();
+  const pts = [], cols = [], tc = new THREE.Color();
+  const seg = (a1, a2, r, hue, bright) => {           // one short chord of an arc
+    tc.setHex(hue);
+    pts.push(Math.cos(deg(a1)) * r, gy, Math.sin(deg(a1)) * r);
+    pts.push(Math.cos(deg(a2)) * r, gy, Math.sin(deg(a2)) * r);
+    for (let k = 0; k < 2; k++) cols.push(tc.r * bright, tc.g * bright, tc.b * bright);
+  };
+  const radial = (a, ra, rb, hue, bright) => {        // a tick, along one bearing
+    tc.setHex(hue);
+    pts.push(Math.cos(deg(a)) * ra, gy, Math.sin(deg(a)) * ra);
+    pts.push(Math.cos(deg(a)) * rb, gy, Math.sin(deg(a)) * rb);
+    for (let k = 0; k < 2; k++) cols.push(tc.r * bright, tc.g * bright, tc.b * bright);
+  };
+  /* A limb's own span, swept in short chords from a0 forward by `width`. Swept
+     forward rather than interpolated between two numbers so create's 355 -> 155
+     wrap draws the 160 degrees it owns and not the 200 it does not. */
+  const limbArc = (r, hue) => {
+    const N = Math.max(2, Math.ceil(r.width / 4));
+    for (let k = 0; k < N; k++) {
+      seg(r.a0 + r.width * (k / N), r.a0 + r.width * ((k + 1) / N), RR.arc, hue, 0.95);
+    }
+    /* the arc's two ENDS, ticked, so where one limb hands over to the next is
+       readable rather than inferred from a colour change. NO CENTRE TICK
+       (§GMARK-C): a radial at q.az duplicated the bearing spoke drawn below at
+       exactly that bearing — Walter's "double entries", and the one member of
+       this family that stays deleted. */
+    radial(r.a0, RR.tickIn, RR.arc, hue, 0.7);
+    radial(r.a1, RR.tickIn, RR.arc, hue, 0.7);
+  };
 
-  /* §GMARK-D — THE CORRESPONDENCE ARCS ARE GONE FROM BOTH BODIES.
+  /* §GMARK-D — THE LIMB ARCS, RESTORED AT THE BODY'S OWN SCALE AND HEIGHT.
      ------------------------------------------------------------------------
-     Walter, twice, on two different bodies: "Remove them on both ground items."
-     Not "make them smaller" — five rounds had already tried re-scaling them
-     (§GMARK-A sized them by the body instead of MAX_R, §QSCAFF sized the
-     per-quarter ring by its own quarter) and each time the same graphic came
-     back as a ring of coloured arcs lying on the floor beside the object.
+     Round 6 deleted this whole family. That was an OVER-CORRECTION, and Walter
+     said so as soon as he saw it:
 
-     The re-scaling was not wrong, it was beside the point. An arc drawn at
-     ground level under a body is FLOOR DECORATION at any radius: it is a mark
-     with no vertical relationship to the solid above it, so the eye files it
-     with the grid and the horizon rather than with the object. Sizing it
-     correctly only makes it a well-sized piece of floor decoration.
+       "Okay, the fix worked. But you lost the original arcs that were actually
+        genuinely helpful: Both models showed the same arcs but on different
+        scales. Please re-introduce those."
 
-     What the arcs were FOR — showing that a nine-sector bearing and its parent
-     quadrant's bearing are the same claim — is already carried by two marks
-     that survive: the BEARING SPOKES below (one ray per axis, at that axis's
-     own bearing, on both bodies) and the wedge spans themselves, which are
-     drawn from the same QUAD_ARC angles. The arcs were a third statement of a
-     thing already said twice, and the one statement that had to lie on the
-     floor to be said at all.
+     The arcs were never the bug. Their PLACEMENT was. Three things were wrong
+     and exactly three, and none of them is "an arc exists":
 
-     Deleted rather than defaulted off behind `?guides=1`. An opt-in for a
-     graphic Walter has asked twice to remove is a way of keeping it, and the
-     next reader would find a flag, turn it on, and reintroduce the bug. If the
-     correspondence argument ever needs a drawn form again it should be found in
-     the air beside the wedges, where it can be seen against them, not on the
-     ground where it can only be seen against the floor.
+       1. WRONG HEIGHT. They were pinned to y ~ 0.005 while the one-box body is
+          lifted to QY(0) = 0.57 (§QLIFT). A mark flat on the floor under a
+          floating object reads as floor decoration AT ANY RADIUS — which is the
+          true observation round 6 made, and then over-applied. It is an
+          argument against drawing a body's marks on the FLOOR, not against
+          drawing them at all. They now ride `bodyMarkY(ud)`, so on the lifted
+          stack they are up at 0.57 WITH the boxes.
+       2. WRONG RADIUS. They were sized from the global MAX_R (4.2) even on a
+          body whose radius is 1.99, so they stranded ~2.5 units past anything
+          they could annotate. They now come from `gmarkRadii(bodyOuterR(ud))`
+          and there is no way to pass a radius in (§GMARK-E).
+       3. A DUPLICATE CENTRE TICK at each limb's own bearing, on top of the
+          bearing spoke already drawn there. That one is still deleted.
 
-     The `arc()` and `radial()` helpers went with their only callers, and so did
-     the empty LineSegments they fed. `?guides=0` and the Guides button now gate
-     the BEARING SPOKES — the only ground mark left, and the mark that was
-     always doing the real correspondence work. The flag keeps a referent
-     instead of becoming a switch that changes nothing. */
+     WHAT THE ARCS CARRY, and why deleting them cost something real. One arc per
+     limb, spanning that limb's QUAD_ARC — create 160 deg over four sectors,
+     automate and distribute 80 deg over two each, build 40 deg over one — drawn
+     on BOTH bodies at each body's own radius. Same four arcs, same four angles,
+     two different scales. That is the page's central claim made visible instead
+     of asserted: these two objects are the same measurement at two altitudes.
+     The bearing spokes alone do not say it — a spoke is a bearing, a point; the
+     arc is the SPAN, the width a limb owns, and the width is the thing that
+     differs between limbs and does not differ between bodies. On the nine-sector
+     body the per-sector inward ticks add the second half: which sectors roll up
+     into which limb, each sector ticking inward under its parent's arc. */
+  if (axes === SECTORS) {
+    /* THE NINE-SECTOR BODY. Four limb arcs — the same four, at this body's own
+       radius — plus one INWARD tick per sector, from the arc ring back toward
+       the body, in the parent limb's hue. The inward direction is the
+       convention Walter approved: the tick points at the object it belongs to
+       instead of away from it, so membership reads as "this sector is under
+       that arc" rather than as a second outward fan competing with the spokes. */
+    QUADS.forEach((q, i) => limbArc(QUAD_ARC[i], q.hue));
+    SECTORS.forEach((s, i) => radial(s.az, RR.R0, RR.R1, QUADS[SEC2QUAD[i]].hue, 0.85));
+  } else {
+    /* THE QUADRANT BODY. The same four arcs from the same QUAD_ARC angles the
+       wedges above are built from, so the ground mark and the solid over it
+       cover the same span. No per-sector ticks here: this body has no sectors,
+       and the four member bearings are already the four bearing spokes. */
+    QUADS.forEach((q, i) => limbArc(QUAD_ARC[i], q.hue));
+  }
 
   /* ---- THE BEARING SPOKES, drawn HERE and nowhere else (§GMARK-B). Three
          builders used to carry their own near-identical copy of this loop. They
@@ -2336,11 +2408,33 @@ function groundMarks(axes, ud, opts = {}) {
     ln.userData.markName = 'bearing spoke ' + s.label;
     spokes.add(ln);
   });
-  /* ?guides=0 / the Guides button. The spokes ARE the ground guides now
-     (§GMARK-D), so the toggle hides them and nothing else lives down here. */
-  spokes.visible = GUIDES;
-  spokes.userData.isGuides = true;
   g.add(spokes);
+
+  /* ---- the arcs and ticks, as one additive LineSegments. ----
+     ?guides=0 / the Guides button gates THE ARCS, which is the flag's original
+     and natural referent: they are the correspondence argument, the drawn claim
+     that can be turned off to see the bodies bare. Round 6 had repointed the
+     flag at the bearing spokes because the arcs no longer existed and a flag
+     with no referent is a no-op; with the arcs back it points at them again.
+
+     THE SPOKES STAY ALWAYS-ON. They are not part of the argument — they are the
+     body's own axes, one ray per axis at that axis's own bearing, and they are
+     what the axis labels sit at the end of. Hiding them with the guides would
+     leave nine labels floating at bearings nothing marks. Default ON for both. */
+  if (pts.length) {
+    const bg = new THREE.BufferGeometry();
+    bg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    bg.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+    const lines = new THREE.LineSegments(bg, new THREE.LineBasicMaterial({
+      vertexColors: true, transparent: true, opacity: 0.62,
+      depthWrite: false, blending: THREE.AdditiveBlending,
+    }));
+    lines.renderOrder = 2;
+    lines.userData.markName = 'limb arcs';
+    lines.visible = GUIDES;
+    lines.userData.isGuides = true;
+    g.add(lines);
+  }
   return g;
 }
 
@@ -3453,12 +3547,14 @@ function buildQuarterOneBox() {
          themselves carry the bearings at full strength now that the labels are
          mirrored correctly, so the spokes only have to hint.
 
-         THE ARCS THAT SAT BESIDE THEM ARE DELETED (§GMARK-D), on this body and
-         on the nine-sector one. Sizing them by the stack instead of by MAX_R was
-         the right fix for the wrong problem: correctly-sized floor decoration is
-         still floor decoration. What is left below the bottom quarter is four
-         dim bearing rays ending at that quarter's own edge, and nothing else.
-         ---- */
+         THE FOUR LIMB ARCS SIT BESIDE THEM AGAIN (§GMARK-D), and critically at
+         THIS level, not on the floor. Sizing them by the stack was the right fix
+         at the wrong layer: a correctly-sized arc still reads as floor
+         decoration while it lies on the floor under a body floating at 0.57.
+         Both numbers now come from the body — radius from bodyOuterR (1.99,
+         giving an arc ring at ~2.8) and height from bodyMarkY (0.57) — so the
+         arcs hug the bottom quarter at its own scale and its own altitude, and
+         the same four angles appear around the 4.2 envelope at ~5.0. ---- */
   grp.userData = { model: 'Q', dimU, skinGrp: solidGrp, roseGrp: markGrp,
                    monthRings: null, meta, axes: QUADS, boxes: true, onebox: true,
                    hover: HOVER, qExtent: QEXTENT };
@@ -5008,6 +5104,13 @@ window.__cam = ({ tx = 0, ty = 1, dist = 8, az = 34, elev = 12 } = {}) => {
 /* Screen position of one named wedge, so a test can put the real cursor on a
    known mark instead of sweeping pixels and hoping. §QHOVER is a pointer
    behaviour; verifying it any other way verifies something else. */
+/* Read-only handles for an EXTERNAL probe. Every in-page probe here shares code
+   and therefore assumptions with the thing it checks — three rounds of clean
+   reports on a visibly broken page came from exactly that. An outside walker
+   needs the drawn graph and the library, and nothing else; it derives its own
+   base heights from measured geometry rather than from bodyMarkY(). */
+window.__scene = scene;
+window.__THREE = THREE;
 window.__wedgeAt = (quarter, limb) => {
   scene.updateMatrixWorld(true);
   let hit = null;

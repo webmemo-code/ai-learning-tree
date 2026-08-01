@@ -219,3 +219,132 @@ and two new rows appear that name their own quarter.**
 > a height, so no call site can supply a wrong one. And every probe that checks it is
 > parameterised per body too — a probe carrying a global where the system has a per-body
 > value will report the one body that matters as clean.**
+
+---
+
+# Round 7 — the deletion was an over-correction; the arcs are back
+
+Walter, on seeing round 6:
+
+> *"Okay, the fix worked. But you lost the original arcs that were actually genuinely
+> helpful: Both models showed the same arcs but on different scales. Please re-introduce
+> those."*
+
+## What round 6 got right, and the inference it got wrong
+
+Round 6's observation was correct and is worth keeping: **a mark drawn flat on the floor
+under a body reads as floor decoration at any radius**, because nothing connects it
+vertically to the solid above it. Five rounds of re-sizing produced five well-sized pieces
+of floor decoration, and that is why sizing never fixed the symptom.
+
+The inference drawn from it was wrong. "An arc on the FLOOR under a lifted body is
+decoration" was generalised to "an arc is decoration", and the whole family was deleted —
+the useful part with the stray part. That is the same class of error the file already
+records four times, just in the other direction: **acting at the wrong layer.** The
+previous five rounds fixed height when the fault was radius, or per-quarter when the fault
+was global. Round 6 fixed *existence* when the fault was *placement*.
+
+The complaint was never "there are arcs". It was, twice, "there are DOUBLE entries" and
+"the second stray arc". Three concrete defects, and only three:
+
+| # | defect | round 7 |
+|---|---|---|
+| 1 | drawn at `y ≈ 0.005` while the one-box body is lifted to `QY(0) = 0.57` | now `bodyMarkY(ud)` — 0.57 on that body |
+| 2 | sized from the global `MAX_R` (4.2) on a body of radius 1.99 | now `gmarkRadii(bodyOuterR(ud))`, no global reachable |
+| 3 | a per-limb CENTRE tick duplicating the bearing spoke at that same bearing | **stays deleted** |
+
+## What the arcs carry, stated so it is not deleted again
+
+One arc per limb, spanning that limb's `QUAD_ARC`, drawn on BOTH bodies at each body's own
+radius, with the two END ticks that mark where one limb hands over to the next:
+
+| limb | arc span | member sectors | A+C radius | Q one-box radius |
+|---|---|---|---|---|
+| create | 160° | 4 | 4.99 | 2.43 |
+| automate | 80° | 2 | 4.99 | 2.43 |
+| distribute | 80° | 2 | 4.99 | 2.43 |
+| build | 40° | 1 | 4.99 | 2.43 |
+
+**Same four angles, two scales.** That is the visual proof of the page's central claim —
+these two objects are the same measurement at two altitudes. The bearing spokes do not
+carry it: a spoke is a *bearing*, a single direction. The arc is the *span*, the width a
+limb owns, and width is the quantity that differs between limbs and does NOT differ
+between bodies. Deleting the arcs removed the evidence for the thing the page exists to
+show. On the nine-sector body the per-sector inward ticks add the rollup: each sector ticks
+inward under its parent limb's arc, so "these four sectors are that one wedge" is drawn.
+
+## The radius rule, sharpened (§GMARK-F)
+
+`gmarkRadii(R)` is back to five radii, but every one is `R + c·k` where `k =
+clamp(R / MAX_R, 0.55, 1)`. The offsets **scale with the body**. A flat `R + 0.79` is a 19%
+standoff around the 4.2 envelope and a 40% standoff around the 1.99 box stack — correct by
+the letter of the per-body rule and still visibly not hugging. `MAX_R` appears in `k` as a
+reference scale only; it can no longer set a mark's position, because it is only ever a
+denominator of the body's own radius.
+
+## The flag
+
+`?guides=` gates the ARCS again, which is its natural referent — they are the
+correspondence argument, the drawn claim you can switch off to see the bodies bare. Round 6
+had repointed it at the bearing spokes only because the arcs no longer existed. **The
+spokes are now always on**: they are the body's own axes, and the axis labels sit at the
+end of them, so hiding them would leave nine captions floating at bearings nothing marks.
+Default ON for both.
+
+## Verification — measured on the DRAWN graph, per body
+
+Two independent walks were run, deliberately not sharing code: the page's own
+`window.__marks()`, and an external walker that takes each body's base from **measured mesh
+geometry** rather than from `bodyMarkY()`, so it cannot inherit the code's assumption about
+where a body stands. They agree on every row. Both walk `Line`, `LineSegments`, `Points`,
+`Mesh` and `Sprite`.
+
+### A+C, nine-sector envelope — `outerR` 4.2, base 0.005
+
+| mark | kind | r | y |
+|---|---|---|---|
+| bearing spokes ×9 | line | 0.30 – 4.20 | 0.010 |
+| **limb arcs + sector ticks** | **lineseg** | **4.54 – 4.99** | **0.005** |
+| axisLabel ×9 | sprite | 5.88 | 0.120 |
+
+### Q one-box stack — `outerR` 1.99, base **0.570**
+
+| mark | kind | r | y |
+|---|---|---|---|
+| wedges/wafers 2024Q4 ×4 | mesh | 0.16 – 1.80 | 0.597 – 0.795 |
+| tick ring | lineseg | 1.99 | 0.570 |
+| bearing spokes ×4 | line | 0.30 – 1.99 | 0.575 |
+| ladder leader 2024Q4 | line | 1.91 – 2.33 | 0.570 |
+| **limb arcs** | **lineseg** | **2.28 – 2.42** | **0.570** |
+| label "2024Q4 (1 mo)" | sprite | 3.20 | 0.570 |
+
+**The row that matters is the last arc row: `y = 0.570`, not `0.005`.** The arcs are up
+with the boxes. The specific regression that cost five rounds — a coloured ring on the
+floor under a floating object — cannot be present, because the only y this code can produce
+is `bodyMarkY(ud)`.
+
+Across `boxes` / `collars` / `envelope` / `guides=0` / `evidence=1&seed=42` / `model=A`, on
+every body: arc `y` equals that body's own base to within 0.01, and no body whose base is
+above 0.1 has any mark at ~0.005. Arc spans measured off the drawn `LineSegments` by
+colour bucket: **160 / 80 / 80 / 40 on every body in every mode.**
+
+## Other invariants, re-checked
+
+- `__align()` worst **0.06°** (build, label-vs-wedge and wedge-vs-bearing); 0.00° on
+  collars and envelope. Under 1°.
+- Quarterly commits `[3, 47, 85, 124, 368, 255, 477, 390]`, sum **1749**.
+- §QZFIGHT `interpenetratingPairs` 0, `worstOverlap` 0, `coplanarTops` 0, `bevelOk` true.
+- `areaErr` 1.11e-16. `sectorSum` 360, `arcTiles` true, `arcSeams` all 0,
+  `maxArcCentreOffset` 0, `hoverPicks` 32.
+- 0 console errors in all six URL variants and all twelve screenshot runs.
+
+## The rule, after round 7
+
+> **A mark belongs to a body in TWO dimensions, and both come from the body: its radius
+> from `bodyOuterR`, its height from `bodyMarkY`. Getting one right and the other wrong
+> produces a mark that is correctly sized and still reads as furniture — which is what
+> made five rounds look like one persistent bug.**
+>
+> **And: when a report names a specific defect ("double entries", "the second stray arc"),
+> fix that defect. Deleting the family it belongs to is a fix at the wrong layer in the
+> other direction, and it costs the thing the family was doing.**
