@@ -111,12 +111,28 @@ THE QUARTERLY BOXES — §QBOX
   quarter basis?" Right instinct: 19 monthly rings is instrument-grade
   resolution and a summary should not carry it. ?qstyle=boxes (DEFAULT for the Q
   view only) replaces the monthly lofted envelope with 8 quarters x 4 limbs of
-  rounded extruded slabs — deliberately discrete, axis-aligned and countable,
-  the opposite of the organic envelope. Footprint AREA = that limb's fractional
-  attributed effort that quarter (same model A weights, commits only); slab
-  HEIGHT is fixed because the vertical axis is time. The ghost becomes a
-  wireframe cage around the slab. Measured zeros are drawn as grey plates.
-  ?qstyle=envelope restores the monthly body for comparison.
+  rounded extruded boxes — deliberately discrete, straight-sided and countable,
+  the opposite of the organic envelope. ?qstyle=envelope restores the monthly
+  body for comparison.
+
+  THE COLLAR LAYOUT, and the correction that produced it. The first build put
+  each box at a FIXED radius and grew its footprint with effort. Walter: "I saw
+  your boxes draft. I envision them more like boxes tied around the stem and
+  then radiate from there." He was right: at a fixed radius every box hangs in
+  space with a gap between it and the trunk, so the stem and the boxes were two
+  unrelated things sharing a frame. Now each box's INNER FACE STARTS AT THE
+  STEM and it extends OUTWARD along its limb's bearing — eight quarterly collars
+  stacked up the time axis, each gripping the trunk and radiating out like fins.
+
+  REACH from the stem = that limb's fractional attributed effort that quarter
+  (same model A weights, commits only), scaled LINEARLY. That is the second half
+  of the fix: length from a common origin is the most accurately-read encoding
+  there is, whereas the previous build used footprint AREA, which the eye reads
+  badly. Width and height are held CONSTANT so reach is unambiguously the
+  variable; height in particular is fixed because the vertical axis is time.
+  The ghost is a translucent TAIL continuing the same radial past the solid, so
+  "reach beyond captured effort" is literally further out. Measured zeros are
+  drawn as flat grey stubs at the stem.
 
   THE COST, STATED ON THE PAGE. 2025-02 — the one month with no activity, drawn
   everywhere else as a pinch that is never interpolated over — falls inside
@@ -241,20 +257,41 @@ HONEST WEAKNESSES
     a viewer may read the wide CREATE wedge as "more effort" when it only means
     "more sub-categories". Under ?qbear=even that confusion disappears and the
     alignment becomes approximate instead. There is no option without a cost.
-  - BOX FOOTPRINT IS AREA-SCALED, WHICH IS THE RIGHT FIX AND STILL NOT A GOOD
-    ENCODING. Area comparisons are read less accurately than length ones. The
-    quarterly table in the side panel exists because the slabs alone will not
-    support a precise reading, only a ranking.
-  - THE GHOST CAGE IS FLOORED TO ALWAYS ENCLOSE ITS SLAB, which means in 8 of the
-    30 filled slots the cage is NOT at its natural size — it has been pushed out
-    to stay outside. This is a deliberate legibility choice over a literal one:
-    unfloored, the cage would disappear inside the block in those slots and the
-    containment relation would mean two different things in one object. The cost
-    is that the cage's absolute size is not reliable in those eight, only its
-    margin ordering is — and eight of thirty is more than a rounding error, so
-    read the cage as a rank, never as a size. window.__probe().qbox.cageFloored
-    names them. Same underlying cause as the envelope's ghost caveat: the two
-    tracks were never on a shared scale.
+  - 2026Q3 IS ONE MONTH, NOT A QUARTER. The log ends at 2026-07, so the top
+    collar covers 2026-07 alone (390 commits) while every collar below it covers
+    three months. Its fins are therefore NOT comparable to the rest of the
+    stack — a third of the window producing nearly as much as full quarters is
+    an artefact of where the data stops, not a surge. The quarterly table marks
+    it, the top collar's ladder label says "(1 mo)", and probe.qbox.partial
+    carries it. This is the same class of hazard as the 2025-02 gap: an artefact
+    of bucketing that the eye will read as a measurement unless it is named.
+  - BOX REACH IS LINEAR IN EFFORT, WHICH IS THE STRONGEST CHANNEL AVAILABLE AND
+    STILL NOT A PRECISE ONE IN 3D. Length from a shared origin is read far more
+    accurately than the area encoding this replaced — that was the reason for
+    the change — but these are lengths seen in PERSPECTIVE, so a near fin
+    projects longer than a far one of equal reach. The plan view (window
+    .__topdown()) removes that distortion and is where a reach comparison should
+    actually be made; the quarterly table in the side panel carries the numbers.
+    Read the 3/4 view for rank and shape, not for ratios.
+  - MINREACH IS AN OFFSET, AND IT COMPRESSES THE SMALL VALUES. Every non-zero fin
+    starts at 0.70 before the effort term is added, so a 1-unit fin and a 5-unit
+    fin differ by less than 5x in drawn length. The offset applies EQUALLY to
+    every non-zero box, so differences stay proportional to differences in
+    effort, but ratios of drawn length are not ratios of effort. Without it the
+    smallest fins would be shorter than the collar band they emerge from and
+    would read as zeros, which is the worse error.
+  - THE GHOST TAIL IS FLOORED TO A MINIMUM VISIBLE LENGTH, IN HALF THE SLOTS
+    THAT HAVE ONE. 15 of the 30 slots with a non-zero secondary count would
+    otherwise have a tail of zero or negative length and simply vanish, because
+    the solid is fractional effort and the ghost is a count of secondary
+    appearances and the two were never on a shared scale. Flooring keeps the
+    relation meaning ONE thing across the object, at the cost that in those 15
+    the tail's length is not its own — only its ordering is. This is a WORSE
+    ratio than the box-cage build it replaces (8 of 30), and the reason is that
+    a tail has a stricter test to pass than a cage: a cage only had to be bigger,
+    a tail has to clear the solid's end AND stay visible. The compromise is
+    counted on the page and in probe.qbox.cageFloored rather than hidden. READ
+    THE TAIL AS A RANK, NEVER AS A LENGTH.
   - Every caveat radial-envelope.html carries still applies: bearing is an
     ordered categorical axis and NOT a compass direction, only the 9 values at
     the bearings are measurement (the 96 resampled ring points are inference),
@@ -404,12 +441,21 @@ USAGE
   #legend .chip.gap   { background: rgba(150, 42, 42, 0.85); }
   #legend .chip.core  { background: rgba(74, 58, 41, 0.9); }
   #legend .chip.quad  { background: linear-gradient(90deg, #ffb454, #7ce65a 42%, #35d0ba 72%, #6a8dff); }
-  /* the box vocabulary: filled slab, open cage, measured-zero plate */
-  #legend .chip.qbox  { background: linear-gradient(160deg, #8ff07a, #4aa03a); border-radius: 5px; }
-  #legend .chip.qcage { background: rgba(124, 230, 90, 0.10); border-radius: 5px;
-                        outline: 1.5px solid rgba(124, 230, 90, 0.75); outline-offset: -2px; }
-  #legend .chip.qnull { background: rgba(42, 50, 64, 0.85); border-radius: 5px; height: 5px;
-                        margin-top: 6px; border: 1px solid rgba(120, 140, 170, 0.35); }
+  /* the collar vocabulary: a box radiating OUT of the stem (the dark left edge),
+     its translucent ghost tail continuing the same radial, and a measured-zero
+     stub. Each chip is read left-to-right as "stem -> outward", matching the
+     object: the mark starts at the trunk and its LENGTH is the quantity. */
+  #legend .chip.qbox  { background: linear-gradient(90deg, #2b3a2a 0 4px, #8ff07a 4px, #4aa03a);
+                        border-radius: 2px 5px 5px 2px; }
+  #legend .chip.qcage { background: linear-gradient(90deg, rgba(124,230,90,0.55) 0 3px,
+                        rgba(124,230,90,0) 3px 5px, rgba(124,230,90,0.34) 5px);
+                        border-radius: 2px 5px 5px 2px;
+                        outline: 1px solid rgba(124, 230, 90, 0.42); outline-offset: -1px; }
+  #legend .chip.qnull { background: linear-gradient(90deg, rgba(42,50,64,0.9), rgba(42,50,64,0.55) 42%,
+                        transparent 42%); border-radius: 2px; height: 5px;
+                        margin-top: 6px; border-left: 2px solid rgba(120, 140, 170, 0.5); }
+  #legend .chip.qhub  { background: linear-gradient(180deg, #7d6349, #55412e); border-radius: 3px;
+                        width: 12px; margin-left: 9px; margin-right: 9px; }
   #legend .chip.guide { background: linear-gradient(90deg, rgba(124,230,90,0), rgba(124,230,90,0.9));
                         height: 2px; margin-top: 7px; }
 
@@ -502,7 +548,7 @@ USAGE
     <div class="qrow">
       <span class="qlab" title="how the quadrant object is drawn">Q body</span>
       <button id="bQStyleB" type="button" data-qs="boxes"
-        title="quarterly rounded slabs — the management summary">boxes</button>
+        title="quarterly collars — rounded boxes tied around the stem, reach = effort">boxes</button>
       <button id="bQStyleE" type="button" data-qs="envelope"
         title="the inherited monthly lofted envelope">envelope</button>
     </div>
@@ -574,28 +620,39 @@ USAGE
         <span><b>Quadrant view</b> &mdash; each limb takes a representative hue from
         its member sectors: copy, workflows, seo, coding.</span>
       </div>
-      <div class="grp" id="lgBoxGrp">Quadrant view &mdash; quarterly boxes</div>
+      <div class="grp" id="lgBoxGrp">Quadrant view &mdash; quarterly collars</div>
       <div id="lgBoxes">
         <div class="sw">
           <span class="chip qbox"></span>
-          <span><b>Rounded slab</b> &mdash; one per <b>quarter &times; limb</b>.
-          Footprint area = that limb's fractional attributed effort that quarter
-          (same model A weights, quarterly). Slab <b>height is fixed</b>: the
-          vertical axis is time and stays time.</span>
+          <span><b>Radiating box</b> &mdash; one per <b>quarter &times; limb</b>, tied
+          around the stem and reaching outward. <b>REACH from the stem</b> = that
+          limb's fractional attributed effort that quarter (same model A weights,
+          quarterly, commits only), <b>linear</b> &mdash; twice as long is twice the
+          effort. Every box starts at the trunk, so the four in a collar compare
+          like bars from one baseline. Width and height are <b>constant</b>: reach
+          is the only variable, and height in particular stays fixed because the
+          vertical axis is time.</span>
         </div>
         <div class="sw">
           <span class="chip qcage"></span>
-          <span><b>Wireframe cage</b> &mdash; the ghost at box resolution: secondary
-          reach, as an open box always drawn <b>outside</b> its slab. Read the
-          <b>margin</b>: wide = far more reach than captured effort, tight = the
-          model already captures this limb's reach. Different unit from the slab
-          &mdash; <b>do not subtract</b>.</span>
+          <span><b>Translucent tail</b> &mdash; the ghost, continuing the same box
+          <b>further out along the same radial</b>: reach beyond captured effort is
+          literally further from the stem. Read <b>how far the tail runs</b>: long =
+          far more reach than the model captures, none = this limb had no secondary
+          appearances. Different unit from the solid &mdash; <b>do not
+          subtract</b>.</span>
         </div>
         <div class="sw">
           <span class="chip qnull"></span>
-          <span><b>Flat grey plate</b> &mdash; a <b>measured zero</b>: that limb did
-          nothing that quarter. Drawn as a deliberately flat plate rather than
-          omitted, because an absent box and an unnoticed box look the same.</span>
+          <span><b>Grey stub</b> &mdash; a <b>measured zero</b>: that limb did nothing
+          that quarter. Drawn at the stem as a deliberately flat, blunt, narrower
+          stub &mdash; a different shape family from a short box, so &ldquo;nothing&rdquo;
+          cannot be mistaken for &ldquo;a little&rdquo;.</span>
+        </div>
+        <div class="sw">
+          <span class="chip qhub"></span>
+          <span><b>Collar band</b> &mdash; a drawn sleeve, not a measurement. It marks
+          the quarter's level on the stem and is what the boxes are tied around.</span>
         </div>
       </div>
       <div class="grp">Other marks</div>
@@ -723,7 +780,15 @@ USAGE
     <b>The boxes are quarterly; the envelope is monthly.</b> They are the same
     weights re-bucketed, not a second measurement &mdash; but they are not
     interchangeable at the same fidelity, and the quarterly view cannot show the
-    2025-02 pinch at all.
+    2025-02 pinch at all.<br>
+    <b>Box reach is the quantity.</b> Every box starts at the stem and its
+    <b>length outward</b> is that limb's fractional effort that quarter, scaled
+    linearly &mdash; width and height are constant so reach is the only variable.
+    Reach replaced footprint area because length from a shared origin reads far
+    more accurately than area does. But these are lengths seen in
+    <b>perspective</b>: a near fin projects longer than an equal far one, so the
+    3/4 view gives rank and shape, and the plan view (<code>__topdown()</code>) or
+    the table above gives the comparison.
   </div>
 </div>
 
@@ -1287,6 +1352,22 @@ const QSMAX = Math.max(1, ...qrows.map((qr) => Math.max(...qr.Qs)));
 const QEMPTY = [];
 qrows.forEach((qr, i) => QUADS.forEach((q, j) => { if (qr.Q[j] <= 0) QEMPTY.push(qr.key + '/' + q.id); }));
 const QGAP_MONTHS = qrows.flatMap((qr) => qr.absentMonths.map((m) => ({ month: m, quarter: qr.key })));
+
+/* PARTIAL QUARTERS — the second bucketing artefact, and the one most likely to
+   be read as a finding. The log starts and ends mid-quarter, so the first and
+   last collars can cover fewer than three months while every collar between
+   them covers three. On this data 2026Q3 is 2026-07 ALONE (390 commits), which
+   next to full quarters of 477 and 368 looks like sustained acceleration and is
+   actually a third of the window producing nearly as much — a real and striking
+   fact, but not the one the unmarked bar shape asserts.
+
+   A summary cannot fix this without inventing months it does not have, so it
+   names it instead: flagged in the quarterly table, on the collar's own ladder
+   label, and on the probe. Same discipline as the 2025-02 gap — where the
+   bucketing distorts, say which bucket and by how much. */
+const QPARTIAL = qrows.map((qr) => qr.months.length).map((n, i) =>
+  (n < 3 ? { quarter: QUARTERS[i], months: n, commits: qrows[i].commits } : null)).filter(Boolean);
+const QPARTIAL_KEYS = new Set(QPARTIAL.map((p) => p.quarter));
 
 /* Gini across sectors: 0 = perfectly even growth in every direction, 1 = one
    sector owns everything. This is the QUANTITATIVE companion to the visual
@@ -1927,87 +2008,142 @@ function correspondenceGuides(axes) {
    the curve between measurements. That is right for nine sectors over nineteen
    months and wrong for a management summary, because a summary's job is to be
    unambiguous about how few numbers it contains. So the boxes are the opposite
-   on purpose: discrete, axis-aligned, rounded-rectangular slabs with visible
+   on purpose: discrete, straight-sided, rounded-rectangular slabs with visible
    edges and visible gaps. 8 quarters x 4 limbs = 32 slots, every one of them
    countable by eye. Dashboard-in-3D, not tree.
 
-   WHAT SIZE MEANS. Box footprint (both horizontal dimensions) scales with that
-   limb's fractional attributed effort in that quarter — the same model A weights
-   as everywhere else on the page, re-bucketed by quarter, commits only. sqrt
-   scaling, so AREA is proportional to effort rather than side length, which is
-   the standard fix for the eye's tendency to read a doubled side as a doubled
-   quantity. Height is FIXED per slab: the vertical axis is time and must stay
-   time, so letting a big quarter grow taller would make one axis mean two things.
+   ------------------------------------------------------------------------
+   THE CORRECTION THAT PRODUCED THIS LAYOUT.
+   ------------------------------------------------------------------------
+   The first build put each box at a FIXED distance from the axis (radial 3.9)
+   and grew its footprint with effort. Walter, on seeing it: "I saw your boxes
+   draft. I envision them more like boxes tied around the stem and then radiate
+   from there."
 
-   THE GHOST at box resolution. A ring outline would disappear against a solid
-   slab, so the secondary reach is drawn as a LARGER WIREFRAME BOX enclosing the
-   solid one — same centre, same rounding, edges only. "The reach is bigger than
-   the captured effort" becomes "the cage is bigger than the block", which
-   survives at this size in a way a faint line does not. Same caveat as
-   everywhere: the two are DIFFERENT UNITS, each normalised to its own maximum,
-   and the cage minus the block is not a quantity.
+   He was right and the defect was structural, not cosmetic. At a fixed radius
+   every box hangs in space with a wide empty gap between it and the trunk, so
+   the stem and the boxes are two unrelated things sharing a frame: nothing is
+   drawn connecting the spine of time to the quantities it is supposed to
+   organise. The object read as scattered slabs, not as a structure.
 
-   EMPTY SLOTS ARE DRAWN. A quarter-limb with zero attributed effort gets a flat
-   dark plate at minimum size rather than nothing at all, because an omitted box
-   and a box you failed to notice look identical, and the honesty rule on this
-   page is that a measured zero must be visible as a measured zero. ----------- */
+   So the boxes are now COLLARS. Each box's INNER FACE STARTS AT THE CORE — it
+   touches the drawn stem, it is not near it — and the box extends OUTWARD along
+   its limb's bearing. At each quarter's height the (up to) four limb boxes grip
+   the trunk together and radiate out like fins. Eight collars stacked up the
+   time axis. Every box is demonstrably attached to the thing it belongs to.
 
-// A rounded rectangle as a THREE.Shape, extruded — the "squircle slab". The
-// corner radius is capped at 45% of the half-extent so tiny boxes stay rounded
-// rectangles instead of degenerating into lozenges of a different family.
+   WHAT SIZE MEANS, AND WHY THIS IS A BETTER ENCODING THAN THE ONE IT REPLACES.
+   REACH — the radial length from the stem outward — is that limb's fractional
+   attributed effort in that quarter. Same model A weights as everywhere else on
+   the page, re-bucketed by quarter, commits only. Reach is scaled LINEARLY in
+   effort, and that is the point of the change: length from a COMMON ORIGIN is
+   the most accurately-read graphical encoding there is (all four fins in a
+   collar start at the same stem, so comparing them is comparing bar lengths),
+   whereas the previous build encoded effort as footprint AREA, which the eye
+   reads badly and which needed a sqrt correction precisely because it is the
+   weaker channel. Two boxes twice as long now differ by twice the effort, and
+   you can check it against the quarterly table.
+
+   The OTHER two dimensions are held CONSTANT — every box is the same tangential
+   width and the same vertical height at every value — so there is exactly one
+   variable dimension and reach cannot be confused with bulk. Height in
+   particular must stay fixed because the vertical axis is time, and letting a
+   big quarter grow taller would make one axis mean two things.
+
+   THE GHOST at collar resolution, and why this layout suits it. The secondary
+   reach is drawn as a translucent EXTENSION of the same fin, continuing outward
+   along the same radial past the end of the solid box. "Reach beyond captured
+   effort" becomes literally further out from the stem — the metaphor and the
+   geometry finally agree, which they did not when the ghost was a cage wrapped
+   around a floating block. Same caveat as everywhere: the two tracks are
+   DIFFERENT UNITS, each normalised to its own maximum, so the extension's
+   LENGTH is not the solid's length minus anything. Read which fins have a long
+   tail and which have none; do not subtract.
+
+   EMPTY SLOTS ARE DRAWN. A quarter-limb with zero attributed effort gets a
+   short, flat, grey STUB at the stem rather than nothing at all, because an
+   omitted box and a box you failed to notice look identical, and the honesty
+   rule on this page is that a measured zero must be visible as a measured zero.
+   The stub is deliberately a different shape family from a small value — flat
+   and blunt rather than a short fin — so "did nothing" and "did a little" do not
+   grade into each other. ------------------------------------------------- */
+
+/* A rounded rectangle as a THREE.Shape, extruded — the "squircle fin", built in
+   LOCAL space where +X is the outward radial. The inner end sits at x=x0 and the
+   outer end at x=x1, so a fin is positioned by putting its local origin at the
+   stem and rotating it onto its bearing; nothing has to be re-centred and the
+   attachment point is exact rather than approximately close. */
 const boxShapeCache = new Map();
 // standard-material slabs whose opacity applyFocus() has to fade by hand
 const dimMats = [];
-function roundedSlabGeometry(w, d, h, r) {
-  const key = w.toFixed(3) + ',' + d.toFixed(3) + ',' + h.toFixed(3) + ',' + r.toFixed(3);
+function roundedFinGeometry(x0, x1, w, h, r) {
+  const key = [x0, x1, w, h, r].map((n) => n.toFixed(3)).join(',');
   let g = boxShapeCache.get(key);
   if (g) return g;
-  /* The corner radius is PROPORTIONAL, not absolute. A fixed 0.22 radius is a
-     gentle round on a 2.3-wide slab and swallows a 0.5-wide one whole — the small
-     boxes came out as cylinders, which is a different visual family and made a
-     small value look like a different KIND of thing rather than less of the same
-     thing. Capping at 0.18 of the side keeps every box the same shape at every
-     size, which is the only way footprint can carry the quantity cleanly. */
-  const rr = Math.min(r, w * 0.18, d * 0.18);
+  /* The corner radius is PROPORTIONAL and capped by the SHORTEST side, so a
+     stubby fin stays a rounded rectangle instead of degenerating into a lozenge
+     — a small value must read as less of the same thing, never as a different
+     kind of thing. */
+  const len = Math.max(0.001, x1 - x0);
+  const rr = Math.min(r, len * 0.30, w * 0.30);
   const sh = new THREE.Shape();
-  const x0 = -w / 2, x1 = w / 2, z0 = -d / 2, z1 = d / 2;
+  const z0 = -w / 2, z1 = w / 2;
   sh.moveTo(x0 + rr, z0);
   sh.lineTo(x1 - rr, z0); sh.quadraticCurveTo(x1, z0, x1, z0 + rr);
   sh.lineTo(x1, z1 - rr); sh.quadraticCurveTo(x1, z1, x1 - rr, z1);
   sh.lineTo(x0 + rr, z1); sh.quadraticCurveTo(x0, z1, x0, z1 - rr);
   sh.lineTo(x0, z0 + rr); sh.quadraticCurveTo(x0, z0, x0 + rr, z0);
-  g = new THREE.ExtrudeGeometry(sh, { depth: h, bevelEnabled: false, curveSegments: 5 });
+  g = new THREE.ExtrudeGeometry(sh, { depth: h, bevelEnabled: false, curveSegments: 6 });
   g.rotateX(-Math.PI / 2);        // shape is drawn in XY; stand it up so depth is +Y
-  g.translate(0, h, 0);
+  g.translate(0, h / 2, 0);       // centre vertically on the quarter's level
   boxShapeCache.set(key, g);
   return g;
 }
 
 const QBOX = {
-  slabH:   0.46,        // fixed slab height — time is the axis, not quantity
-  minSide: 0.44,        // an empty slot is still this big, so zero is visible
-  maxSide: 2.30,        // the fullest quarter-limb
-  radius:  0.22,
-  ringPad: 0.30,        // how far the ghost cage sits outside the solid slab
-  /* 3.9 rather than the 3.05 the boxes strictly need. Nothing OVERLAPS at 3.05 —
-     the closest pair (distribute/build, 60 deg apart under centroid bearings)
-     still clears — but in perspective the columns project onto one another and
-     the object reads as a pile rather than four countable stacks. A summary that
-     has to be orbited before it can be counted is not doing its job. */
-  radial:  3.9,         // distance from the axis to each limb's box column
+  slabH:   0.78,        // fixed fin height — time is the axis, not quantity
+  width:   1.46,        // fixed tangential width — reach is the ONLY variable
+  /* The inner face. Sitting it a hair INSIDE the drawn core rather than tangent
+     to it guarantees the fin visually bites into the stem at every camera angle:
+     an exactly-tangent face shows a hairline of background between box and trunk
+     as soon as the perspective is not dead-on, and that hairline is precisely the
+     detachment this rebuild exists to remove. */
+  inner:   CORE_R * 0.55,
+  minReach: 0.70,       // the shortest NON-ZERO fin, so tiny values still read
+  maxReach: 4.05,       // the fullest quarter-limb
+  stubReach: 0.34,      // a measured zero: a blunt stub, not a short fin
+  radius:  0.26,
+  gap:     0.10,        // breathing room between a fin's end and its ghost tail
 };
+/* The furthest a fin (or its ghost tail) can get from the axis. Framing, the
+   quarter ladder and the tick rings all have to agree on this or the outermost
+   fin crops or the ladder lands on top of it — one constant, three readers. */
+const QOUTER = QBOX.inner + QBOX.maxReach + QBOX.gap + 1.15;
 // quarters are spaced up the same time axis the monthly view uses, so the two
 // renderings of the Q view occupy the same height and can be swapped in place.
 const QY = (i) => (QUARTERS.length > 1 ? (i / (QUARTERS.length - 1)) * TOP_Y : TOP_Y / 2);
-const boxSide = (v, max) => (v <= 0 ? QBOX.minSide
-  : QBOX.minSide + Math.sqrt(v / max) * (QBOX.maxSide - QBOX.minSide));
-/* Slots where the ghost's natural box is SMALLER than its slab, so the cage has
-   to be floored outward to stay a cage. Computed once, printed on the page and
-   exposed on the probe — a rendering compromise that changes what a mark means
-   has to be counted where the reader can see it, not buried in a comment. */
+/* REACH IS LINEAR IN EFFORT. Deliberately not sqrt: the previous build encoded
+   effort as footprint area and needed sqrt to undo the eye's bias, but length
+   from a shared origin has no such bias, so applying sqrt here would actively
+   distort a channel that reads correctly raw. The floor (minReach) is an offset
+   for legibility, not a scale change — it applies equally to every non-zero fin,
+   so DIFFERENCES in reach stay proportional to differences in effort. */
+const boxReach = (v, max) => (v <= 0 ? QBOX.stubReach
+  : QBOX.minReach + (v / max) * (QBOX.maxReach - QBOX.minReach));
+/* Slots where the ghost's own reach falls SHORT of the solid's, so the tail has
+   to be floored to a visible minimum to stay an extension rather than vanish.
+   Computed once, printed on the page and exposed on the probe — a rendering
+   compromise that changes what a mark means has to be counted where the reader
+   can see it, not buried in a comment. */
+const GHOST_TAIL_MIN = 0.22;
 const CAGE_FLOORED = qrows.flatMap((qr, i) => QUADS.map((q, j) =>
-  (qr.Qs[j] > 0 && boxSide(qr.Qs[j], QSMAX) < boxSide(qr.Q[j], QMAX))
+  (qr.Qs[j] > 0 && boxReach(qr.Qs[j], QSMAX) < boxReach(qr.Q[j], QMAX) + QBOX.gap + GHOST_TAIL_MIN)
     ? qr.key + '/' + q.id : null).filter(Boolean));
+/* The right denominator for that count. A slot with NO secondary appearances
+   draws no tail at all and cannot be floored, so measuring the compromise
+   against "all filled slots" would understate it. This is the number of slots
+   that actually have a tail. */
+const GHOST_SLOTS = qrows.reduce((a, qr) => a + qr.Qs.filter((v) => v > 0).length, 0);
 
 function buildQuarterBoxes() {
   const meta = MODEL_META.Q;
@@ -2017,57 +2153,63 @@ function buildQuarterBoxes() {
   const markGrp = new THREE.Group();    // maps to roseGrp — edges, ghosts, dots
 
   const edgeP = [], edgeC = [], ghostP = [], ghostC = [], tc = new THREE.Color();
+  const ghostMeshes = [];
 
   qrows.forEach((qr, qi) => {
     const y = QY(qi);
     QUADS.forEach((q, j) => {
       const v = qr.Q[j], gv = qr.Qs[j];
       const a = deg(q.az);
-      const cx = Math.cos(a) * QBOX.radial, cz = Math.sin(a) * QBOX.radial;
-      const side = boxSide(v, QMAX);
       const empty = v <= 0;
+      const reach = boxReach(v, QMAX);
+      // inner face at the stem, outer face at inner + reach: the fin IS the span
+      const x0 = QBOX.inner, x1 = QBOX.inner + reach;
 
-      /* ---- the solid slab. A measured zero gets a wider, much FLATTER plate
-             rather than a shrunken slab: at minimum footprint the corner radius
-             swallows the corners and a tiny slab reads as a puck, i.e. as a
-             small non-zero value. A plate that is obviously flat cannot be
-             mistaken for a short column, so zero stays legible as zero. ---- */
-      const h = empty ? QBOX.slabH * 0.13 : QBOX.slabH;
-      const geo = roundedSlabGeometry(side, side, h, QBOX.radius * (empty ? 0.5 : 1));
+      /* ---- the solid fin, tied to the stem and radiating outward.
+             A measured zero gets a much FLATTER and slightly NARROWER stub than
+             any real fin, because a merely-short fin of the same profile grades
+             into "a small value" — and the one thing a measured zero must not do
+             is look like a little bit of something. Flat + blunt + grey is a
+             different shape family, readable as "nothing here" at a glance. ---- */
+      const h = empty ? QBOX.slabH * 0.20 : QBOX.slabH;
+      const w = empty ? QBOX.width * 0.55 : QBOX.width;
+      const geo = roundedFinGeometry(x0, x1, w, h, QBOX.radius * (empty ? 0.4 : 1));
       tc.setHex(q.hue);
       const mat = new THREE.MeshStandardMaterial({
         color: empty ? 0x55637a : tc.getHex(),
         emissive: empty ? 0x1b2331 : tc.clone().multiplyScalar(0.34).getHex(),
         roughness: empty ? 0.9 : 0.42, metalness: empty ? 0.0 : 0.18,
-        transparent: true, opacity: empty ? 0.72 : 0.82, depthWrite: true,
+        transparent: true, opacity: empty ? 0.72 : 0.86, depthWrite: true,
       });
       /* MeshStandardMaterial has no uDim uniform, so the focus lever cannot ride
          a shader here the way it does on every other object. Register the
          material instead and let applyFocus() fade opacity directly — same
          observable behaviour, no forked shader. */
-      dimMats.push({ mat, base: empty ? 0.72 : 0.82 });
+      dimMats.push({ mat, base: empty ? 0.72 : 0.86 });
       const m = new THREE.Mesh(geo, mat);
-      m.position.set(cx, y, cz);
-      m.rotation.y = -a;                     // face the slab outward along its bearing
+      // local origin sits ON the axis at this quarter's height, so the fin is
+      // ATTACHED by construction — its position cannot drift off the stem.
+      m.position.set(0, y, 0);
+      m.rotation.y = -a;                     // swing the fin onto its bearing
       m.renderOrder = 2;
-      m.userData.baseOpacity = empty ? 0.34 : 0.82;
+      m.userData.baseOpacity = empty ? 0.34 : 0.86;
       solidGrp.add(m);
 
-      /* ---- crisp edges, so the slab reads as an object and not a blob.
+      /* ---- crisp edges, so the fin reads as an object and not a blob.
              EdgesGeometry is in LOCAL space, so the box transform is baked in on
              the CPU and every box's edges land in ONE shared buffer — 32
              per-box LineSegments would otherwise cost 32 draw calls for what is
              visually a single wireframe layer. ---- */
       const eg = new THREE.EdgesGeometry(geo, 24);
       const epos = eg.getAttribute('position');
+      const mtx = new THREE.Matrix4().makeRotationY(-a).setPosition(0, y, 0);
       {
-        // an empty plate's edge is drawn in NEUTRAL GREY, not a dim version of the
+        // an empty stub's edge is drawn in NEUTRAL GREY, not a dim version of the
         // limb hue — a dim hue reads as "a little of this limb", which is the one
         // thing a measured zero must not say.
         const er = empty ? 0.52 : tc.r * 1.15;
         const eg2c = empty ? 0.58 : tc.g * 1.15;
         const eb = empty ? 0.68 : tc.b * 1.15;
-        const mtx = new THREE.Matrix4().makeRotationY(-a).setPosition(cx, y, cz);
         const v3 = new THREE.Vector3();
         for (let k = 0; k < epos.count; k++) {
           v3.set(epos.getX(k), epos.getY(k), epos.getZ(k)).applyMatrix4(mtx);
@@ -2077,30 +2219,65 @@ function buildQuarterBoxes() {
       }
       eg.dispose();
 
-      /* ---- the ghost cage: secondary reach, as a wireframe box OUTSIDE ------
-         A CONTAINMENT HAZARD, handled rather than ignored. Solid and ghost are
-         different units on separate normalisations (see the page footer), so
-         nothing guarantees the ghost's box is bigger than the solid's. On this
-         data it is smaller in 8 of the 30 filled slots (probe.qbox.cageFloored
-         lists them; they are the high-effort / low-secondary slots, mostly
-         create and build in the busy quarters). Drawn naively the cage would sit
-         INSIDE the block and vanish, and worse, the containment relation would
-         flip meaning halfway across the object: sometimes "reach exceeds effort",
-         sometimes nothing at all.
+      /* ---- the ghost: secondary reach as a TRANSLUCENT TAIL continuing the fin
+         outward along the same radial. This is the layout's one clear win over
+         the cage it replaces: "reach beyond captured effort" is now literally
+         further out from the stem, on the same line, in the same units of
+         distance the solid uses for its own quantity.
 
-         So the cage is FLOORED to always enclose its block. What varies, and what
-         the eye should read, is HOW FAR OUTSIDE it sits: a wide margin is a limb
-         with far more reach than captured effort, a tight cage hugging the block
-         is a limb whose reach the model already captures. The relation stays
-         one-directional and therefore readable. The margin is still not a
-         subtractable quantity — the quarterly table carries the two numbers. */
+         A LENGTH HAZARD, handled rather than ignored. Solid and ghost are
+         different units on separate normalisations (see the page footer), so
+         nothing guarantees the ghost's own reach lands beyond the solid's end.
+         Where it falls short the tail would have zero or negative length and
+         simply vanish — and worse, the relation would mean two different things
+         in one object: sometimes "reach exceeds effort", sometimes nothing.
+
+         So the tail is FLOORED to a minimum visible length. What the eye should
+         read is HOW FAR the tail runs: a long tail is a limb with far more reach
+         than captured effort, a stub of a tail is a limb whose reach the model
+         already captures. The relation stays one-directional and readable. In
+         the floored slots the tail's length is not its own — read it as a rank,
+         and take the two numbers from the quarterly table. */
       if (gv > 0) {
-        const gside = Math.max(boxSide(gv, QSMAX), side) + QBOX.ringPad;
-        const gh = QBOX.slabH + QBOX.ringPad * 0.6;
-        const gg = roundedSlabGeometry(gside, gside, gh, QBOX.radius * 1.2);
+        const gStart = x1 + QBOX.gap;
+        const gEnd = Math.max(QBOX.inner + boxReach(gv, QSMAX), gStart + GHOST_TAIL_MIN);
+        const gh = QBOX.slabH * 0.78;
+        const gw = QBOX.width * 0.78;
+        const gg = roundedFinGeometry(gStart, gEnd, gw, gh, QBOX.radius * 0.8);
+        /* Translucent solid, not a wireframe: at this size an outline reads as an
+           edge of the solid fin rather than as a separate track, and the whole
+           point is that the tail is the SAME radial continued. Additive blending
+           keeps it obviously immaterial next to the lit slab. */
+        const gmat = new THREE.ShaderMaterial({
+          transparent: true, depthWrite: false, side: THREE.DoubleSide,
+          blending: THREE.AdditiveBlending,
+          uniforms: { uGhost: GHOSTU, uDim: dimU,
+                      uCol: { value: new THREE.Color(q.hue) } },
+          vertexShader: `
+            varying vec3 vN;
+            void main() {
+              vN = normalize(normalMatrix * normal);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }`,
+          fragmentShader: `
+            uniform float uGhost; uniform float uDim; uniform vec3 uCol;
+            varying vec3 vN;
+            void main() {
+              float f = 0.62 + 0.38 * abs(vN.y);
+              gl_FragColor = vec4(uCol * f * (0.42 + uGhost * 0.95) * uDim,
+                                  clamp(0.22 + uGhost * 0.52, 0.0, 1.0) * uDim);
+            }`,
+        });
+        const gm = new THREE.Mesh(gg, gmat);
+        gm.position.set(0, y, 0);
+        gm.rotation.y = -a;
+        gm.renderOrder = 3;
+        ghostMeshes.push(gm);
+        markGrp.add(gm);
+        // a bright outline on the tail's OUTER end only, so where the ghost stops
+        // is a hard mark rather than a fade the eye has to guess at
         const ge = new THREE.EdgesGeometry(gg, 24);
         const gpos = ge.getAttribute('position');
-        const mtx = new THREE.Matrix4().makeRotationY(-a).setPosition(cx, y - QBOX.ringPad * 0.3, cz);
         const v3 = new THREE.Vector3();
         for (let k = 0; k < gpos.count; k++) {
           v3.set(gpos.getX(k), gpos.getY(k), gpos.getZ(k)).applyMatrix4(mtx);
@@ -2152,9 +2329,9 @@ function buildQuarterBoxes() {
          levels are countable even where a limb is empty ---- */
   {
     const tp = [], tcol = [];
+    const R = QBOX.inner + QBOX.maxReach + 0.55;
     qrows.forEach((qr, qi) => {
       const y = QY(qi);
-      const R = QBOX.radial + QBOX.maxSide * 0.75;
       const N = 72;
       for (let k = 0; k < N; k++) {
         const a1 = (k / N) * Math.PI * 2, a2 = ((k + 1) / N) * Math.PI * 2;
@@ -2167,9 +2344,33 @@ function buildQuarterBoxes() {
     tg.setAttribute('position', new THREE.Float32BufferAttribute(tp, 3));
     tg.setAttribute('color', new THREE.Float32BufferAttribute(tcol, 3));
     const ticks = new THREE.LineSegments(tg, new THREE.LineBasicMaterial({
-      vertexColors: true, transparent: true, opacity: 0.28, depthWrite: false,
+      vertexColors: true, transparent: true, opacity: 0.24, depthWrite: false,
     }));
     ticks.renderOrder = 1; markGrp.add(ticks);
+  }
+
+  /* ---- THE COLLAR HUB. A short opaque sleeve around the stem at each quarter's
+         height, sized to swallow every fin's inner end. It does two jobs: it is
+         the literal "tied around the stem" band the fins radiate out of, and it
+         hides the four inner faces meeting inside the trunk, which from a low
+         camera angle would otherwise be visible through the translucent core as
+         a crossing X and read as a modelling accident. Drawn in the SOLID group
+         so the Skin toggle takes the whole collar away together — a hub with no
+         fins would be a band the data never earned. ---- */
+  {
+    const hubR = QBOX.inner + 0.16, hubH = QBOX.slabH * 1.16;
+    const hg = new THREE.CylinderGeometry(hubR, hubR, hubH, 28, 1, false);
+    qrows.forEach((qr, qi) => {
+      const hm = new THREE.MeshStandardMaterial({
+        color: 0x6a5541, emissive: 0x241a12,
+        roughness: 0.72, metalness: 0.1, transparent: true, opacity: 0.95,
+      });
+      dimMats.push({ mat: hm, base: 0.95 });
+      const hub = new THREE.Mesh(hg, hm);
+      hub.position.set(0, QY(qi), 0);
+      hub.renderOrder = 2;
+      solidGrp.add(hub);
+    });
   }
 
   markGrp.visible = LOOK.rose;
@@ -2266,7 +2467,7 @@ shown.forEach((m, i) => {
 
   const meta = MODEL_META[m];
   const tagFor = (mm) => (mm === 'Q' && QSTYLE === 'boxes')
-    ? 'quarterly abstracted boxes — a management summary'
+    ? 'quarterly collars — boxes tied to the stem, reach = effort'
     : meta.tag;
   const hexOf = (h) => '#' + h.toString(16).padStart(6, '0');
   // Title above each envelope + the two headline numbers, so the visual and the
@@ -2304,8 +2505,14 @@ shown.forEach((m, i) => {
      does not exist. */
   if (env.userData.boxes) {
     qrows.forEach((qr, qi) => {
-      const sp = makeLabel(qr.key, { size: 28, col: '#9fb2c8' });
-      sp.position.set(x + QBOX.radial + QBOX.maxSide + 0.85, QY(qi) + QBOX.slabH * 0.5, 0);
+      /* A partial quarter is labelled AS partial right where it is read. Left
+         bare, "2026Q3" promises three months of accumulation next to seven
+         collars that deliver it, and the fin length would be read as a surge
+         rather than as one month of a bucket that holds three. */
+      const partial = QPARTIAL.find((p) => p.quarter === qr.key);
+      const txt = partial ? `${qr.key} (${partial.months} mo)` : qr.key;
+      const sp = makeLabel(txt, { size: 28, col: partial ? '#ffcf6e' : '#9fb2c8' });
+      sp.position.set(x + QOUTER + 0.55, QY(qi), 0);
       scene.add(sp);
     });
   }
@@ -2351,10 +2558,11 @@ function frameAll() {
   // half-width follows the row length, so the default two-up frames tight and
   // the ?evidence=1 five-up still fits without cropping the outer titles.
   const span = (shown.length - 1) * SPACING / 2;
-  // the box body reaches further than MAX_R (radial + half a slab + its ladder),
-  // so the frame has to know which body is on screen or the outer column crops.
+  // the box body reaches further than MAX_R (longest fin + its ghost tail + the
+  // ladder), so the frame has to know which body is on screen or the outer
+  // column crops. QOUTER is the single source of truth for that extent.
   const reach = (QSTYLE === 'boxes' && shown.includes('Q'))
-    ? Math.max(MAX_R, QBOX.radial + QBOX.maxSide + 0.9) : MAX_R;
+    ? Math.max(MAX_R, QOUTER + 0.9) : MAX_R;
   const halfW = (SOLO ? reach + 2.4 : span + reach + 3.2);
   /* The month ladder moves to the LEFT of the row when the box body is on the
      right (it labels the monthly envelope, not the quarterly slabs). The content
@@ -2500,7 +2708,14 @@ document.getElementById('spQuadAvg').innerHTML =
     QUADS.map((q) => `<th title="${q.id}"><span style="color:${hexOf(q.hue)}">${q.label.slice(0, 4)}</span></th>`).join('') +
     '</tr>';
   qrows.forEach((qr) => {
-    html += `<tr><td class="l">${qr.key}</td><td>${qr.commits}</td>` +
+    // a partial bucket is marked IN the table, not only in prose — the row is
+    // where a reader checks a fin's length against its number, so the reason
+    // that number is not comparable has to be in the row
+    const part = QPARTIAL.find((p) => p.quarter === qr.key);
+    const mark = part
+      ? ` <span style="color:#ffcf6e;font-size:9px" title="only ${part.months} of 3 months — not comparable to a full quarter">${part.months}mo</span>`
+      : '';
+    html += `<tr><td class="l">${qr.key}${mark}</td><td>${qr.commits}</td>` +
       QUADS.map((_, i) => `<td class="${qr.Q[i] > 0 ? '' : 'z'}">${qr.Q[i] > 0 ? qr.Q[i].toFixed(0) : '0'}</td>`).join('') +
       '</tr>';
   });
@@ -2533,16 +2748,31 @@ document.getElementById('spQuadAvg').innerHTML =
     `Of ${QUARTERS.length}&times;${QUADS.length} = ${QUARTERS.length * QUADS.length} slots, ` +
     `<b style="color:#cfe0f2">${emptyN}</b> are genuinely zero ` +
     (emptyN ? `(${QEMPTY.join(', ')})` : '') +
-    ` and are drawn as flat grey plates, not omitted. ` +
+    ` and are drawn as flat grey stubs at the stem, not omitted. ` +
     `<span style="color:#8fa3ba">19 monthly rings &rarr; ${QUARTERS.length} quarterly levels: ` +
     `the time axis loses ${(100 - QUARTERS.length / MONTHS.length * 100).toFixed(0)}% of its
     resolution to buy a shape you can read in one glance.</span><br>` +
-    `<b>The ghost cage is floored.</b> Solid and ghost are different units, so the
-     ghost box is not always the bigger one &mdash; in <b style="color:#cfe0f2">${CAGE_FLOORED.length}</b>
-     of the ${QUARTERS.length * QUADS.length - QEMPTY.length} filled slots it would sit
-     <i>inside</i> its slab and vanish. It is pushed out to keep containment meaning
-     one thing across the whole object. <b>Read the cage's margin as a rank, not a
-     size</b> &mdash; in those slots the size is not its own.`;
+    (QPARTIAL.length
+      ? `<b style="color:#ffcf6e">Not every collar is a quarter.</b> ` +
+        QPARTIAL.map((p) => `<b>${p.quarter}</b> covers only <b>${p.months}</b> of 3 months ` +
+          `(${p.commits} commits)`).join(', ') +
+        ` &mdash; the log simply stops there. Its fins are <b>not comparable</b> to the
+         collars below them: a third of the window producing nearly as much as a full
+         quarter is a striking fact, but the fin length on its own asserts a surge that
+         the bucketing manufactured. Marked <span style="color:#ffcf6e">amber</span> in
+         this table and on the collar's own ladder label.<br>`
+      : '') +
+    `<b>The ghost tail is floored, and often.</b> Solid and ghost are different units on
+     separate normalisations, so the ghost's own reach frequently fails to land beyond the
+     solid's end &mdash; in <b style="color:#cfe0f2">${CAGE_FLOORED.length}</b>
+     of the ${GHOST_SLOTS} slots that have a tail at all, it would have no length left and
+     would vanish. It is floored to a visible minimum so the relation means one thing
+     across the whole object. That is <b>${(CAGE_FLOORED.length / Math.max(1, GHOST_SLOTS) * 100).toFixed(0)}%</b>
+     of them, far more than a rounding error:
+     <b>read how far a tail runs as a rank, not as a length</b>, and take
+     the two numbers from the table above. The reason is structural, not a bug &mdash; the
+     solid is fractional effort and the ghost is a count of secondary appearances, and
+     they were never on a shared scale.`;
 }
 
 {
@@ -2851,11 +3081,22 @@ window.__probe = () => ({
     slots: QUARTERS.length * QUADS.length,
     empty: QEMPTY,
     gapMonthsHidden: QGAP_MONTHS,
+    // buckets that are not full quarters — the top collar is one month, not three
+    partial: QPARTIAL,
+    monthsPerQuarter: qrows.map((qr) => qr.months.length),
     sum: +qrows.reduce((a, qr) => a + qr.Q.reduce((x, y) => x + y, 0), 0).toFixed(2),
     commitSum: qrows.reduce((a, qr) => a + qr.commits, 0),
-    // slots where the ghost cage had to be floored to stay outside its slab
+    // slots where the ghost tail had to be floored to stay a visible extension,
+    // and the right denominator for that count (slots that have a tail at all)
     cageFloored: CAGE_FLOORED,
-    sides: { min: QBOX.minSide, max: QBOX.maxSide, ringPad: QBOX.ringPad, slabH: QBOX.slabH },
+    ghostSlots: GHOST_SLOTS,
+    /* the encoding itself, so a reader can check a fin against a number:
+       reach = minReach + (effort / max) * (maxReach - minReach), LINEAR. */
+    encoding: 'reach-from-stem, linear in fractional effort',
+    sides: { inner: QBOX.inner, minReach: QBOX.minReach, maxReach: QBOX.maxReach,
+             stubReach: QBOX.stubReach, width: QBOX.width, slabH: QBOX.slabH,
+             ghostTailMin: GHOST_TAIL_MIN, outer: +QOUTER.toFixed(3) },
+    reach: qrows.map((qr) => qr.Q.map((v) => +boxReach(v, QMAX).toFixed(3))),
   },
   guides: GUIDES,
   evidence: EVIDENCE, ghost: GHOSTU.value,
@@ -2883,7 +3124,7 @@ window.__topdown = (dist) => {
      footprint: looking straight down at a tower from inside its own height puts
      the near boxes in your face. Hence + TOP_Y. */
   const reach = (QSTYLE === 'boxes' && shown.includes('Q'))
-    ? Math.max(MAX_R, QBOX.radial + QBOX.maxSide + 0.9) : MAX_R;
+    ? Math.max(MAX_R, QOUTER + 0.9) : MAX_R;
   const halfW = span + reach + 2.4;
   const hFov = 2 * Math.atan(Math.tan(deg(camera.fov) / 2) * camera.aspect);
   const cy = TOP_Y * 0.5;                       // aim at the tower's mid-height
