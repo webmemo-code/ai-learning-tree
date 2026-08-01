@@ -42,6 +42,7 @@ Then open <http://127.0.0.1:8123/> — the root page redirects to the acacia vie
 | `/prototypes/grove-sketch/` | Top-down 2D map of a mock grove |
 | `/prototypes/grove-walk/` | First-person walkable 3D grove (drag to look, WASD to walk) |
 | `/prototypes/acacia-look/` | Static 2D concept board (this one also works from `file://`) |
+| `/prototypes/time-axis-board/multi-axis.html` | Time-axis form search — attribution models, quarterly rollup, one box per quarter. See the [discovery session](docs/documentation/discovery-session/) for how this form was arrived at |
 
 ## Useful URL parameters
 
