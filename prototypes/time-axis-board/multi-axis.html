@@ -84,6 +84,49 @@ THE QUADRANT ROLLUP — the same data at a coarser altitude
   buckets almost every month lights up most of them. Both asymmetry sparklines
   are drawn side by side so the loss is visible, not argued. See §Q.
 
+THE ALIGNMENT FIX — §QBEAR
+  Walter: "Rotate the quadrant view to align with the detail view. Currently they
+  point in different directions." A real defect. The quadrants were hard-coded to
+  45/135/225/315 while their member sectors sit at 15..335, so AUTOMATE's limb
+  pointed 60 degrees away from its own two sectors — into DISTRIBUTE's arc. Two
+  objects claimed to be one measurement at two altitudes while pointing different
+  ways, which makes the claim unreadable.
+
+  The fix has TWO answers because the honest one and the tidy one conflict. The
+  members' circular centroids are 75/195/275/335, spaced 120/80/60/100 and NOT 90
+  — CREATE owns four of nine sectors, BUILD owns one. So exact alignment and even
+  90-degree spacing are mutually exclusive. Both ship, ?qbear= picks:
+    centroid  (DEFAULT) each limb on its members' circular centroid. Drift 0
+              everywhere. Uneven spacing; BUILD's wedge reads thin, which is true.
+    even      90 apart, rotated as a whole to the drift-minimising phase — that
+              phase computes to exactly 85 (85/175/265/355), max drift 20 against
+              the old 60.
+  Ground arcs sweep from each sector's bearing to its parent limb's bearing on
+  BOTH objects, so the correspondence is drawn rather than asserted; under
+  centroid they converge exactly, under even they miss by the drift.
+
+THE QUARTERLY BOXES — §QBOX
+  Walter: "Since in the quadrant view we are synthesizing to a management
+  summary, how about visualizing abstracted boxes with rounded corners on a per
+  quarter basis?" Right instinct: 19 monthly rings is instrument-grade
+  resolution and a summary should not carry it. ?qstyle=boxes (DEFAULT for the Q
+  view only) replaces the monthly lofted envelope with 8 quarters x 4 limbs of
+  rounded extruded slabs — deliberately discrete, axis-aligned and countable,
+  the opposite of the organic envelope. Footprint AREA = that limb's fractional
+  attributed effort that quarter (same model A weights, commits only); slab
+  HEIGHT is fixed because the vertical axis is time. The ghost becomes a
+  wireframe cage around the slab. Measured zeros are drawn as grey plates.
+  ?qstyle=envelope restores the monthly body for comparison.
+
+  THE COST, STATED ON THE PAGE. 2025-02 — the one month with no activity, drawn
+  everywhere else as a pinch that is never interpolated over — falls inside
+  2025Q1, which has 47 commits. At quarterly resolution the gap CANNOT be shown:
+  a non-empty quarter has no empty box to put it in. The #qgapNote panel names
+  that loss with the numbers in it rather than letting the mark quietly vanish.
+
+  THE 9-SECTOR DETAIL VIEW IS NOT TOUCHED by any of this. It is the instrument;
+  an instrument does not get summarised.
+
 THE RULESET — Walter's actual question, answered from evidence
   "How do we systematically assign the distribution per classification?"
   Hand-guessed fractions would be indefensible, so the primary rule is derived
@@ -186,6 +229,32 @@ HONEST WEAKNESSES
     ghost is normalised to its own maximum — so the gap between them reads as
     "there is more reach here than effort captured", NOT as a subtractable
     quantity. Do not read ghost-minus-solid as a number.
+  - THE QUARTERLY BOXES CANNOT SHOW THE 2025-02 GAP. Stated at length in §QBOX
+    and on the page itself. It is the sharpest single example of what a summary
+    costs: a fact that is a visible mark at monthly resolution has no mark
+    available to it at quarterly resolution. The boxes are not wrong; they are
+    less able, and the page has to keep saying so.
+  - centroid BEARINGS MAKE BUILD LOOK THIN, AND THAT IS THE POINT AND ALSO A
+    HAZARD. Under ?qbear=centroid the four limbs cover 120/80/60/100 degrees,
+    which correctly encodes that CREATE owns four sectors and BUILD owns one. But
+    angular span is now carrying information that nothing on the page measures —
+    a viewer may read the wide CREATE wedge as "more effort" when it only means
+    "more sub-categories". Under ?qbear=even that confusion disappears and the
+    alignment becomes approximate instead. There is no option without a cost.
+  - BOX FOOTPRINT IS AREA-SCALED, WHICH IS THE RIGHT FIX AND STILL NOT A GOOD
+    ENCODING. Area comparisons are read less accurately than length ones. The
+    quarterly table in the side panel exists because the slabs alone will not
+    support a precise reading, only a ranking.
+  - THE GHOST CAGE IS FLOORED TO ALWAYS ENCLOSE ITS SLAB, which means in 8 of the
+    30 filled slots the cage is NOT at its natural size — it has been pushed out
+    to stay outside. This is a deliberate legibility choice over a literal one:
+    unfloored, the cage would disappear inside the block in those slots and the
+    containment relation would mean two different things in one object. The cost
+    is that the cage's absolute size is not reliable in those eight, only its
+    margin ordering is — and eight of thirty is more than a rounding error, so
+    read the cage as a rank, never as a size. window.__probe().qbox.cageFloored
+    names them. Same underlying cause as the envelope's ghost caveat: the two
+    tracks were never on a shared scale.
   - Every caveat radial-envelope.html carries still applies: bearing is an
     ordered categorical axis and NOT a compass direction, only the 9 values at
     the bearings are measurement (the 96 resampled ring points are inference),
@@ -202,6 +271,15 @@ USAGE
           ?evidence=1        also show A, B and C alone (the comparison that
                              produced the choice). Default off — the decision is
                              made; the evidence is one click away, not in the way.
+          ?qbear=centroid|even   where the four quadrant limbs point. centroid
+                             (default) = exact alignment with the sector view,
+                             uneven spacing. even = 90 apart at the drift-
+                             minimising phase 85. See §QBEAR.
+          ?qstyle=boxes|envelope how the QUADRANT object is drawn. boxes
+                             (default) = quarterly rounded slabs, the management
+                             summary. envelope = the inherited monthly lofted
+                             body. The 9-sector view ignores this. See §QBOX.
+          ?guides=0          hide the ground arcs joining sectors to their limbs
           ?ghost=<0..1.6>    ghost visual weight. Default .62 (was effectively
                              .40 when the ghost only existed inside model C).
           ?legend=0          collapse the colour legend
@@ -239,6 +317,17 @@ USAGE
   }
   button:hover { background: rgba(120, 170, 245, 0.34); }
   button[aria-pressed="true"] { background: rgba(120, 200, 245, 0.4); border-color: rgba(170, 220, 255, 0.65); }
+
+  /* ---- quadrant-view controls ---- */
+  #qctl { margin-top: 8px; border-top: 1px solid rgba(120, 160, 230, 0.16); padding-top: 8px; }
+  #qctl .qrow { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+  #qctl .qlab { font-size: 10px; color: #7f93aa; width: 62px; flex: none; letter-spacing: 0.03em; }
+  #qctl button { font-size: 11px; padding: 3px 8px; }
+  #qctl .qdrift { font-size: 10px; color: #7f93aa; line-height: 1.5; margin-top: 3px;
+                  font-variant-numeric: tabular-nums; }
+  #qctl .qdrift b { color: #cfe0f2; font-weight: 600; }
+  #qctl .qdrift .ok { color: #7ff0d2; }
+  #qctl .qdrift .off { color: #ffb08a; }
 
   #look { margin-top: 10px; border-top: 1px solid rgba(120, 160, 230, 0.16); padding-top: 9px; }
   #look .sl { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
@@ -315,6 +404,14 @@ USAGE
   #legend .chip.gap   { background: rgba(150, 42, 42, 0.85); }
   #legend .chip.core  { background: rgba(74, 58, 41, 0.9); }
   #legend .chip.quad  { background: linear-gradient(90deg, #ffb454, #7ce65a 42%, #35d0ba 72%, #6a8dff); }
+  /* the box vocabulary: filled slab, open cage, measured-zero plate */
+  #legend .chip.qbox  { background: linear-gradient(160deg, #8ff07a, #4aa03a); border-radius: 5px; }
+  #legend .chip.qcage { background: rgba(124, 230, 90, 0.10); border-radius: 5px;
+                        outline: 1.5px solid rgba(124, 230, 90, 0.75); outline-offset: -2px; }
+  #legend .chip.qnull { background: rgba(42, 50, 64, 0.85); border-radius: 5px; height: 5px;
+                        margin-top: 6px; border: 1px solid rgba(120, 140, 170, 0.35); }
+  #legend .chip.guide { background: linear-gradient(90deg, rgba(124,230,90,0), rgba(124,230,90,0.9));
+                        height: 2px; margin-top: 7px; }
 
   /* ---- quadrant comparison block ---- */
   #quad { margin-top: 10px; border-top: 1px solid rgba(120, 160, 230, 0.16); padding-top: 8px; }
@@ -336,6 +433,15 @@ USAGE
   #quad .spark svg { display: block; width: 100%; height: 34px; }
   #quad .note { color: #7f93aa; font-size: 10.5px; line-height: 1.55; margin-top: 7px; }
   #quad .note b { color: #ffb08a; }
+  #qbox { margin-top: 10px; border-top: 1px solid rgba(120, 160, 230, 0.16); padding-top: 8px; }
+  #qbox b.hd { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 6px; font-size: 11.5px; }
+  #qbox table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  #qbox th { color: #7f93aa; font-weight: 500; text-align: right; padding: 0 0 4px 3px; font-size: 9.5px; }
+  #qbox th.l { text-align: left; }
+  #qbox td { text-align: right; padding: 1.5px 0 1.5px 3px; color: #9fb2c8; font-size: 10.5px; }
+  #qbox td.l { text-align: left; color: #cfd8e3; }
+  #qbox td.z { color: #6a7686; }
+  #qbox tr.sum td { border-top: 1px solid rgba(120, 160, 230, 0.2); padding-top: 4px; color: #cfe0f2; }
 
   #err {
     position: fixed; inset: 0; display: none; place-items: center; z-index: 50;
@@ -382,6 +488,31 @@ USAGE
     <button id="bB" type="button" data-m="B">B whole</button>
     <button id="bC" type="button" data-m="C">C prim+sec</button>
   </div>
+  <!-- ===== QUADRANT-VIEW CONTROLS =====
+       Two decisions Walter asked to make by eye rather than by argument, so both
+       options exist and neither is hidden behind a rebuild-and-hope. -->
+  <div id="qctl">
+    <div class="qrow">
+      <span class="qlab" title="where the four quadrant limbs point">Q bearings</span>
+      <button id="bQBearC" type="button" data-qb="centroid"
+        title="each limb on its members' circular centroid — exact alignment, uneven spacing">centroid</button>
+      <button id="bQBearE" type="button" data-qb="even"
+        title="90 degrees apart, rotated as a whole to minimise drift — even spacing, approximate alignment">even 90&deg;</button>
+    </div>
+    <div class="qrow">
+      <span class="qlab" title="how the quadrant object is drawn">Q body</span>
+      <button id="bQStyleB" type="button" data-qs="boxes"
+        title="quarterly rounded slabs — the management summary">boxes</button>
+      <button id="bQStyleE" type="button" data-qs="envelope"
+        title="the inherited monthly lofted envelope">envelope</button>
+    </div>
+    <div class="qrow">
+      <span class="qlab" title="ground arcs joining each sector to its parent limb">links</span>
+      <button id="bGuides" type="button">&#8631; sector&rarr;limb guides</button>
+    </div>
+    <div class="qdrift" id="qdrift"></div>
+  </div>
+
   <div class="btnrow" style="margin-top:6px">
     <button id="bSpin" type="button" aria-pressed="true">&#9199; Orbit</button>
     <button id="bSkin" type="button" aria-pressed="true">&#9673; Skin</button>
@@ -443,7 +574,38 @@ USAGE
         <span><b>Quadrant view</b> &mdash; each limb takes a representative hue from
         its member sectors: copy, workflows, seo, coding.</span>
       </div>
+      <div class="grp" id="lgBoxGrp">Quadrant view &mdash; quarterly boxes</div>
+      <div id="lgBoxes">
+        <div class="sw">
+          <span class="chip qbox"></span>
+          <span><b>Rounded slab</b> &mdash; one per <b>quarter &times; limb</b>.
+          Footprint area = that limb's fractional attributed effort that quarter
+          (same model A weights, quarterly). Slab <b>height is fixed</b>: the
+          vertical axis is time and stays time.</span>
+        </div>
+        <div class="sw">
+          <span class="chip qcage"></span>
+          <span><b>Wireframe cage</b> &mdash; the ghost at box resolution: secondary
+          reach, as an open box always drawn <b>outside</b> its slab. Read the
+          <b>margin</b>: wide = far more reach than captured effort, tight = the
+          model already captures this limb's reach. Different unit from the slab
+          &mdash; <b>do not subtract</b>.</span>
+        </div>
+        <div class="sw">
+          <span class="chip qnull"></span>
+          <span><b>Flat grey plate</b> &mdash; a <b>measured zero</b>: that limb did
+          nothing that quarter. Drawn as a deliberately flat plate rather than
+          omitted, because an absent box and an unnoticed box look the same.</span>
+        </div>
+      </div>
       <div class="grp">Other marks</div>
+      <div class="sw">
+        <span class="chip guide"></span>
+        <span><b>Ground arcs</b> &mdash; each sector's bearing swept to its parent
+        limb's bearing, in the limb's hue. Under <b>centroid</b> bearings they
+        converge exactly; under <b>even 90&deg;</b> they land short or long, and
+        that residual is what even spacing costs.</span>
+      </div>
       <div class="sw">
         <span class="chip gap"></span>
         <span><b>Dark red band</b> &mdash; 2025-02, a month with no activity at all.
@@ -525,6 +687,13 @@ USAGE
       </div>
     </div>
     <div class="note" id="quadNote"></div>
+
+    <!-- The quarterly boxes' own numbers, and the fact they cost. -->
+    <div id="qbox">
+      <b class="hd">Quarterly buckets &mdash; what the boxes contain</b>
+      <table id="qboxTbl"></table>
+      <div class="note" id="qgapNote"></div>
+    </div>
   </div>
 
   <div class="rep">
@@ -547,8 +716,14 @@ USAGE
     <b>9 sectors.</b> The 8 from radial-envelope plus <b>agents</b>; no-code and
     low-code stay dropped (unobservable in a commit log by construction).
     <b>generator/taxonomy.mjs is untouched.</b><br>
-    <b>Bearings respaced</b> to an even 40&deg;. Azimuth means &ldquo;which
-    sector&rdquo;, not a compass direction.
+    <b>Bearings.</b> The nine sectors are respaced to an even 40&deg;. The four
+    quadrants are <b>no longer</b> hard-coded to 45/135/225/315 &mdash; they now
+    follow <span id="footBear">their members</span>, so the two objects point the
+    same way. Azimuth means &ldquo;which sector&rdquo;, not a compass direction.<br>
+    <b>The boxes are quarterly; the envelope is monthly.</b> They are the same
+    weights re-bucketed, not a second measurement &mdash; but they are not
+    interchangeable at the same fidelity, and the quarterly view cannot show the
+    2025-02 pinch at all.
   </div>
 </div>
 
@@ -601,6 +776,18 @@ const LOOK = {
   // watch, not the slider's max.
   ghost:   numParam('ghost', 0.62, 0, 1.6),
 };
+/* ---- QUADRANT-VIEW-ONLY LEVERS (both new; neither touches the 9-sector view) --
+   qbear   how the four quadrant bearings are placed. See §QBEAR below.
+   qstyle  how the quadrant view is DRAWN: the inherited monthly lofted envelope,
+           or the quarterly abstracted boxes. See §QBOX below. */
+const enumParam = (name, allowed, def) => {
+  const v = (PARAMS.get(name) || '').toLowerCase();
+  return allowed.includes(v) ? v : def;
+};
+let QBEAR  = enumParam('qbear',  ['centroid', 'even'],     'centroid');
+let QSTYLE = enumParam('qstyle', ['boxes', 'envelope'],    'boxes');
+// the sector<->quadrant correspondence guides on the ground plane
+let GUIDES = PARAMS.get('guides') !== '0';
 // Valid render targets. AC is the merged model Walter chose; Q is the quadrant
 // rollup; A/B/C survive as the evidence behind the choice.
 const ALL_KEYS = ['AC', 'Q', 'A', 'B', 'C'];
@@ -882,16 +1069,80 @@ const MODEL_META = {
    wears copy's amber (its largest member), AUTOMATE wears workflows' green,
    DISTRIBUTE wears seo's teal, BUILD wears coding's blue (its only member).
 
-   BEARINGS respaced to an even 90 degrees — the same presentation-only rule
-   applied to the nine at 40 degrees. Phase-locked to 45 so the four limbs sit
-   between the diagonals and the object does not read as an axis-aligned box.
-   -------------------------------------------------------------------------- */
-const QUADS = [
-  { id: 'create',     label: 'create',     az: 45,  hue: 0xffb454 },
-  { id: 'automate',   label: 'automate',   az: 135, hue: 0x7ce65a },
-  { id: 'distribute', label: 'distribute', az: 225, hue: 0x35d0ba },
-  { id: 'build',      label: 'build',      az: 315, hue: 0x6a8dff },
-];
+   §QBEAR — BEARINGS. THE BUG THAT WAS HERE, AND WHY THE FIX HAS TWO ANSWERS.
+   --------------------------------------------------------------------------
+   The quadrants used to sit at a hard-coded 45/135/225/315 while their member
+   sectors sit at 15..335 in 40-degree steps. Walter: "Rotate the quadrant view to
+   align with the detail view. Currently they point in different directions." He
+   is right and it is a defect, not a preference: the two objects are THE SAME
+   MEASUREMENT AT TWO ALTITUDES, and if CREATE's four sectors span 15-135 while
+   the CREATE limb points at 45, the eye is told they are different things. The
+   drift was large enough to invert readings — AUTOMATE's limb pointed 60 degrees
+   away from where its own two sectors live, i.e. into DISTRIBUTE's arc.
+
+     quadrant     members         circular centroid   old bearing   drift
+     create       15 55 95 135          75                45        -30
+     automate     175 215              195               135        -60
+     distribute   255 295              275               225        -50
+     build        335                  335               315        -20
+
+   THE TENSION, WHICH CANNOT BE ENGINEERED AWAY. The centroids are 75/195/275/335
+   — spaced 120/80/60/100, NOT 90. That is not sloppiness; it is the data: CREATE
+   owns four of the nine sectors and BUILD owns one, so the arc each limb covers
+   is genuinely unequal. "Aligned with the detail view" and "evenly spaced at 90
+   degrees" are therefore MUTUALLY EXCLUSIVE. Both are implemented; ?qbear= picks.
+
+     centroid  each limb sits exactly on its members' circular centroid. Perfect
+               alignment — a spoke in the quadrant view points where its sectors
+               actually are. Cost: uneven spacing, and BUILD's lone wedge reads
+               thin because it genuinely covers one sector out of nine.
+     even      90 degrees apart, rotated AS A WHOLE to the phase that minimises
+               total squared drift from the centroids. That phase is exactly 85
+               (85/175/265/355), max drift 20 against the old 60. Cost: alignment
+               is approximate, not exact.
+
+   DEFAULT centroid — the ask was alignment, the alignment claim is what the two
+   views' comparability rests on, and "evenly spaced" is a cosmetic property that
+   actively misrepresents how the nine sectors distribute across four limbs.
+
+   The even phase is COMPUTED here, not typed, so it cannot go stale if a sector
+   is ever added or a bearing moves. -------------------------------------------- */
+const QUAD_MEMBER_AZ = {
+  create: [], automate: [], distribute: [], build: [],
+};
+for (const s of SECTORS) QUAD_MEMBER_AZ[s.id.split('.')[0]].push(s.az);
+
+// circular mean of a list of bearings — the honest "where do these point on
+// average" for an angular quantity, where a plain arithmetic mean is wrong.
+function circMean(azs) {
+  let x = 0, y = 0;
+  for (const a of azs) { x += Math.cos(deg(a)); y += Math.sin(deg(a)); }
+  return ((Math.atan2(y, x) * 180 / Math.PI) % 360 + 360) % 360;
+}
+const signedDelta = (a, b) => (((a - b + 180) % 360) + 360) % 360 - 180;
+
+const QUAD_ORDER = ['create', 'automate', 'distribute', 'build'];
+const QUAD_CENTROID = {};
+for (const k of QUAD_ORDER) QUAD_CENTROID[k] = circMean(QUAD_MEMBER_AZ[k]);
+// the even-mode phase: circular mean of (centroid_i - 90*i), which is the exact
+// minimiser of sum of squared circular drift for a rigid 90-degree cross.
+const EVEN_PHASE = (() => {
+  let x = 0, y = 0;
+  QUAD_ORDER.forEach((k, i) => {
+    const a = deg(QUAD_CENTROID[k] - 90 * i);
+    x += Math.cos(a); y += Math.sin(a);
+  });
+  return ((Math.atan2(y, x) * 180 / Math.PI) % 360 + 360) % 360;
+})();
+const quadAz = (id, i) => (QBEAR === 'even'
+  ? (EVEN_PHASE + 90 * i) % 360
+  : QUAD_CENTROID[id]);
+
+const QUAD_HUE = { create: 0xffb454, automate: 0x7ce65a, distribute: 0x35d0ba, build: 0x6a8dff };
+const QUADS = QUAD_ORDER.map((id, i) => ({ id, label: id, az: quadAz(id, i), hue: QUAD_HUE[id] }));
+// drift of each limb from its centroid, printed in the panel so the trade-off is
+// a number on screen rather than a claim in a comment.
+const QUAD_DRIFT = QUADS.map((q) => signedDelta(q.az, QUAD_CENTROID[q.id]));
 const QI = new Map(QUADS.map((q, i) => [q.id, i]));
 // sector index -> quadrant index, derived from the id prefix so it cannot drift
 const SEC2QUAD = SECTORS.map((s) => QI.get(s.id.split('.')[0]));
@@ -971,6 +1222,71 @@ for (const r of rows) {
   });
   QUADS.forEach((_, i) => { TOT.Q[i] += r.Q[i]; TOT.Qs[i] += r.Qs[i]; });
 }
+
+/* ==========================================================================
+   1b · §QBOX — QUARTERLY BUCKETS, for the boxes rendering of the quadrant view
+   ==========================================================================
+   Walter: "Since in the quadrant view we are synthesizing to a management
+   summary, how about visualizing abstracted boxes with rounded corners on a per
+   quarter basis?"
+
+   The instinct is right and it is the same instinct as the rollup itself: 19
+   monthly rings is instrument-grade resolution, and a summary that wants to be
+   read in one glance should not carry it. Quarters are the time axis' equivalent
+   of the sector->quadrant rollup, so the boxes view coarsens BOTH axes at once
+   and is honest about being a summary rather than pretending to be the log.
+
+   These are a pure re-bucketing of the SAME per-commit weights the monthly rows
+   use — summed by quarter instead of by month. Nothing is reweighted, so the
+   quarterly grand total is the monthly grand total is 1749.
+
+   WHAT THIS COSTS, AND IT IS NOT NOTHING. 2025-02 — the one month in the whole
+   history with no activity at all, drawn everywhere else on this page as a real
+   dark-red pinch that is never interpolated over — SITS INSIDE 2025Q1, which has
+   47 commits. At quarterly resolution that gap is arithmetically invisible: the
+   quarter is non-empty, so no box can be empty there, and the pinch stops
+   existing as a mark. That is the exact cost of summarising and it is stated on
+   the page (see #qgapNote) rather than allowed to vanish silently. A summary that
+   loses a fact should say which fact it lost.
+   ========================================================================== */
+const quarterKey = (mk) => {
+  const y = mk.slice(0, 4), m = Number(mk.slice(5, 7));
+  return y + 'Q' + (Math.floor((m - 1) / 3) + 1);
+};
+const QUARTERS = [];
+{
+  const seenQ = new Set();
+  for (const mk of MONTHS) { const q = quarterKey(mk); if (!seenQ.has(q)) { seenQ.add(q); QUARTERS.push(q); } }
+}
+const QRI = new Map(QUARTERS.map((k, i) => [k, i]));
+/* One quarter row: the four limbs' fractional effort, the four limbs' ghost
+   counts, the commit count, and — kept explicitly — WHICH MONTHS INSIDE IT WERE
+   ABSENT, so the page can name the fidelity it just gave up instead of dropping
+   the fact on the floor. */
+const qrows = QUARTERS.map((key) => ({
+  key,
+  Q:  new Array(QUADS.length).fill(0),
+  Qs: new Array(QUADS.length).fill(0),
+  commits: 0,
+  months: [],          // month keys falling in this quarter
+  absentMonths: [],    // of those, the ones with no activity at all
+}));
+for (const r of rows) {
+  const qr = qrows[QRI.get(quarterKey(r.key))];
+  qr.months.push(r.key);
+  if (!r.present) { qr.absentMonths.push(r.key); continue; }
+  qr.commits += r.commits;
+  QUADS.forEach((_, i) => { qr.Q[i] += r.Q[i]; qr.Qs[i] += r.Qs[i]; });
+}
+// A quarter is "present" if ANY month in it had activity. Every quarter here is
+// present — which is precisely why the 2025-02 pinch disappears at this altitude.
+qrows.forEach((qr) => { qr.present = qr.commits > 0; });
+const QMAX  = Math.max(1, ...qrows.map((qr) => Math.max(...qr.Q)));
+const QSMAX = Math.max(1, ...qrows.map((qr) => Math.max(...qr.Qs)));
+// slots that are genuinely zero — drawn as visible empty frames, never omitted
+const QEMPTY = [];
+qrows.forEach((qr, i) => QUADS.forEach((q, j) => { if (qr.Q[j] <= 0) QEMPTY.push(qr.key + '/' + q.id); }));
+const QGAP_MONTHS = qrows.flatMap((qr) => qr.absentMonths.map((m) => ({ month: m, quarter: qr.key })));
 
 /* Gini across sectors: 0 = perfectly even growth in every direction, 1 = one
    sector owns everything. This is the QUANTITATIVE companion to the visual
@@ -1519,7 +1835,369 @@ function buildEnvelope(model) {
     })));
   });
 
+  grp.add(correspondenceGuides(axes));
+
   grp.userData = { model, dimU, skinGrp, roseGrp, monthRings, meta, axes };
+  return grp;
+}
+
+/* ==========================================================================
+   4b · CORRESPONDENCE GUIDES — making "these are the same data" legible
+   ==========================================================================
+   Rotating the quadrants onto their centroids makes the alignment TRUE. It does
+   not by itself make it VISIBLE: a viewer looking at two objects with different
+   numbers of spokes has no way to see which spoke belongs to which without being
+   told, and being told is exactly the assertion this page tries never to make.
+
+   So both objects carry the same ground mark. On the NINE-sector object each
+   sector's ground spoke is joined by a faint arc, in its parent limb's hue, that
+   sweeps from the sector's own bearing to its parent quadrant's bearing — a
+   literal drawn line from "where this sector is" to "where its limb points". On
+   the FOUR-quadrant object the same limb hue is laid down as an arc spanning the
+   whole angular range its members occupy, so the quadrant's wedge visibly covers
+   its sectors' arc rather than merely claiming to.
+
+   Under ?qbear=centroid the sector arcs converge exactly on the quadrant marks.
+   Under ?qbear=even they land short or long by the drift, and that residual is
+   the honest visual statement of what even spacing costs.
+
+   These are DRAWN AIDS at ground level, not measurement. They carry no radius
+   information and sit at y=0.005 so they never mix with the lobes above. ------ */
+function correspondenceGuides(axes) {
+  const g = new THREE.Group();
+  const pts = [], cols = [], tc = new THREE.Color();
+  const R0 = MAX_R + 0.34, R1 = MAX_R + 0.62;
+  const arc = (a1, a2, r, hue, bright) => {
+    const n = Math.max(2, Math.ceil(Math.abs(signedDelta(a2, a1)) / 2) + 1);
+    tc.setHex(hue);
+    for (let i = 0; i < n; i++) {
+      const t1 = i / n, t2 = (i + 1) / n;
+      const b1 = a1 + signedDelta(a2, a1) * t1, b2 = a1 + signedDelta(a2, a1) * t2;
+      pts.push(Math.cos(deg(b1)) * r, 0.005, Math.sin(deg(b1)) * r);
+      pts.push(Math.cos(deg(b2)) * r, 0.005, Math.sin(deg(b2)) * r);
+      for (let k = 0; k < 2; k++) cols.push(tc.r * bright, tc.g * bright, tc.b * bright);
+    }
+  };
+  const radial = (a, ra, rb, hue, bright) => {
+    tc.setHex(hue);
+    pts.push(Math.cos(deg(a)) * ra, 0.005, Math.sin(deg(a)) * ra);
+    pts.push(Math.cos(deg(a)) * rb, 0.005, Math.sin(deg(a)) * rb);
+    for (let k = 0; k < 2; k++) cols.push(tc.r * bright, tc.g * bright, tc.b * bright);
+  };
+
+  if (axes === SECTORS) {
+    // one arc per sector: from its own bearing to its parent limb's bearing
+    SECTORS.forEach((s, i) => {
+      const q = QUADS[SEC2QUAD[i]];
+      radial(s.az, R0, R1, q.hue, 0.85);
+      arc(s.az, q.az, R1, q.hue, 0.55);
+    });
+    QUADS.forEach((q) => radial(q.az, R1, R1 + 0.34, q.hue, 1.25));
+  } else {
+    // the quadrant object: each limb's arc spans the angular range of its members
+    QUADS.forEach((q, i) => {
+      const azs = QUAD_MEMBER_AZ[q.id];
+      radial(q.az, R1, R1 + 0.34, q.hue, 1.25);
+      azs.forEach((a) => { radial(a, R0, R1, q.hue, 0.85); arc(a, q.az, R1, q.hue, 0.55); });
+    });
+  }
+  const bg = new THREE.BufferGeometry();
+  bg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  bg.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  const lines = new THREE.LineSegments(bg, new THREE.LineBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.62,
+    depthWrite: false, blending: THREE.AdditiveBlending,
+  }));
+  lines.renderOrder = 2;
+  g.add(lines);
+  g.visible = GUIDES;
+  g.userData.isGuides = true;
+  return g;
+}
+
+/* ==========================================================================
+   4c · §QBOX — THE QUARTERLY BOX RENDERING of the quadrant view
+   ==========================================================================
+   An ALTERNATIVE body for the Q view only. The nine-sector AC object is never
+   touched by any of this — its monthly lofted envelope is the instrument, and an
+   instrument should not be summarised.
+
+   THE FORM AND WHY IT IS DELIBERATELY UNLIKE THE ENVELOPE. The envelope is
+   organic: continuous, interpolated, growth-shaped, and it invites you to read
+   the curve between measurements. That is right for nine sectors over nineteen
+   months and wrong for a management summary, because a summary's job is to be
+   unambiguous about how few numbers it contains. So the boxes are the opposite
+   on purpose: discrete, axis-aligned, rounded-rectangular slabs with visible
+   edges and visible gaps. 8 quarters x 4 limbs = 32 slots, every one of them
+   countable by eye. Dashboard-in-3D, not tree.
+
+   WHAT SIZE MEANS. Box footprint (both horizontal dimensions) scales with that
+   limb's fractional attributed effort in that quarter — the same model A weights
+   as everywhere else on the page, re-bucketed by quarter, commits only. sqrt
+   scaling, so AREA is proportional to effort rather than side length, which is
+   the standard fix for the eye's tendency to read a doubled side as a doubled
+   quantity. Height is FIXED per slab: the vertical axis is time and must stay
+   time, so letting a big quarter grow taller would make one axis mean two things.
+
+   THE GHOST at box resolution. A ring outline would disappear against a solid
+   slab, so the secondary reach is drawn as a LARGER WIREFRAME BOX enclosing the
+   solid one — same centre, same rounding, edges only. "The reach is bigger than
+   the captured effort" becomes "the cage is bigger than the block", which
+   survives at this size in a way a faint line does not. Same caveat as
+   everywhere: the two are DIFFERENT UNITS, each normalised to its own maximum,
+   and the cage minus the block is not a quantity.
+
+   EMPTY SLOTS ARE DRAWN. A quarter-limb with zero attributed effort gets a flat
+   dark plate at minimum size rather than nothing at all, because an omitted box
+   and a box you failed to notice look identical, and the honesty rule on this
+   page is that a measured zero must be visible as a measured zero. ----------- */
+
+// A rounded rectangle as a THREE.Shape, extruded — the "squircle slab". The
+// corner radius is capped at 45% of the half-extent so tiny boxes stay rounded
+// rectangles instead of degenerating into lozenges of a different family.
+const boxShapeCache = new Map();
+// standard-material slabs whose opacity applyFocus() has to fade by hand
+const dimMats = [];
+function roundedSlabGeometry(w, d, h, r) {
+  const key = w.toFixed(3) + ',' + d.toFixed(3) + ',' + h.toFixed(3) + ',' + r.toFixed(3);
+  let g = boxShapeCache.get(key);
+  if (g) return g;
+  /* The corner radius is PROPORTIONAL, not absolute. A fixed 0.22 radius is a
+     gentle round on a 2.3-wide slab and swallows a 0.5-wide one whole — the small
+     boxes came out as cylinders, which is a different visual family and made a
+     small value look like a different KIND of thing rather than less of the same
+     thing. Capping at 0.18 of the side keeps every box the same shape at every
+     size, which is the only way footprint can carry the quantity cleanly. */
+  const rr = Math.min(r, w * 0.18, d * 0.18);
+  const sh = new THREE.Shape();
+  const x0 = -w / 2, x1 = w / 2, z0 = -d / 2, z1 = d / 2;
+  sh.moveTo(x0 + rr, z0);
+  sh.lineTo(x1 - rr, z0); sh.quadraticCurveTo(x1, z0, x1, z0 + rr);
+  sh.lineTo(x1, z1 - rr); sh.quadraticCurveTo(x1, z1, x1 - rr, z1);
+  sh.lineTo(x0 + rr, z1); sh.quadraticCurveTo(x0, z1, x0, z1 - rr);
+  sh.lineTo(x0, z0 + rr); sh.quadraticCurveTo(x0, z0, x0 + rr, z0);
+  g = new THREE.ExtrudeGeometry(sh, { depth: h, bevelEnabled: false, curveSegments: 5 });
+  g.rotateX(-Math.PI / 2);        // shape is drawn in XY; stand it up so depth is +Y
+  g.translate(0, h, 0);
+  boxShapeCache.set(key, g);
+  return g;
+}
+
+const QBOX = {
+  slabH:   0.46,        // fixed slab height — time is the axis, not quantity
+  minSide: 0.44,        // an empty slot is still this big, so zero is visible
+  maxSide: 2.30,        // the fullest quarter-limb
+  radius:  0.22,
+  ringPad: 0.30,        // how far the ghost cage sits outside the solid slab
+  /* 3.9 rather than the 3.05 the boxes strictly need. Nothing OVERLAPS at 3.05 —
+     the closest pair (distribute/build, 60 deg apart under centroid bearings)
+     still clears — but in perspective the columns project onto one another and
+     the object reads as a pile rather than four countable stacks. A summary that
+     has to be orbited before it can be counted is not doing its job. */
+  radial:  3.9,         // distance from the axis to each limb's box column
+};
+// quarters are spaced up the same time axis the monthly view uses, so the two
+// renderings of the Q view occupy the same height and can be swapped in place.
+const QY = (i) => (QUARTERS.length > 1 ? (i / (QUARTERS.length - 1)) * TOP_Y : TOP_Y / 2);
+const boxSide = (v, max) => (v <= 0 ? QBOX.minSide
+  : QBOX.minSide + Math.sqrt(v / max) * (QBOX.maxSide - QBOX.minSide));
+/* Slots where the ghost's natural box is SMALLER than its slab, so the cage has
+   to be floored outward to stay a cage. Computed once, printed on the page and
+   exposed on the probe — a rendering compromise that changes what a mark means
+   has to be counted where the reader can see it, not buried in a comment. */
+const CAGE_FLOORED = qrows.flatMap((qr, i) => QUADS.map((q, j) =>
+  (qr.Qs[j] > 0 && boxSide(qr.Qs[j], QSMAX) < boxSide(qr.Q[j], QMAX))
+    ? qr.key + '/' + q.id : null).filter(Boolean));
+
+function buildQuarterBoxes() {
+  const meta = MODEL_META.Q;
+  const grp = new THREE.Group();
+  const dimU = { value: 1.0 };
+  const solidGrp = new THREE.Group();   // maps to skinGrp so the Skin toggle works
+  const markGrp = new THREE.Group();    // maps to roseGrp — edges, ghosts, dots
+
+  const edgeP = [], edgeC = [], ghostP = [], ghostC = [], tc = new THREE.Color();
+
+  qrows.forEach((qr, qi) => {
+    const y = QY(qi);
+    QUADS.forEach((q, j) => {
+      const v = qr.Q[j], gv = qr.Qs[j];
+      const a = deg(q.az);
+      const cx = Math.cos(a) * QBOX.radial, cz = Math.sin(a) * QBOX.radial;
+      const side = boxSide(v, QMAX);
+      const empty = v <= 0;
+
+      /* ---- the solid slab. A measured zero gets a wider, much FLATTER plate
+             rather than a shrunken slab: at minimum footprint the corner radius
+             swallows the corners and a tiny slab reads as a puck, i.e. as a
+             small non-zero value. A plate that is obviously flat cannot be
+             mistaken for a short column, so zero stays legible as zero. ---- */
+      const h = empty ? QBOX.slabH * 0.13 : QBOX.slabH;
+      const geo = roundedSlabGeometry(side, side, h, QBOX.radius * (empty ? 0.5 : 1));
+      tc.setHex(q.hue);
+      const mat = new THREE.MeshStandardMaterial({
+        color: empty ? 0x55637a : tc.getHex(),
+        emissive: empty ? 0x1b2331 : tc.clone().multiplyScalar(0.34).getHex(),
+        roughness: empty ? 0.9 : 0.42, metalness: empty ? 0.0 : 0.18,
+        transparent: true, opacity: empty ? 0.72 : 0.82, depthWrite: true,
+      });
+      /* MeshStandardMaterial has no uDim uniform, so the focus lever cannot ride
+         a shader here the way it does on every other object. Register the
+         material instead and let applyFocus() fade opacity directly — same
+         observable behaviour, no forked shader. */
+      dimMats.push({ mat, base: empty ? 0.72 : 0.82 });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(cx, y, cz);
+      m.rotation.y = -a;                     // face the slab outward along its bearing
+      m.renderOrder = 2;
+      m.userData.baseOpacity = empty ? 0.34 : 0.82;
+      solidGrp.add(m);
+
+      /* ---- crisp edges, so the slab reads as an object and not a blob.
+             EdgesGeometry is in LOCAL space, so the box transform is baked in on
+             the CPU and every box's edges land in ONE shared buffer — 32
+             per-box LineSegments would otherwise cost 32 draw calls for what is
+             visually a single wireframe layer. ---- */
+      const eg = new THREE.EdgesGeometry(geo, 24);
+      const epos = eg.getAttribute('position');
+      {
+        // an empty plate's edge is drawn in NEUTRAL GREY, not a dim version of the
+        // limb hue — a dim hue reads as "a little of this limb", which is the one
+        // thing a measured zero must not say.
+        const er = empty ? 0.52 : tc.r * 1.15;
+        const eg2c = empty ? 0.58 : tc.g * 1.15;
+        const eb = empty ? 0.68 : tc.b * 1.15;
+        const mtx = new THREE.Matrix4().makeRotationY(-a).setPosition(cx, y, cz);
+        const v3 = new THREE.Vector3();
+        for (let k = 0; k < epos.count; k++) {
+          v3.set(epos.getX(k), epos.getY(k), epos.getZ(k)).applyMatrix4(mtx);
+          edgeP.push(v3.x, v3.y, v3.z);
+          edgeC.push(er, eg2c, eb);
+        }
+      }
+      eg.dispose();
+
+      /* ---- the ghost cage: secondary reach, as a wireframe box OUTSIDE ------
+         A CONTAINMENT HAZARD, handled rather than ignored. Solid and ghost are
+         different units on separate normalisations (see the page footer), so
+         nothing guarantees the ghost's box is bigger than the solid's. On this
+         data it is smaller in 8 of the 30 filled slots (probe.qbox.cageFloored
+         lists them; they are the high-effort / low-secondary slots, mostly
+         create and build in the busy quarters). Drawn naively the cage would sit
+         INSIDE the block and vanish, and worse, the containment relation would
+         flip meaning halfway across the object: sometimes "reach exceeds effort",
+         sometimes nothing at all.
+
+         So the cage is FLOORED to always enclose its block. What varies, and what
+         the eye should read, is HOW FAR OUTSIDE it sits: a wide margin is a limb
+         with far more reach than captured effort, a tight cage hugging the block
+         is a limb whose reach the model already captures. The relation stays
+         one-directional and therefore readable. The margin is still not a
+         subtractable quantity — the quarterly table carries the two numbers. */
+      if (gv > 0) {
+        const gside = Math.max(boxSide(gv, QSMAX), side) + QBOX.ringPad;
+        const gh = QBOX.slabH + QBOX.ringPad * 0.6;
+        const gg = roundedSlabGeometry(gside, gside, gh, QBOX.radius * 1.2);
+        const ge = new THREE.EdgesGeometry(gg, 24);
+        const gpos = ge.getAttribute('position');
+        const mtx = new THREE.Matrix4().makeRotationY(-a).setPosition(cx, y - QBOX.ringPad * 0.3, cz);
+        const v3 = new THREE.Vector3();
+        for (let k = 0; k < gpos.count; k++) {
+          v3.set(gpos.getX(k), gpos.getY(k), gpos.getZ(k)).applyMatrix4(mtx);
+          ghostP.push(v3.x, v3.y, v3.z);
+          ghostC.push(tc.r, tc.g, tc.b);
+        }
+        ge.dispose();
+      }
+    });
+  });
+
+  solidGrp.visible = LOOK.skin;
+  grp.add(solidGrp);
+
+  const eg2 = new THREE.BufferGeometry();
+  eg2.setAttribute('position', new THREE.Float32BufferAttribute(edgeP, 3));
+  eg2.setAttribute('color', new THREE.Float32BufferAttribute(edgeC, 3));
+  const edges = new THREE.LineSegments(eg2, new THREE.LineBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.85,
+    depthWrite: false, blending: THREE.AdditiveBlending,
+  }));
+  edges.renderOrder = 3; markGrp.add(edges);
+
+  if (ghostP.length) {
+    const gg2 = new THREE.BufferGeometry();
+    gg2.setAttribute('position', new THREE.Float32BufferAttribute(ghostP, 3));
+    gg2.setAttribute('color', new THREE.Float32BufferAttribute(ghostC, 3));
+    const ghostBox = new THREE.LineSegments(gg2, new THREE.ShaderMaterial({
+      vertexColors: true, transparent: true, depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      uniforms: { uGhost: GHOSTU, uDim: dimU },
+      vertexShader: `
+        varying vec3 vCol;
+        void main() {
+          vCol = color;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `
+        uniform float uGhost; uniform float uDim; varying vec3 vCol;
+        void main() {
+          gl_FragColor = vec4(vCol * (0.32 + uGhost * 0.66) * uDim,
+                              clamp(0.24 + uGhost * 0.52, 0.0, 1.0) * uDim);
+        }`,
+    }));
+    ghostBox.renderOrder = 3; markGrp.add(ghostBox);
+  }
+
+  /* ---- the time axis itself: one faint tick plane per quarter, so the eight
+         levels are countable even where a limb is empty ---- */
+  {
+    const tp = [], tcol = [];
+    qrows.forEach((qr, qi) => {
+      const y = QY(qi);
+      const R = QBOX.radial + QBOX.maxSide * 0.75;
+      const N = 72;
+      for (let k = 0; k < N; k++) {
+        const a1 = (k / N) * Math.PI * 2, a2 = ((k + 1) / N) * Math.PI * 2;
+        tp.push(Math.cos(a1) * R, y, Math.sin(a1) * R);
+        tp.push(Math.cos(a2) * R, y, Math.sin(a2) * R);
+        for (let z = 0; z < 2; z++) tcol.push(0.30, 0.38, 0.50);
+      }
+    });
+    const tg = new THREE.BufferGeometry();
+    tg.setAttribute('position', new THREE.Float32BufferAttribute(tp, 3));
+    tg.setAttribute('color', new THREE.Float32BufferAttribute(tcol, 3));
+    const ticks = new THREE.LineSegments(tg, new THREE.LineBasicMaterial({
+      vertexColors: true, transparent: true, opacity: 0.28, depthWrite: false,
+    }));
+    ticks.renderOrder = 1; markGrp.add(ticks);
+  }
+
+  markGrp.visible = LOOK.rose;
+  grp.add(markGrp);
+
+  /* ---- the drawn core, same floor as every other object on the page ---- */
+  const cg = new THREE.CylinderGeometry(CORE_R * 0.985, CORE_R * 0.985, TOP_Y, 32, 1, true);
+  const core = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({
+    color: 0x4a3a29, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false,
+  }));
+  core.position.y = TOP_Y / 2; core.renderOrder = 0; grp.add(core);
+
+  /* ---- bearing spokes + the same correspondence guides the envelope carries,
+         so the alignment argument survives the change of body ---- */
+  QUADS.forEach((q) => {
+    const a = deg(q.az);
+    const lg = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(Math.cos(a) * CORE_R, 0.01, Math.sin(a) * CORE_R),
+      new THREE.Vector3(Math.cos(a) * (MAX_R + 0.7), 0.01, Math.sin(a) * (MAX_R + 0.7)),
+    ]);
+    grp.add(new THREE.Line(lg, new THREE.LineBasicMaterial({
+      color: q.hue, transparent: true, opacity: 0.2,
+    })));
+  });
+  grp.add(correspondenceGuides(QUADS));
+
+  grp.userData = { model: 'Q', dimU, skinGrp: solidGrp, roseGrp: markGrp,
+                   monthRings: null, meta, axes: QUADS, boxes: true };
   return grp;
 }
 
@@ -1568,26 +2246,34 @@ const xOf = (i) => (SOLO ? 0 : (i - (shown.length - 1) / 2) * SPACING);
 const headlineFor = (m) => {
   const sum = (a) => a.reduce((x, y) => x + y, 0);
   if (m === 'AC') return sum(TOT.A).toFixed(0) + ' attributed  ·  ' + sum(TOT.Cs) + ' ghost';
-  if (m === 'Q')  return sum(TOT.Q).toFixed(0) + ' attributed  ·  4 limbs';
+  if (m === 'Q')  return QSTYLE === 'boxes'
+    ? sum(TOT.Q).toFixed(0) + ' attributed  ·  ' + QUARTERS.length + ' quarters × 4 limbs'
+    : sum(TOT.Q).toFixed(0) + ' attributed  ·  4 limbs';
   if (m === 'A')  return sum(TOT.A).toFixed(0) + ' attributed';
   if (m === 'B')  return sum(TOT.B) + ' axis-hits';
   return sum(TOT.C) + ' primary';
 };
 
 shown.forEach((m, i) => {
-  const env = buildEnvelope(m);
+  // The Q view has TWO bodies. ?qstyle=boxes swaps the monthly lofted envelope
+  // for the quarterly slabs; every other model keeps its envelope unconditionally,
+  // because the 9-sector detail view is the instrument and is not summarised.
+  const env = (m === 'Q' && QSTYLE === 'boxes') ? buildQuarterBoxes() : buildEnvelope(m);
   const x = xOf(i);
   env.position.x = x;
   scene.add(env);
   envelopes[m] = env;
 
   const meta = MODEL_META[m];
+  const tagFor = (mm) => (mm === 'Q' && QSTYLE === 'boxes')
+    ? 'quarterly abstracted boxes — a management summary'
+    : meta.tag;
   const hexOf = (h) => '#' + h.toString(16).padStart(6, '0');
   // Title above each envelope + the two headline numbers, so the visual and the
   // quantitative sit in the same glance rather than in two different places.
   const t = makeLabel(meta.name, { size: 44, col: hexOf(meta.tint), bold: true });
   t.position.set(x, TOP_Y + 2.35, 0); scene.add(t);
-  const t2 = makeLabel(meta.tag, { size: 30, col: '#8fa3ba' });
+  const t2 = makeLabel(tagFor(m), { size: 30, col: '#8fa3ba' });
   t2.position.set(x, TOP_Y + 1.62, 0); scene.add(t2);
   const t3 = makeLabel(headlineFor(m) + '   ·   Gini ' + GINI[m].toFixed(3),
     { size: 30, col: '#cfe0f2', bold: true });
@@ -1610,19 +2296,47 @@ shown.forEach((m, i) => {
     sp.position.set(x + Math.cos(a) * rr, 0.12, Math.sin(a) * rr);
     scene.add(sp);
   });
+
+  /* QUARTER LADDER on the box view. The monthly ladder at the far right of the
+     row labels MONTHS, which are not the buckets this object contains — so the
+     boxes carry their own ladder, at their own eight levels, or the viewer reads
+     eight slabs against nineteen month marks and silently assumes a mapping that
+     does not exist. */
+  if (env.userData.boxes) {
+    qrows.forEach((qr, qi) => {
+      const sp = makeLabel(qr.key, { size: 28, col: '#9fb2c8' });
+      sp.position.set(x + QBOX.radial + QBOX.maxSide + 0.85, QY(qi) + QBOX.slabH * 0.5, 0);
+      scene.add(sp);
+    });
+  }
 });
 
-// month ladder, once, at the far right of whatever row is on screen
+/* MONTH LADDER, once. It normally sits at the far right of the row — but the
+   rightmost object is Q, and under ?qstyle=boxes Q's buckets are QUARTERS, not
+   months. A monthly ladder running up the side of eight quarterly slabs invites
+   exactly one reading, and that reading is wrong. So when the box body is on
+   screen the month ladder moves to the LEFT of the row, where it belongs to the
+   monthly envelope it actually describes, and the boxes carry their own quarter
+   ladder (added above) on their own side. Two time axes at two resolutions are on
+   screen together; each has to be labelled in its own units or the summary
+   silently borrows the instrument's precision. */
 {
   const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monLabel = (key) => { const [y, m] = key.split('-'); return MON[Number(m) - 1] + " '" + y.slice(2); };
-  const x = xOf(shown.length - 1) + MAX_R + 1.6;
-  rows.forEach((r, i) => {
-    if (i % 3 !== 0 && r.present) return;
-    const sp = makeLabel(monLabel(r.key), { size: 30, col: r.present ? '#9fb2c8' : '#ff9d9d' });
-    sp.position.set(x, yOf(i), 0);
-    scene.add(sp);
-  });
+  const boxesOnRight = QSTYLE === 'boxes' && shown[shown.length - 1] === 'Q';
+  // ?solo=Q with the box body has NO monthly object on screen at all, so a
+  // monthly ladder would label nothing. Skip it entirely rather than park it
+  // beside eight quarterly slabs it does not describe.
+  const monthlyObjectOnScreen = !(SOLO === 'Q' && QSTYLE === 'boxes');
+  if (monthlyObjectOnScreen) {
+    const x = boxesOnRight ? xOf(0) - (MAX_R + 2.5) : xOf(shown.length - 1) + MAX_R + 1.6;
+    rows.forEach((r, i) => {
+      if (i % 3 !== 0 && r.present) return;
+      const sp = makeLabel(monLabel(r.key), { size: 30, col: r.present ? '#9fb2c8' : '#ff9d9d' });
+      sp.position.set(x, yOf(i), 0);
+      scene.add(sp);
+    });
+  }
 }
 
 /* Framing has to clear THREE title lines that sit above TOP_Y (at +1.0, +1.62 and
@@ -1637,7 +2351,19 @@ function frameAll() {
   // half-width follows the row length, so the default two-up frames tight and
   // the ?evidence=1 five-up still fits without cropping the outer titles.
   const span = (shown.length - 1) * SPACING / 2;
-  const halfW = (SOLO ? MAX_R + 2.4 : span + MAX_R + 3.2);
+  // the box body reaches further than MAX_R (radial + half a slab + its ladder),
+  // so the frame has to know which body is on screen or the outer column crops.
+  const reach = (QSTYLE === 'boxes' && shown.includes('Q'))
+    ? Math.max(MAX_R, QBOX.radial + QBOX.maxSide + 0.9) : MAX_R;
+  const halfW = (SOLO ? reach + 2.4 : span + reach + 3.2);
+  /* The month ladder moves to the LEFT of the row when the box body is on the
+     right (it labels the monthly envelope, not the quarterly slabs). The content
+     is then ASYMMETRIC about x=0 — extra on the left, none on the right — so the
+     frame must both widen AND recentre, or the ladder sits under the HUD while
+     empty space sits opposite it. */
+  const ladderLeft = QSTYLE === 'boxes' && shown[shown.length - 1] === 'Q' && SOLO !== 'Q';
+  const shiftX = ladderLeft ? -1.5 : 0;   // centre of the actual content
+  const halfW2 = ladderLeft ? halfW + 1.5 : halfW;
   const yTop = TOP_Y + 3.1;             // tallest label, not tallest geometry
   const halfH = yTop / 2;
   const vFov = deg(camera.fov);
@@ -1648,9 +2374,9 @@ function frameAll() {
      the panels or off-frame entirely. Widen the margin with the row length so
      every envelope stays inside the readable centre band at any row size. */
   const margin = shown.length >= 5 ? 1.66 : (shown.length >= 3 ? 1.22 : 1.14);
-  const d = Math.max(halfH / Math.tan(vFov / 2), halfW / Math.tan(hFov / 2)) * margin;
-  camera.position.set(0, yTop * 0.5, d);
-  controls.target.set(0, yTop * 0.5, 0);
+  const d = Math.max(halfH / Math.tan(vFov / 2), halfW2 / Math.tan(hFov / 2)) * margin;
+  camera.position.set(shiftX, yTop * 0.5, d);
+  controls.target.set(shiftX, yTop * 0.5, 0);
   controls.update();
 }
 frameAll();
@@ -1765,6 +2491,71 @@ document.getElementById('spQuadAvg').innerHTML =
     `carries the serial&rarr;parallel finding is what pays for it.</b>`;
 }
 
+/* ---- the quarterly table: exactly what each box contains, so a slab's size can
+   be checked against a number rather than trusted. Also the commit count per
+   quarter, which is the figure most easily verified against the raw log. ---- */
+{
+  const t = document.getElementById('qboxTbl');
+  let html = '<tr><th class="l">quarter</th><th title="commits in the quarter">commits</th>' +
+    QUADS.map((q) => `<th title="${q.id}"><span style="color:${hexOf(q.hue)}">${q.label.slice(0, 4)}</span></th>`).join('') +
+    '</tr>';
+  qrows.forEach((qr) => {
+    html += `<tr><td class="l">${qr.key}</td><td>${qr.commits}</td>` +
+      QUADS.map((_, i) => `<td class="${qr.Q[i] > 0 ? '' : 'z'}">${qr.Q[i] > 0 ? qr.Q[i].toFixed(0) : '0'}</td>`).join('') +
+      '</tr>';
+  });
+  const tc = qrows.reduce((a, qr) => a + qr.commits, 0);
+  html += `<tr class="sum"><td class="l">total</td><td>${tc}</td>` +
+    QUADS.map((_, i) => `<td>${qrows.reduce((a, qr) => a + qr.Q[i], 0).toFixed(0)}</td>`).join('') + '</tr>';
+  t.innerHTML = html;
+}
+
+/* ---- THE FIDELITY THE BOXES GIVE UP, named. -------------------------------
+   Everywhere else on this page 2025-02 is a dark red pinch that is never
+   interpolated over, because a month with no activity is a measurement and not a
+   rendering inconvenience. At quarterly resolution it is inside a 47-commit
+   quarter and therefore arithmetically gone: no box can be empty in a non-empty
+   quarter. That is a real loss and the page says so, with the number, rather than
+   letting the mark quietly stop appearing and hoping nobody notices. ---------- */
+{
+  const emptyN = QEMPTY.length;
+  const gapList = QGAP_MONTHS.map((g) => `${g.month} (inside ${g.quarter})`).join(', ');
+  document.getElementById('qgapNote').innerHTML =
+    `<b>What quarterly resolution costs.</b> ` +
+    (QGAP_MONTHS.length
+      ? `${gapList} has <b>no activity at all</b> and is drawn everywhere else on this
+         page as a real pinch that is never interpolated over. Its quarter carries
+         ${qrows[QRI.get(QGAP_MONTHS[0].quarter)].commits} commits, so at this altitude
+         <b>the gap cannot be shown</b> &mdash; a non-empty quarter has no empty box to
+         put it in. The pinch does not become false; it becomes invisible, and that
+         is exactly the price of a summary. `
+      : `no absent month falls inside a bucket here. `) +
+    `Of ${QUARTERS.length}&times;${QUADS.length} = ${QUARTERS.length * QUADS.length} slots, ` +
+    `<b style="color:#cfe0f2">${emptyN}</b> are genuinely zero ` +
+    (emptyN ? `(${QEMPTY.join(', ')})` : '') +
+    ` and are drawn as flat grey plates, not omitted. ` +
+    `<span style="color:#8fa3ba">19 monthly rings &rarr; ${QUARTERS.length} quarterly levels: ` +
+    `the time axis loses ${(100 - QUARTERS.length / MONTHS.length * 100).toFixed(0)}% of its
+    resolution to buy a shape you can read in one glance.</span><br>` +
+    `<b>The ghost cage is floored.</b> Solid and ghost are different units, so the
+     ghost box is not always the bigger one &mdash; in <b style="color:#cfe0f2">${CAGE_FLOORED.length}</b>
+     of the ${QUARTERS.length * QUADS.length - QEMPTY.length} filled slots it would sit
+     <i>inside</i> its slab and vanish. It is pushed out to keep containment meaning
+     one thing across the whole object. <b>Read the cage's margin as a rank, not a
+     size</b> &mdash; in those slots the size is not its own.`;
+}
+
+{
+  const fb = document.getElementById('footBear');
+  if (fb) {
+    fb.textContent = QBEAR === 'centroid'
+      ? 'their members’ circular centroids (' + QUADS.map((q) => q.az.toFixed(0)).join('/') + '°, drift 0)'
+      : 'an even 90° at the drift-minimising phase ' + EVEN_PHASE.toFixed(0) + '° ('
+        + QUADS.map((q) => q.az.toFixed(0)).join('/') + '°, max drift '
+        + Math.max(...QUAD_DRIFT.map(Math.abs)).toFixed(0) + '°)';
+  }
+}
+
 // the fallback-chain rollup, in the HUD
 {
   const t = document.getElementById('chainTbl');
@@ -1832,6 +2623,10 @@ function applyFocus() {
     const env = envelopes[m]; if (!env) continue;
     env.userData.dimU.value = (!FOCUS || FOCUS === m) ? 1.0 : 0.22;
   }
+  // the box slabs use MeshStandardMaterial, which has no uDim uniform — fade
+  // their opacity directly so the focus lever behaves identically on both bodies
+  const qDim = (!FOCUS || FOCUS === 'Q') ? 1.0 : 0.22;
+  for (const { mat, base } of dimMats) { mat.opacity = base * qDim; mat.needsUpdate = false; }
   for (const m of ALL_KEYS) setPressed('b' + m, FOCUS === m);
   setPressed('bAll', !FOCUS);
 }
@@ -1862,6 +2657,62 @@ document.getElementById('bAll').addEventListener('click', () => { FOCUS = null; 
     pushURL(); location.reload();
   });
   syncEv();
+}
+
+/* ---- quadrant bearing mode + quadrant body style -------------------------
+   Both change what geometry EXISTS (different bearings, different bodies), so
+   like the evidence row they round-trip through the URL and rebuild rather than
+   mutating a live scene — the params are the state on this page, and a lever that
+   half-updates the scene is how a screenshot stops matching its own caption. */
+{
+  const setQ = (key, val) => {
+    const p = new URLSearchParams(location.search);
+    p.set(key, val);
+    history.replaceState(null, '', location.pathname + '?' + p.toString());
+    location.reload();
+  };
+  document.getElementById('bQBearC').addEventListener('click', () => setQ('qbear', 'centroid'));
+  document.getElementById('bQBearE').addEventListener('click', () => setQ('qbear', 'even'));
+  document.getElementById('bQStyleB').addEventListener('click', () => setQ('qstyle', 'boxes'));
+  document.getElementById('bQStyleE').addEventListener('click', () => setQ('qstyle', 'envelope'));
+  setPressed('bQBearC', QBEAR === 'centroid');
+  setPressed('bQBearE', QBEAR === 'even');
+  setPressed('bQStyleB', QSTYLE === 'boxes');
+  setPressed('bQStyleE', QSTYLE === 'envelope');
+
+  /* The drift readout. This is the whole tension in four rows: under centroid
+     every drift is 0 and the SPACING column is uneven; under even the spacing is
+     90 everywhere and the drift column is not zero. Printing both makes the
+     choice a look-at-the-numbers decision rather than a preference. */
+  const spacing = QUADS.map((q, i) => {
+    const nx = QUADS[(i + 1) % QUADS.length];
+    return ((nx.az - q.az) % 360 + 360) % 360;
+  });
+  const maxDrift = Math.max(...QUAD_DRIFT.map(Math.abs));
+  let h = `<b>bearings</b> ${QBEAR}` +
+    (QBEAR === 'even' ? ` <span style="color:#7f93aa">(phase ${EVEN_PHASE.toFixed(0)}&deg;)</span>` : '') +
+    `<br>`;
+  h += QUADS.map((q, i) =>
+    `${q.label.padEnd(0)} <span style="color:#cfd8e3">${q.az.toFixed(0)}&deg;</span> ` +
+    `<span style="color:#5f7085">c${QUAD_CENTROID[q.id].toFixed(0)}</span> ` +
+    (Math.abs(QUAD_DRIFT[i]) < 0.05
+      ? `<span class="ok">drift 0</span>`
+      : `<span class="off">drift ${QUAD_DRIFT[i] > 0 ? '+' : ''}${QUAD_DRIFT[i].toFixed(0)}&deg;</span>`) +
+    ` <span style="color:#5f7085">span ${spacing[i].toFixed(0)}&deg;</span>`
+  ).join('<br>');
+  h += `<br><b>max drift ${maxDrift.toFixed(0)}&deg;</b> ` +
+    `<span style="color:#5f7085">(was 60&deg; at the old fixed 45/135/225/315)</span>`;
+  document.getElementById('qdrift').innerHTML = h;
+}
+
+{
+  const b = document.getElementById('bGuides');
+  const sync = () => {
+    setPressed('bGuides', GUIDES);
+    scene.traverse((o) => { if (o.userData && o.userData.isGuides) o.visible = GUIDES; });
+  };
+  b.addEventListener('click', () => { GUIDES = !GUIDES; sync(); pushURL(); });
+  sync();
 }
 
 document.getElementById('bSpin').addEventListener('click', () => {
@@ -1910,6 +2761,8 @@ function pushURL() {
   if (LEGEND_OPEN) p.delete('legend'); else p.set('legend', '0');
   if (LOOK.skin) p.delete('skin'); else p.set('skin', '0');
   if (LOOK.rose) p.delete('rose'); else p.set('rose', '0');
+  p.set('qbear', QBEAR); p.set('qstyle', QSTYLE);
+  if (GUIDES) p.delete('guides'); else p.set('guides', '0');
   history.replaceState(null, '', location.pathname + '?' + p.toString());
 }
 document.getElementById('bShare').addEventListener('click', async (e) => {
@@ -1976,6 +2829,35 @@ window.__probe = () => ({
     secSat: +ASYM.secSat.toFixed(3), quadSat: +ASYM.quadSat.toFixed(3),
     secLevels: ASYM.secLevels, quadLevels: ASYM.quadLevels,
   },
+  // §QBEAR — the alignment fix, checkable
+  qbear: {
+    mode: QBEAR,
+    evenPhase: +EVEN_PHASE.toFixed(3),
+    centroids: Object.fromEntries(QUAD_ORDER.map((k) => [k, +QUAD_CENTROID[k].toFixed(3)])),
+    memberAz: QUAD_MEMBER_AZ,
+    bearings: Object.fromEntries(QUADS.map((q) => [q.id, +q.az.toFixed(3)])),
+    drift: Object.fromEntries(QUADS.map((q, i) => [q.id, +QUAD_DRIFT[i].toFixed(3)])),
+    maxDrift: +Math.max(...QUAD_DRIFT.map(Math.abs)).toFixed(3),
+    spacing: QUADS.map((q, i) => +((((QUADS[(i + 1) % QUADS.length].az - q.az) % 360) + 360) % 360).toFixed(3)),
+  },
+  // §QBOX — the quarterly buckets, checkable against the raw log
+  qbox: {
+    style: QSTYLE,
+    quarters: QUARTERS,
+    commitsPerQuarter: qrows.map((qr) => qr.commits),
+    effort: qrows.map((qr) => qr.Q.map((v) => +v.toFixed(2))),
+    ghost: qrows.map((qr) => qr.Qs.slice()),
+    quadOrder: QUADS.map((q) => q.id),
+    slots: QUARTERS.length * QUADS.length,
+    empty: QEMPTY,
+    gapMonthsHidden: QGAP_MONTHS,
+    sum: +qrows.reduce((a, qr) => a + qr.Q.reduce((x, y) => x + y, 0), 0).toFixed(2),
+    commitSum: qrows.reduce((a, qr) => a + qr.commits, 0),
+    // slots where the ghost cage had to be floored to stay outside its slab
+    cageFloored: CAGE_FLOORED,
+    sides: { min: QBOX.minSide, max: QBOX.maxSide, ringPad: QBOX.ringPad, slabH: QBOX.slabH },
+  },
+  guides: GUIDES,
   evidence: EVIDENCE, ghost: GHOSTU.value,
   badges: BADGE, badgeRepos: BADGE_REPOS, topicCaptured: TOPIC_CAPTURED,
   repos: [...repoInfo.entries()].map(([p, i]) => ({
@@ -1988,6 +2870,29 @@ window.__probe = () => ({
 });
 window.__focus = (m) => { const b = document.getElementById('b' + m); if (b) b.click(); };
 window.__spinOff = () => { controls.autoRotate = false; setPressed('bSpin', false); };
+/* Plan view. The alignment claim is an ANGULAR one, and an angular claim seen in
+   perspective from the side is not checkable — the eye cannot separate bearing
+   from foreshortening. Straight down, the two objects' spokes are directly
+   comparable and the fix either holds or visibly does not. */
+window.__topdown = (dist) => {
+  controls.autoRotate = false; setPressed('bSpin', false);
+  const span = (shown.length - 1) * SPACING / 2;
+  /* Same side-panel allowance as frameAll() — the usable centre band is ~62% of
+     the frame, so a plan view framed to the geometry alone lands under the
+     panels. And the camera must clear the TOP of the object, not just its
+     footprint: looking straight down at a tower from inside its own height puts
+     the near boxes in your face. Hence + TOP_Y. */
+  const reach = (QSTYLE === 'boxes' && shown.includes('Q'))
+    ? Math.max(MAX_R, QBOX.radial + QBOX.maxSide + 0.9) : MAX_R;
+  const halfW = span + reach + 2.4;
+  const hFov = 2 * Math.atan(Math.tan(deg(camera.fov) / 2) * camera.aspect);
+  const cy = TOP_Y * 0.5;                       // aim at the tower's mid-height
+  const d = dist || halfW / Math.tan(hFov / 2) * 1.86;
+  camera.position.set(0, cy + d, 0.0001);
+  controls.target.set(0, cy, 0);
+  camera.up.set(0, 0, -1);
+  controls.update();
+};
 </script>
 </body>
 </html>
