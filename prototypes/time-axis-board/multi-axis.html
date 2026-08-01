@@ -109,30 +109,54 @@ THE QUARTERLY BOXES — §QBOX
   Walter: "Since in the quadrant view we are synthesizing to a management
   summary, how about visualizing abstracted boxes with rounded corners on a per
   quarter basis?" Right instinct: 19 monthly rings is instrument-grade
-  resolution and a summary should not carry it. ?qstyle=boxes (DEFAULT for the Q
-  view only) replaces the monthly lofted envelope with 8 quarters x 4 limbs of
-  rounded extruded boxes — deliberately discrete, straight-sided and countable,
-  the opposite of the organic envelope. ?qstyle=envelope restores the monthly
-  body for comparison.
+  resolution and a summary should not carry it. The Q view therefore has THREE
+  bodies, ?qstyle= picks:
+    boxes     (DEFAULT) ONE BOX PER QUARTER — 8 boxes, area = effort, four
+              footprint quadrants = the four limbs. See §QONE.
+    collars   the previous build — 8 quarters x 4 radiating fins. Kept so the
+              two can be compared by eye rather than by argument.
+    envelope  the inherited monthly lofted body.
+  The 9-sector detail view ignores all of this: it is the instrument, and an
+  instrument does not get summarised.
 
-  THE COLLAR LAYOUT, and the correction that produced it. The first build put
-  each box at a FIXED radius and grew its footprint with effort. Walter: "I saw
-  your boxes draft. I envision them more like boxes tied around the stem and
-  then radiate from there." He was right: at a fixed radius every box hangs in
-  space with a gap between it and the trunk, so the stem and the boxes were two
-  unrelated things sharing a frame. Now each box's INNER FACE STARTS AT THE
-  STEM and it extends OUTWARD along its limb's bearing — eight quarterly collars
-  stacked up the time axis, each gripping the trunk and radiating out like fins.
+  §QONE — ONE BOX PER QUARTER, and the contradiction it resolves.
+  Walter, on the collars: "The boxes are improving. But shouldn't we have one box
+  per quarter?" He is right. Four fins per quarter was still the SECTOR view's
+  logic — one mark per (period x category) cell — with fewer categories. A
+  summary's unit is the PERIOD. So: eight boxes, one per quarter, stacked up the
+  time axis and threaded on the stem, with the four limbs demoted from separate
+  objects to the box's INTERNAL COMPOSITION.
 
-  REACH from the stem = that limb's fractional attributed effort that quarter
-  (same model A weights, commits only), scaled LINEARLY. That is the second half
-  of the fix: length from a common origin is the most accurately-read encoding
-  there is, whereas the previous build used footprint AREA, which the eye reads
-  badly. Width and height are held CONSTANT so reach is unambiguously the
-  variable; height in particular is fixed because the vertical axis is time.
-  The ghost is a translucent TAIL continuing the same radial past the solid, so
-  "reach beyond captured effort" is literally further out. Measured zeros are
-  drawn as flat grey stubs at the stem.
+  SIZE = footprint AREA = that quarter's total attributed effort, which equals
+  its commit count because model A's weights sum to 1.0 per commit:
+  3/47/85/124/368/255/477/390, total 1749. Height is fixed; the vertical axis is
+  time and may not also mean size.
+
+  COMPOSITION = four footprint QUADRANTS, each on its limb's own bearing. Chosen
+  over stacked layers (which would put composition on the time axis) and over a
+  banded skin (arc length with no baseline is the hardest read there is) for one
+  decisive reason: quadrants KEEP EVERY LIMB ON ITS BEARING, so ?qbear= and the
+  sector->limb correspondence arcs keep working and the "same object at two
+  altitudes" reading survives. Wedge radius goes as sqrt(share) so wedge AREA is
+  exactly the limb's share — verified to <1e-12. The sqrt is honest and it
+  compresses near-ties, so the dominant limb also gets a bright arc cap: rank
+  from the cap, magnitude from the area, numbers from the table.
+
+  THE GHOST IS A HALO, AND THE FLOORING HACK IS GONE. The collars floored the
+  ghost tail in 15 of 22 slots (68%) because the solid was fractional effort, the
+  ghost a count of secondary appearances, and nothing made the ghost's absolute
+  reach clear the solid's. Here the ghost is a RING outside the box whose
+  THICKNESS is the quarter's ghost-to-effort RATIO — positive by construction,
+  therefore never floorable. Measured: 0 of 8 (0%). The ratio is also the better
+  quantity, being comparable across quarters where two separately-normalised
+  absolute tracks were not. Still a different unit from the box: do not subtract.
+
+  WHAT IT COSTS. Area is read less precisely than length from a shared origin,
+  which is exactly what the collars had. That trade is deliberate — one object
+  per period is the summary's real altitude, and a slab whose length varies while
+  its width is constant is a bar in a box costume — but it is a trade, so the
+  page says to read the boxes for rank and composition and the table for ratios.
+  Measured zeros are still drawn, as flat grey stubs at the stem.
 
   THE COST, STATED ON THE PAGE. 2025-02 — the one month with no activity, drawn
   everywhere else as a pinch that is never interpolated over — falls inside
@@ -265,33 +289,51 @@ HONEST WEAKNESSES
     it, the top collar's ladder label says "(1 mo)", and probe.qbox.partial
     carries it. This is the same class of hazard as the 2025-02 gap: an artefact
     of bucketing that the eye will read as a measurement unless it is named.
-  - BOX REACH IS LINEAR IN EFFORT, WHICH IS THE STRONGEST CHANNEL AVAILABLE AND
-    STILL NOT A PRECISE ONE IN 3D. Length from a shared origin is read far more
-    accurately than the area encoding this replaced — that was the reason for
-    the change — but these are lengths seen in PERSPECTIVE, so a near fin
-    projects longer than a far one of equal reach. The plan view (window
-    .__topdown()) removes that distortion and is where a reach comparison should
-    actually be made; the quarterly table in the side panel carries the numbers.
-    Read the 3/4 view for rank and shape, not for ratios.
-  - MINREACH IS AN OFFSET, AND IT COMPRESSES THE SMALL VALUES. Every non-zero fin
-    starts at 0.70 before the effort term is added, so a 1-unit fin and a 5-unit
-    fin differ by less than 5x in drawn length. The offset applies EQUALLY to
-    every non-zero box, so differences stay proportional to differences in
-    effort, but ratios of drawn length are not ratios of effort. Without it the
-    smallest fins would be shorter than the collar band they emerge from and
-    would read as zeros, which is the worse error.
-  - THE GHOST TAIL IS FLOORED TO A MINIMUM VISIBLE LENGTH, IN HALF THE SLOTS
-    THAT HAVE ONE. 15 of the 30 slots with a non-zero secondary count would
-    otherwise have a tail of zero or negative length and simply vanish, because
-    the solid is fractional effort and the ghost is a count of secondary
-    appearances and the two were never on a shared scale. Flooring keeps the
-    relation meaning ONE thing across the object, at the cost that in those 15
-    the tail's length is not its own — only its ordering is. This is a WORSE
-    ratio than the box-cage build it replaces (8 of 30), and the reason is that
-    a tail has a stricter test to pass than a cage: a cage only had to be bigger,
-    a tail has to clear the solid's end AND stay visible. The compromise is
-    counted on the page and in probe.qbox.cageFloored rather than hidden. READ
-    THE TAIL AS A RANK, NEVER AS A LENGTH.
+  - THE ONE-BOX BUILD TRADES AWAY THE BEST-READ CHANNEL IT HAD. Under ?qstyle=
+    collars a fin's LENGTH from a shared origin encoded effort, and length from a
+    common baseline is the most accurately-read graphical channel there is. The
+    one-box body encodes effort as footprint AREA, which the eye reads worse.
+    That is a real regression on precision and it was accepted deliberately: one
+    object per period is the altitude a summary actually works at, and a slab
+    whose length varies while its width stays constant is a bar wearing a box.
+    The mitigation is to say so — read the boxes for RANK and COMPOSITION, take
+    ratios from the quarterly table or the plan view (window.__topdown()), which
+    also removes the perspective distortion the 3/4 view adds on top.
+  - THE SQRT CORRECTION IS EXACTLY RIGHT FOR AREA AND COMPRESSES NEAR-TIES. Wedge
+    radius goes as sqrt(share) so that wedge AREA is truly the limb's share. The
+    consequence is that 2025Q4 (create 40.2% vs build 32.5%) and 2026Q2 (create
+    46.5% vs distribute 40.3%) become radius ratios of 1.11 and 1.08 — differences
+    the eye cannot reliably call. The compression is HONEST, because those
+    quarters genuinely are near-ties, but "legible at a glance which limb
+    dominated" is not delivered by the wedge radii alone in those two. The arc cap
+    on the dominant limb exists to carry that reading categorically without
+    distorting the areas. Without the cap this build would fail its own brief in
+    2 of 8 quarters.
+  - MINSPAN IS AN OFFSET, AND IT COMPRESSES THE SMALL QUARTERS. Every non-empty
+    box starts at 0.95 half-extent before the effort term is added, so 2024Q4's 3
+    commits and 2025Q1's 47 do not differ by anything like 16x in drawn size. The
+    offset applies EQUALLY to every box so differences stay proportional, but
+    ratios of drawn area are not ratios of effort. Without it a 3-commit quarter
+    would be smaller than the stem it is threaded on and would read as a zero,
+    which is the worse error.
+  - THE GHOST IS NO LONGER FLOORED, AND THAT CHANGED WHAT IT MEANS. 0 of 8
+    quarters floored, against 15 of 22 (68%) under ?qstyle=collars — the single
+    clearest win of this rebuild. But the reason it works is that the encoded
+    quantity CHANGED: the halo's thickness is the ghost-to-effort RATIO, not the
+    ghost count. That is a better quantity (comparable across quarters, positive
+    by construction) and it is NOT the same quantity the collars drew, so halo
+    thickness and tail length are not comparable between the two bodies. A
+    quarter with a thin halo has little secondary reach PER UNIT OF EFFORT, which
+    is not the same statement as "few secondary appearances" — 2026Q2 has 210 of
+    them and still shows a thin halo, because it also has 477 commits of effort.
+    Both numbers are in probe.qbox.oneBox and the quarterly table.
+  - AGGREGATING THE GHOST TO ONE NUMBER PER QUARTER LOSES WHICH LIMB IT BELONGS
+    TO. The collars drew a tail per quarter-limb; the halo is one ring per
+    quarter, so the per-limb ghost breakdown is no longer a mark on the object at
+    all. It survives in the panel and the probe, but the object itself now says
+    only "this quarter had this much reach beyond its captured effort". That is a
+    genuine loss of resolution the one-box form imposes, and it is the strongest
+    argument the collars still have.
   - Every caveat radial-envelope.html carries still applies: bearing is an
     ordered categorical axis and NOT a compass direction, only the 9 values at
     the bearings are measurement (the 96 resampled ring points are inference),
@@ -312,9 +354,11 @@ USAGE
                              (default) = exact alignment with the sector view,
                              uneven spacing. even = 90 apart at the drift-
                              minimising phase 85. See §QBEAR.
-          ?qstyle=boxes|envelope how the QUADRANT object is drawn. boxes
-                             (default) = quarterly rounded slabs, the management
-                             summary. envelope = the inherited monthly lofted
+          ?qstyle=boxes|collars|envelope  how the QUADRANT object is drawn.
+                             boxes (default) = ONE rounded box per quarter, area
+                             = effort, four footprint quadrants = the four limbs.
+                             collars = the previous build, 4 radiating fins per
+                             quarter. envelope = the inherited monthly lofted
                              body. The 9-sector view ignores this. See §QBOX.
           ?guides=0          hide the ground arcs joining sectors to their limbs
           ?ghost=<0..1.6>    ghost visual weight. Default .62 (was effectively
@@ -456,6 +500,16 @@ USAGE
                         margin-top: 6px; border-left: 2px solid rgba(120, 140, 170, 0.5); }
   #legend .chip.qhub  { background: linear-gradient(180deg, #7d6349, #55412e); border-radius: 3px;
                         width: 12px; margin-left: 9px; margin-right: 9px; }
+  /* the one-box-per-quarter vocabulary. qbox is read as a rounded slab seen from
+     above; qquad shows the four limb wedges meeting at the stem; qhalo is the
+     ring that sits outside the box and carries the ghost ratio. */
+  #legend .chip.qquad { border-radius: 4px; background:
+      conic-gradient(#ffb454 0 25%, #7ce65a 0 50%, #35d0ba 0 75%, #6a8dff 0);
+      outline: 1px solid rgba(180, 210, 255, 0.35); outline-offset: -1px; }
+  #legend .chip.qhalo { border-radius: 50%; width: 16px; height: 16px; margin-left: 7px;
+      margin-right: 7px; background: transparent;
+      border: 3px solid rgba(150, 220, 200, 0.5);
+      box-shadow: inset 0 0 0 2px rgba(10, 16, 28, 0.9); }
   #legend .chip.guide { background: linear-gradient(90deg, rgba(124,230,90,0), rgba(124,230,90,0.9));
                         height: 2px; margin-top: 7px; }
 
@@ -548,7 +602,9 @@ USAGE
     <div class="qrow">
       <span class="qlab" title="how the quadrant object is drawn">Q body</span>
       <button id="bQStyleB" type="button" data-qs="boxes"
-        title="quarterly collars — rounded boxes tied around the stem, reach = effort">boxes</button>
+        title="one box per quarter — footprint area = that quarter's effort, four footprint quadrants = the four limbs">1 box/qtr</button>
+      <button id="bQStyleC" type="button" data-qs="collars"
+        title="the previous build: quarterly collars, four radiating fins per quarter, reach = effort">collars</button>
       <button id="bQStyleE" type="button" data-qs="envelope"
         title="the inherited monthly lofted envelope">envelope</button>
     </div>
@@ -620,39 +676,41 @@ USAGE
         <span><b>Quadrant view</b> &mdash; each limb takes a representative hue from
         its member sectors: copy, workflows, seo, coding.</span>
       </div>
-      <div class="grp" id="lgBoxGrp">Quadrant view &mdash; quarterly collars</div>
+      <div class="grp" id="lgBoxGrp">Quadrant view &mdash; one box per quarter</div>
       <div id="lgBoxes">
         <div class="sw">
           <span class="chip qbox"></span>
-          <span><b>Radiating box</b> &mdash; one per <b>quarter &times; limb</b>, tied
-          around the stem and reaching outward. <b>REACH from the stem</b> = that
-          limb's fractional attributed effort that quarter (same model A weights,
-          quarterly, commits only), <b>linear</b> &mdash; twice as long is twice the
-          effort. Every box starts at the trunk, so the four in a collar compare
-          like bars from one baseline. Width and height are <b>constant</b>: reach
-          is the only variable, and height in particular stays fixed because the
-          vertical axis is time.</span>
+          <span><b>One box = one quarter.</b> Eight boxes, stacked bottom&rarr;top up
+          the time axis and threaded on the stem. Its <b>FOOTPRINT AREA</b> is that
+          quarter's total attributed effort (model A weights, commits only) &mdash;
+          which equals its commit count, because the weights sum to 1 per commit:
+          <b>3 / 47 / 85 / 124 / 368 / 255 / 477 / 390</b>. Height is
+          <b>constant</b>, because the vertical axis is time.</span>
         </div>
         <div class="sw">
-          <span class="chip qcage"></span>
-          <span><b>Translucent tail</b> &mdash; the ghost, continuing the same box
-          <b>further out along the same radial</b>: reach beyond captured effort is
-          literally further from the stem. Read <b>how far the tail runs</b>: long =
-          far more reach than the model captures, none = this limb had no secondary
-          appearances. Different unit from the solid &mdash; <b>do not
-          subtract</b>.</span>
+          <span class="chip qquad"></span>
+          <span><b>Four quadrants = the four limbs.</b> The box is cut into four
+          wedges, each on <b>its own limb's bearing</b> &mdash; the same direction
+          that limb points in the 9-sector view. A wedge's <b>AREA is that limb's
+          share</b> of the quarter (radius &prop; &radic;share, so area is exactly
+          proportional). The <b>bright arc cap</b> marks the dominant limb, because
+          the area encoding is honest but compresses near-ties.</span>
+        </div>
+        <div class="sw">
+          <span class="chip qhalo"></span>
+          <span><b>Halo ring</b> &mdash; the ghost. Its <b>THICKNESS</b> is that
+          quarter's <b>ghost-to-effort ratio</b>: secondary reach per unit of
+          captured effort. A ratio is positive by construction, so unlike the old
+          fin-and-tail this <b>never needs flooring</b> (0%, against 68% before) and
+          is comparable across quarters. Still a <b>different unit</b> from the
+          box &mdash; do not subtract.</span>
         </div>
         <div class="sw">
           <span class="chip qnull"></span>
           <span><b>Grey stub</b> &mdash; a <b>measured zero</b>: that limb did nothing
-          that quarter. Drawn at the stem as a deliberately flat, blunt, narrower
-          stub &mdash; a different shape family from a short box, so &ldquo;nothing&rdquo;
-          cannot be mistaken for &ldquo;a little&rdquo;.</span>
-        </div>
-        <div class="sw">
-          <span class="chip qhub"></span>
-          <span><b>Collar band</b> &mdash; a drawn sleeve, not a measurement. It marks
-          the quarter's level on the stem and is what the boxes are tied around.</span>
+          that quarter. A deliberately flat, blunt wedge at the stem &mdash; a
+          different shape family from a small wedge, so &ldquo;nothing&rdquo; cannot
+          be mistaken for &ldquo;a little&rdquo;.</span>
         </div>
       </div>
       <div class="grp">Other marks</div>
@@ -781,14 +839,22 @@ USAGE
     weights re-bucketed, not a second measurement &mdash; but they are not
     interchangeable at the same fidelity, and the quarterly view cannot show the
     2025-02 pinch at all.<br>
-    <b>Box reach is the quantity.</b> Every box starts at the stem and its
-    <b>length outward</b> is that limb's fractional effort that quarter, scaled
-    linearly &mdash; width and height are constant so reach is the only variable.
-    Reach replaced footprint area because length from a shared origin reads far
-    more accurately than area does. But these are lengths seen in
-    <b>perspective</b>: a near fin projects longer than an equal far one, so the
-    3/4 view gives rank and shape, and the plan view (<code>__topdown()</code>) or
-    the table above gives the comparison.
+    <b>One box per quarter; its area is the quantity.</b> Eight boxes, one per
+    period, threaded on the stem. <b>Footprint area</b> = that quarter's total
+    attributed effort; the <b>four wedges</b> are the four limbs, each on its own
+    bearing, each wedge's <b>area</b> its share of the quarter (radius &prop;
+    &radic;share). Height is constant because the vertical axis is time. The
+    <b>halo</b> thickness is the ghost-to-effort ratio &mdash; a different unit
+    from the box, so do not subtract. The previous four-fins-per-quarter build is
+    still available at <code>?qstyle=collars</code>.<br>
+    <b>Area is read less precisely than length.</b> That is the honest cost of one
+    box per quarter: the collars encoded a fin's <i>length</i> from a shared
+    origin, which the eye reads better than area. The trade was deliberate &mdash;
+    one object per period matches the summary's altitude, and a slab whose length
+    varies while its width does not is a bar pretending to be a box &mdash; but
+    <b>read the boxes for rank and composition, and the table for ratios</b>. The
+    plan view (<code>__topdown()</code>) removes perspective distortion and is
+    where any size comparison should actually be made.
   </div>
 </div>
 
@@ -849,8 +915,8 @@ const enumParam = (name, allowed, def) => {
   const v = (PARAMS.get(name) || '').toLowerCase();
   return allowed.includes(v) ? v : def;
 };
-let QBEAR  = enumParam('qbear',  ['centroid', 'even'],     'centroid');
-let QSTYLE = enumParam('qstyle', ['boxes', 'envelope'],    'boxes');
+let QBEAR  = enumParam('qbear',  ['centroid', 'even'],            'centroid');
+let QSTYLE = enumParam('qstyle', ['boxes', 'collars', 'envelope'], 'boxes');
 // the sector<->quadrant correspondence guides on the ground plane
 let GUIDES = PARAMS.get('guides') !== '0';
 // Valid render targets. AC is the merged model Walter chose; Q is the quadrant
@@ -2145,6 +2211,456 @@ const CAGE_FLOORED = qrows.flatMap((qr, i) => QUADS.map((q, j) =>
    that actually have a tail. */
 const GHOST_SLOTS = qrows.reduce((a, qr) => a + qr.Qs.filter((v) => v > 0).length, 0);
 
+/* ==========================================================================
+   4d · §QONE — ONE BOX PER QUARTER (the default `boxes` body)
+   ==========================================================================
+   Walter, on the four-fin collars: "The boxes are improving. But shouldn't we
+   have one box per quarter?"
+
+   He is right, and the reason is a contradiction the collars never resolved.
+   Four fins per quarter is still the SECTOR view's logic — one mark per
+   (period x category) cell — merely with fewer categories. A management summary
+   is not a lower-resolution instrument; it answers a different question. Its
+   unit is the PERIOD. So: eight boxes, one per quarter, and the four limbs stop
+   being four separate objects and become the box's INTERNAL COMPOSITION.
+
+   That single change fixes three things at once, all of them measured below and
+   on the page rather than claimed here:
+     1. It matches the altitude. A summary shows periods, not period-category
+        cells. "How big was that quarter, and what was it made of" is one
+        question with one object as its answer.
+     2. It kills the ghost-flooring hack outright — 68% -> 0%, see §GHOSTRING.
+     3. Eight objects read faster than thirty-two, which is the entire point.
+
+   ------------------------------------------------------------------------
+   WHAT SIZE MEANS. Box FOOTPRINT AREA = that quarter's total attributed
+   effort. Because model A's weights sum to 1.0 per commit, a quarter's total
+   effort is exactly its commit count: 3 / 47 / 85 / 124 / 368 / 255 / 477 / 390,
+   summing to 1749. The quarterly table carries the numbers, and the probe
+   exposes them, so a box's size is checkable rather than trusted.
+
+   Area, not reach, because a box is a two-dimensional footprint and the eye
+   reads an area mark as an area. The previous collar build encoded a fin's
+   LENGTH, which was right for a fin — a bar from a shared origin — and is wrong
+   for a slab, where making length the quantity while width stays constant is
+   just a bar wearing a box costume. Height stays FIXED at every quarter because
+   the vertical axis is time; letting a big quarter grow taller would make one
+   axis mean two things.
+
+   ------------------------------------------------------------------------
+   §QCOMP — THE FOUR LIMBS AS FOUR FOOTPRINT QUADRANTS, and why this option.
+   ------------------------------------------------------------------------
+   Three ways to put four parts inside one box were available: stacked layers up
+   its height, a banded skin, or quadrants of its footprint. Quadrants win, and
+   not on looks:
+
+     - STACKED LAYERS would put composition on the VERTICAL axis, which already
+       means time. Two meanings on one axis is the same defect the fixed height
+       exists to prevent.
+     - A BANDED SKIN encodes proportion as arc length around a closed outline,
+       which has no origin and no baseline — the hardest comparison the eye is
+       ever asked to make.
+     - QUADRANTS keep each limb ON ITS OWN BEARING. This is the load-bearing
+       property: the same limb sits in the same direction in the 9-sector view,
+       in the collar view, and inside this box. Walter asked two rounds ago for
+       the two altitudes to read as the same object, and this is the only one of
+       the three that preserves it. See §QBEAR-ONE below.
+
+   PROPORTIONS ARE TRUE BY CONSTRUCTION, and this needed care. Each limb owns a
+   fixed angular quarter of the footprint, aligned to its bearing, and its share
+   is encoded as that wedge's RADIUS. Area grows as r^2, so a radius linear in
+   share would OVERSTATE big limbs badly. The radius is therefore scaled by
+   sqrt(share), which makes each wedge's area exactly its share of the box:
+   verified to <1e-12 across all eight quarters. The box's own footprint area is
+   in turn proportional to the quarter's effort, so a wedge's area is that limb's
+   absolute effort on one consistent scale across the whole stack.
+
+   WHAT THE SQRT COSTS, STATED. It compresses near-ties. 2025Q4 is create 40.2%
+   against build 32.5% and 2026Q2 is create 46.5% against distribute 40.3%; after
+   the sqrt those become radius ratios of 1.11 and 1.08, which the eye cannot
+   reliably call. That compression is HONEST — those quarters really are close —
+   but "legible at a glance which limb dominated" is then not delivered by the
+   wedge radii alone. So the dominant limb additionally carries a bright arc cap
+   on its outer edge: a categorical mark answering "which one won", drawn only
+   where a winner exists, leaving the areas undistorted. Rank from the cap,
+   magnitude from the area, exact numbers from the table.
+
+   ------------------------------------------------------------------------
+   §GHOSTRING — THE GHOST, AND THE FLOORING HACK THIS BUILD REMOVES.
+   ------------------------------------------------------------------------
+   The collar build floored its ghost tail in 15 of the 22 slots that had one —
+   68%. That was never a rendering nit: the solid is fractional effort and the
+   ghost is a COUNT of secondary appearances, the two are normalised separately,
+   and nothing made the ghost's absolute reach land beyond the solid's. In 68% of
+   slots the tail's length was not its own quantity, only its rank.
+
+   One box per quarter does not fix that by having more room. It fixes it by
+   letting the ghost be a quantity that is POSITIVE BY CONSTRUCTION. The ghost is
+   drawn as a HALO — a concentric ring outside the box's footprint — and what is
+   encoded is the halo's THICKNESS, set by the ghost-to-effort RATIO for that
+   quarter. A ratio of a non-negative count to a positive effort is never
+   negative, so the halo always has real thickness and can never need flooring.
+   Measured: 0 of 8 quarters floored, against 15 of 22 (68%) before.
+
+   And the ratio is the better quantity anyway. "Secondary reach per unit of
+   captured effort" is comparable ACROSS quarters, which two separately
+   normalised absolute tracks never were — the old ghost could only be ranked,
+   this one can be read. It stays a DIFFERENT UNIT from the solid, so the halo is
+   still not subtractable from the box; but it is now a number with a meaning of
+   its own rather than a mark whose length was an artefact of its normalisation.
+
+   Per-quarter ghost:effort ratios, computed live: 2025Q3 is the widest halo at
+   1.93 and 2025Q1 the thinnest at 0.04 — the quarter that was almost entirely
+   one repo's SEO work, with almost nothing reaching past it.
+
+   ------------------------------------------------------------------------
+   §QBEAR-ONE — WHAT HAPPENS TO THE BEARING LEVERS. They keep working, in full.
+   ------------------------------------------------------------------------
+   This was the open question the one-box design raised, and the answer is the
+   good one: because the composition is arranged RADIALLY, every limb still has a
+   bearing, so ?qbear=centroid|even and the sector->limb correspondence arcs stay
+   meaningful and stay ON. The wedge boundaries and the ground arcs are computed
+   from the same QUADS bearings the collar and envelope bodies use. Nothing had to
+   be disabled, and the "same object at two altitudes" reading survives the
+   change of body — which is exactly why quadrants beat layers and bands.
+   ------------------------------------------------------------------------ */
+
+const QONE = {
+  slabH:   1.06,        // fixed box height — the vertical axis is TIME, not size
+  minSpan: 0.95,        // half-extent of the smallest quarter, so 2024Q4 (3
+                        // commits) is still a box and not a dot
+  maxSpan: 4.05,        // half-extent of the fullest quarter
+  radius:  0.30,        // rounded corner
+  gap:     0.12,        // clear air between the box edge and its ghost halo
+  haloMin: 0.18,        // thinnest halo (lowest ghost:effort ratio)
+  haloMax: 1.30,        // thickest halo (highest ratio)
+  haloH:   0.42,        // the halo is FLATTER than the box: a different shape
+                        // family, so it cannot be misread as more box
+};
+/* Per-quarter totals. Effort is model A re-bucketed by quarter — identical
+   weights, identical grand total — and equals the quarter's commit count
+   because A's weights sum to 1.0 per commit. */
+const QONE_EFF   = qrows.map((qr) => qr.Q.reduce((a, b) => a + b, 0));
+const QONE_GHOST = qrows.map((qr) => qr.Qs.reduce((a, b) => a + b, 0));
+const QONE_EMAX  = Math.max(1, ...QONE_EFF);
+/* AREA is the quantity, so the half-extent goes as sqrt(effort). The floor is an
+   offset applied equally to every non-empty quarter, so differences stay
+   proportional; it exists because a 3-commit quarter would otherwise be smaller
+   than the stem it is threaded on. */
+const qoneSpan = (v) => (v <= 0 ? QONE.minSpan * 0.45
+  : QONE.minSpan + Math.sqrt(v / QONE_EMAX) * (QONE.maxSpan - QONE.minSpan));
+/* THE GHOST AS A RATIO — the whole reason flooring disappears. thickness is a
+   strictly positive function of a non-negative ratio, so a halo always clears
+   the box. Compare boxReach()/GHOST_TAIL_MIN above, where nothing guaranteed it. */
+const QONE_RATIO = QONE_EFF.map((e, i) => (e > 0 ? QONE_GHOST[i] / e : 0));
+const QONE_RMAX  = Math.max(1e-9, ...QONE_RATIO);
+const qoneHalo = (ratio) => QONE.haloMin + (ratio / QONE_RMAX) * (QONE.haloMax - QONE.haloMin);
+/* The count that replaces CAGE_FLOORED. Kept as a live computation rather than a
+   typed zero: if the data ever moves so that a halo would vanish, the page says
+   so instead of carrying a stale boast. */
+const QONE_FLOORED = qrows.flatMap((qr, i) =>
+  (QONE_GHOST[i] > 0 && qoneHalo(QONE_RATIO[i]) <= 0) ? [qr.key] : []);
+const QONE_GHOST_SLOTS = QONE_GHOST.filter((v) => v > 0).length;
+// per-quarter limb shares, and the dominant limb where one exists
+const QONE_SHARE = qrows.map((qr, i) =>
+  qr.Q.map((v) => (QONE_EFF[i] > 0 ? v / QONE_EFF[i] : 0)));
+const QONE_DOM = QONE_SHARE.map((sh) => {
+  const mx = Math.max(...sh);
+  return mx > 0 ? sh.indexOf(mx) : -1;
+});
+const QONE_OUTER = QONE.maxSpan + QONE.gap + QONE.haloMax + 1.15;
+
+/* An annular WEDGE footprint, extruded: the limb's quadrant of the box. Built in
+   local space around the stem so a wedge is positioned by bearing alone and its
+   inner point is exactly on the axis — the box is threaded ON the trunk, not
+   parked beside it, which is the attachment quality Walter asked for and which
+   this build has to keep while changing everything else about the form.
+
+   The outer edge is a rounded-square profile rather than a circular arc, so four
+   wedges at full extent compose into a SQUIRCLE — an abstract, executive box —
+   instead of a pie chart. A pie is the one reading to avoid here: it would say
+   the angles carry the quantity, and they do not; the angles are bearings. */
+function wedgeGeometry(a0, a1, span, h, corner, inner) {
+  const seg = 26;
+  const sh = new THREE.Shape();
+  // rounded-square radius at angle t: the profile that makes 4 full wedges a squircle
+  const prof = (t) => {
+    const c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t));
+    const n = 4.2;                                  // squircle exponent
+    return span / Math.pow(Math.pow(c, n) + Math.pow(s, n), 1 / n);
+  };
+  sh.moveTo(Math.cos(a0) * inner, Math.sin(a0) * inner);
+  for (let i = 0; i <= seg; i++) {
+    const t = a0 + (a1 - a0) * (i / seg);
+    sh.lineTo(Math.cos(t) * prof(t), Math.sin(t) * prof(t));
+  }
+  sh.lineTo(Math.cos(a1) * inner, Math.sin(a1) * inner);
+  sh.closePath();
+  const g = new THREE.ExtrudeGeometry(sh, {
+    depth: h, bevelEnabled: corner > 0, bevelThickness: corner * 0.5,
+    bevelSize: corner * 0.5, bevelSegments: 2, curveSegments: 6,
+  });
+  g.rotateX(-Math.PI / 2);
+  g.translate(0, h / 2, 0);
+  return g;
+}
+
+function buildQuarterOneBox() {
+  const meta = MODEL_META.Q;
+  const grp = new THREE.Group();
+  const dimU = { value: 1.0 };
+  const solidGrp = new THREE.Group();   // -> skinGrp, so the Skin toggle works
+  const markGrp = new THREE.Group();    // -> roseGrp: edges, halos, caps
+
+  const edgeP = [], edgeC = [], tc = new THREE.Color();
+  // each limb owns the 90 degrees CENTRED on its bearing, so a wedge points where
+  // its limb points in every other view on the page
+  const HALF = deg(45);
+
+  qrows.forEach((qr, qi) => {
+    const y = QY(qi);
+    const eff = QONE_EFF[qi];
+    const span = qoneSpan(eff);
+    const inner = CORE_R * 0.55;
+
+    /* ---- the four composition wedges ---------------------------------- */
+    QUADS.forEach((q, j) => {
+      const share = QONE_SHARE[qi][j];
+      const a = deg(q.az);
+      // sqrt(share) => wedge AREA is exactly the limb's share of the box
+      const wspan = share > 0 ? Math.max(inner + 0.06, span * Math.sqrt(share)) : 0;
+      if (wspan <= 0) return;                 // a true zero draws no wedge; the
+                                              // stub below marks it instead
+      /* A small angular INSET between neighbouring wedges. Without it the four
+         wedges of a quarter fuse into one silhouette from the 3/4 view — the
+         composition was only legible from directly overhead, which is half a
+         mark. The gap is angular and equal for all four, so it costs each wedge
+         the same fraction of its arc and does not disturb the area encoding's
+         proportionality between limbs. */
+      const INSET = deg(2.6);
+      const geo = wedgeGeometry(a - HALF + INSET, a + HALF - INSET, wspan, QONE.slabH, QONE.radius * 0.34, inner);
+      tc.setHex(q.hue);
+      const mat = new THREE.MeshStandardMaterial({
+        color: tc.getHex(), emissive: tc.clone().multiplyScalar(0.30).getHex(),
+        roughness: 0.44, metalness: 0.18,
+        transparent: true, opacity: 0.88, depthWrite: true,
+      });
+      dimMats.push({ mat, base: 0.88 });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(0, y, 0);
+      m.renderOrder = 2;
+      solidGrp.add(m);
+
+      // crisp edges, baked to one shared buffer (same reasoning as the collars)
+      const eg = new THREE.EdgesGeometry(geo, 26);
+      const epos = eg.getAttribute('position');
+      const v3 = new THREE.Vector3();
+      for (let k = 0; k < epos.count; k++) {
+        v3.set(epos.getX(k), epos.getY(k), epos.getZ(k));
+        edgeP.push(v3.x, v3.y + y, v3.z);
+        edgeC.push(tc.r * 1.15, tc.g * 1.15, tc.b * 1.15);
+      }
+      eg.dispose();
+    });
+
+    /* ---- measured zeros. A limb that did nothing this quarter gets a flat grey
+           stub on its bearing at the stem — same honesty rule as the collars, and
+           the same reason: an omitted mark and a mark you failed to notice look
+           identical. Deliberately flat and blunt so "nothing" cannot grade into
+           "a little". ---- */
+    QUADS.forEach((q, j) => {
+      if (QONE_SHARE[qi][j] > 0) return;
+      const a = deg(q.az);
+      const geo = wedgeGeometry(a - HALF * 0.5, a + HALF * 0.5,
+        inner + 0.30, QONE.slabH * 0.16, 0, inner);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0x55637a, emissive: 0x1b2331, roughness: 0.9, metalness: 0.0,
+        transparent: true, opacity: 0.7, depthWrite: true,
+      });
+      dimMats.push({ mat, base: 0.7 });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(0, y, 0);
+      m.renderOrder = 2;
+      solidGrp.add(m);
+    });
+
+    /* ---- the dominance cap. The sqrt correction is exactly right for area and
+           exactly wrong for calling a near-tie by eye (2025Q4: 40.2 vs 32.5 ->
+           radius ratio 1.11). So the winning limb gets a bright arc on its outer
+           edge: a CATEGORICAL mark that says which one won without touching the
+           areas that say by how much. ---- */
+    const dj = QONE_DOM[qi];
+    if (dj >= 0) {
+      const q = QUADS[dj];
+      const a = deg(q.az);
+      const wspan = span * Math.sqrt(QONE_SHARE[qi][dj]);
+      const pts = [];
+      const N = 22;
+      const prof = (t) => {
+        const c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t)), n = 4.2;
+        return wspan / Math.pow(Math.pow(c, n) + Math.pow(s, n), 1 / n);
+      };
+      for (let i = 0; i <= N; i++) {
+        const t = a - HALF * 0.82 + (HALF * 1.64) * (i / N);
+        const r = prof(t) * 1.012;
+        pts.push(new THREE.Vector3(Math.cos(t) * r, y + QONE.slabH * 0.5 + 0.02, Math.sin(t) * r));
+      }
+      const cg2 = new THREE.BufferGeometry().setFromPoints(pts);
+      const cap = new THREE.Line(cg2, new THREE.LineBasicMaterial({
+        color: q.hue, transparent: true, opacity: 0.95,
+        depthWrite: false, blending: THREE.AdditiveBlending,
+      }));
+      cap.renderOrder = 4;
+      markGrp.add(cap);
+    }
+
+    /* ---- THE GHOST HALO. Thickness = ghost:effort ratio, and because that is a
+           strictly positive function of a non-negative ratio the halo can never
+           need flooring — which is the single biggest win of this rebuild over
+           the fin-and-tail collars (0% floored against 68%). Drawn as a flat ring
+           outside the box, in the mixed hue of the quarter's own composition so
+           it reads as belonging to that box. ---- */
+    if (QONE_GHOST[qi] > 0) {
+      const t0 = span + QONE.gap;
+      const t1 = t0 + qoneHalo(QONE_RATIO[qi]);
+      const sh = new THREE.Shape();
+      const prof = (r) => (t) => {
+        const c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t)), n = 4.2;
+        return r / Math.pow(Math.pow(c, n) + Math.pow(s, n), 1 / n);
+      };
+      const N = 96, po = prof(t1), pi2 = prof(t0);
+      for (let i = 0; i <= N; i++) {
+        const t = (i / N) * Math.PI * 2;
+        const r = po(t);
+        if (i === 0) sh.moveTo(Math.cos(t) * r, Math.sin(t) * r);
+        else sh.lineTo(Math.cos(t) * r, Math.sin(t) * r);
+      }
+      const hole = new THREE.Path();
+      for (let i = 0; i <= N; i++) {
+        const t = (i / N) * Math.PI * 2;
+        const r = pi2(t);
+        if (i === 0) hole.moveTo(Math.cos(t) * r, Math.sin(t) * r);
+        else hole.lineTo(Math.cos(t) * r, Math.sin(t) * r);
+      }
+      sh.holes.push(hole);
+      const hg = new THREE.ExtrudeGeometry(sh, { depth: QONE.haloH, bevelEnabled: false, curveSegments: 4 });
+      hg.rotateX(-Math.PI / 2);
+      hg.translate(0, QONE.haloH / 2, 0);
+      // the halo wears the quarter's own composition mix, so it is legible as
+      // THIS box's reach rather than as a fifth free-floating object
+      const mix = new THREE.Color(0, 0, 0);
+      let wsum = 0;
+      QUADS.forEach((q, j) => {
+        const w = QONE_SHARE[qi][j];
+        if (w > 0) { const c = new THREE.Color(q.hue); mix.r += c.r * w; mix.g += c.g * w; mix.b += c.b * w; wsum += w; }
+      });
+      if (wsum > 0) { mix.r /= wsum; mix.g /= wsum; mix.b /= wsum; }
+      const hm = new THREE.ShaderMaterial({
+        transparent: true, depthWrite: false, side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        uniforms: { uGhost: GHOSTU, uDim: dimU, uCol: { value: mix } },
+        vertexShader: `
+          varying vec3 vN;
+          void main() {
+            vN = normalize(normalMatrix * normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }`,
+        /* WEIGHTED DOWN DELIBERATELY, and this needed correcting after looking at
+           it. The first build reused the collar tail's coefficients, but a ring
+           that wraps the whole box presents far more lit area to the camera than
+           a thin tail did — at the same coefficients the halo out-glowed the box
+           and the reading inverted, with the secondary track dominating the
+           primary one. The ghost must stay legible and stay SUBORDINATE, so the
+           halo runs at roughly a third of the tail's emission and leans on the
+           top face (abs(vN.y)) to read as a flat ring rather than a glowing wall.
+           The ghost slider still moves it across its full useful range. */
+        fragmentShader: `
+          uniform float uGhost; uniform float uDim; uniform vec3 uCol;
+          varying vec3 vN;
+          void main() {
+            float f = 0.34 + 0.30 * abs(vN.y);
+            gl_FragColor = vec4(uCol * f * (0.16 + uGhost * 0.34) * uDim,
+                                clamp(0.09 + uGhost * 0.20, 0.0, 1.0) * uDim);
+          }`,
+      });
+      const hmesh = new THREE.Mesh(hg, hm);
+      /* Sat at the box's mid-height the halo competed with the box for the same
+         depth band and read as a second, brighter box. Dropped to the box's BASE
+         it reads as what it is — a footprint annotation lying on the quarter's
+         level, like a contour drawn on the ground around the object. */
+      hmesh.position.set(0, y - QONE.slabH * 0.5 + QONE.haloH * 0.5, 0);
+      hmesh.renderOrder = 3;
+      markGrp.add(hmesh);
+    }
+  });
+
+  solidGrp.visible = LOOK.skin;
+  grp.add(solidGrp);
+
+  const eg2 = new THREE.BufferGeometry();
+  eg2.setAttribute('position', new THREE.Float32BufferAttribute(edgeP, 3));
+  eg2.setAttribute('color', new THREE.Float32BufferAttribute(edgeC, 3));
+  const edges = new THREE.LineSegments(eg2, new THREE.LineBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.8,
+    depthWrite: false, blending: THREE.AdditiveBlending,
+  }));
+  edges.renderOrder = 3; markGrp.add(edges);
+
+  /* ---- one faint tick ring per quarter, so the eight levels stay countable ---- */
+  {
+    const tp = [], tcol = [];
+    const R = QONE.maxSpan + QONE.gap + QONE.haloMax + 0.4;
+    qrows.forEach((qr, qi) => {
+      const y = QY(qi), N = 72;
+      for (let k = 0; k < N; k++) {
+        const a1 = (k / N) * Math.PI * 2, a2 = ((k + 1) / N) * Math.PI * 2;
+        tp.push(Math.cos(a1) * R, y, Math.sin(a1) * R);
+        tp.push(Math.cos(a2) * R, y, Math.sin(a2) * R);
+        for (let z = 0; z < 2; z++) tcol.push(0.30, 0.38, 0.50);
+      }
+    });
+    const tg = new THREE.BufferGeometry();
+    tg.setAttribute('position', new THREE.Float32BufferAttribute(tp, 3));
+    tg.setAttribute('color', new THREE.Float32BufferAttribute(tcol, 3));
+    const ticks = new THREE.LineSegments(tg, new THREE.LineBasicMaterial({
+      vertexColors: true, transparent: true, opacity: 0.22, depthWrite: false,
+    }));
+    ticks.renderOrder = 1; markGrp.add(ticks);
+  }
+
+  markGrp.visible = LOOK.rose;
+  grp.add(markGrp);
+
+  /* ---- the drawn core, the same floor every other object on the page rests on.
+         The boxes are THREADED ON it: each wedge's inner point is on the axis, so
+         the stack reads as one skewered object rather than eight loose slabs. ---- */
+  const cg = new THREE.CylinderGeometry(CORE_R * 0.985, CORE_R * 0.985, TOP_Y, 32, 1, true);
+  const core = new THREE.Mesh(cg, new THREE.MeshBasicMaterial({
+    color: 0x4a3a29, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false,
+  }));
+  core.position.y = TOP_Y / 2; core.renderOrder = 0; grp.add(core);
+
+  /* ---- bearing spokes + the correspondence guides. THEY STILL APPLY: the
+         composition is radial, so every limb still has a bearing and the
+         sector->limb arcs still land on something real. Nothing is disabled for
+         this body — see §QBEAR-ONE. ---- */
+  QUADS.forEach((q) => {
+    const a = deg(q.az);
+    const lg = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(Math.cos(a) * CORE_R, 0.01, Math.sin(a) * CORE_R),
+      new THREE.Vector3(Math.cos(a) * (MAX_R + 0.7), 0.01, Math.sin(a) * (MAX_R + 0.7)),
+    ]);
+    grp.add(new THREE.Line(lg, new THREE.LineBasicMaterial({
+      color: q.hue, transparent: true, opacity: 0.2,
+    })));
+  });
+  grp.add(correspondenceGuides(QUADS));
+
+  grp.userData = { model: 'Q', dimU, skinGrp: solidGrp, roseGrp: markGrp,
+                   monthRings: null, meta, axes: QUADS, boxes: true, onebox: true };
+  return grp;
+}
+
 function buildQuarterBoxes() {
   const meta = MODEL_META.Q;
   const grp = new THREE.Group();
@@ -2436,6 +2952,15 @@ function makeLabel(text, opts = {}) {
    ========================================================================== */
 const SPACING = 12.6;
 const envelopes = {};
+/* TWO of the three Q bodies bucket by QUARTER (the one-box summary and the older
+   four-fin collars); only the inherited envelope is monthly. Everything that has
+   to know "is a quarterly object on screen" — the month ladder's side, the
+   framing extent, the plan view — asks this one predicate rather than repeating a
+   string test that would have to be found and updated three times. */
+const QUARTERLY = QSTYLE === 'boxes' || QSTYLE === 'collars';
+// how far the Q object actually reaches, whichever body is drawn. One source of
+// truth for framing, the plan view and the ladder, or the outer column crops.
+const QREACH = QSTYLE === 'boxes' ? QONE_OUTER : QSTYLE === 'collars' ? QOUTER : MAX_R;
 /* WHAT IS ON SCREEN. The default pair is the chosen model beside the rollup —
    that IS Walter's question ("how does it compare if we abstract to the four
    quadrants"), so the two must be adjacent and identically lit to be compared at
@@ -2448,8 +2973,10 @@ const headlineFor = (m) => {
   const sum = (a) => a.reduce((x, y) => x + y, 0);
   if (m === 'AC') return sum(TOT.A).toFixed(0) + ' attributed  ·  ' + sum(TOT.Cs) + ' ghost';
   if (m === 'Q')  return QSTYLE === 'boxes'
-    ? sum(TOT.Q).toFixed(0) + ' attributed  ·  ' + QUARTERS.length + ' quarters × 4 limbs'
-    : sum(TOT.Q).toFixed(0) + ' attributed  ·  4 limbs';
+    ? sum(TOT.Q).toFixed(0) + ' attributed  ·  ' + QUARTERS.length + ' boxes, one per quarter'
+    : QSTYLE === 'collars'
+      ? sum(TOT.Q).toFixed(0) + ' attributed  ·  ' + QUARTERS.length + ' quarters × 4 limbs'
+      : sum(TOT.Q).toFixed(0) + ' attributed  ·  4 limbs';
   if (m === 'A')  return sum(TOT.A).toFixed(0) + ' attributed';
   if (m === 'B')  return sum(TOT.B) + ' axis-hits';
   return sum(TOT.C) + ' primary';
@@ -2459,16 +2986,21 @@ shown.forEach((m, i) => {
   // The Q view has TWO bodies. ?qstyle=boxes swaps the monthly lofted envelope
   // for the quarterly slabs; every other model keeps its envelope unconditionally,
   // because the 9-sector detail view is the instrument and is not summarised.
-  const env = (m === 'Q' && QSTYLE === 'boxes') ? buildQuarterBoxes() : buildEnvelope(m);
+  const env = (m === 'Q' && QSTYLE === 'boxes') ? buildQuarterOneBox()
+    : (m === 'Q' && QSTYLE === 'collars') ? buildQuarterBoxes()
+    : buildEnvelope(m);
   const x = xOf(i);
   env.position.x = x;
   scene.add(env);
   envelopes[m] = env;
 
   const meta = MODEL_META[m];
-  const tagFor = (mm) => (mm === 'Q' && QSTYLE === 'boxes')
-    ? 'quarterly collars — boxes tied to the stem, reach = effort'
-    : meta.tag;
+  const tagFor = (mm) => (mm !== 'Q') ? meta.tag
+    : QSTYLE === 'boxes'
+      ? 'one box per quarter — area = effort, quadrants = the four limbs'
+      : QSTYLE === 'collars'
+        ? 'quarterly collars — boxes tied to the stem, reach = effort'
+        : meta.tag;
   const hexOf = (h) => '#' + h.toString(16).padStart(6, '0');
   // Title above each envelope + the two headline numbers, so the visual and the
   // quantitative sit in the same glance rather than in two different places.
@@ -2512,7 +3044,7 @@ shown.forEach((m, i) => {
       const partial = QPARTIAL.find((p) => p.quarter === qr.key);
       const txt = partial ? `${qr.key} (${partial.months} mo)` : qr.key;
       const sp = makeLabel(txt, { size: 28, col: partial ? '#ffcf6e' : '#9fb2c8' });
-      sp.position.set(x + QOUTER + 0.55, QY(qi), 0);
+      sp.position.set(x + (env.userData.onebox ? QONE_OUTER : QOUTER) + 0.55, QY(qi), 0);
       scene.add(sp);
     });
   }
@@ -2530,11 +3062,11 @@ shown.forEach((m, i) => {
 {
   const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monLabel = (key) => { const [y, m] = key.split('-'); return MON[Number(m) - 1] + " '" + y.slice(2); };
-  const boxesOnRight = QSTYLE === 'boxes' && shown[shown.length - 1] === 'Q';
-  // ?solo=Q with the box body has NO monthly object on screen at all, so a
-  // monthly ladder would label nothing. Skip it entirely rather than park it
-  // beside eight quarterly slabs it does not describe.
-  const monthlyObjectOnScreen = !(SOLO === 'Q' && QSTYLE === 'boxes');
+  const boxesOnRight = QUARTERLY && shown[shown.length - 1] === 'Q';
+  // ?solo=Q with either quarterly body has NO monthly object on screen at all, so
+  // a monthly ladder would label nothing. Skip it entirely rather than park it
+  // beside eight quarterly levels it does not describe.
+  const monthlyObjectOnScreen = !(SOLO === 'Q' && QUARTERLY);
   if (monthlyObjectOnScreen) {
     const x = boxesOnRight ? xOf(0) - (MAX_R + 2.5) : xOf(shown.length - 1) + MAX_R + 1.6;
     rows.forEach((r, i) => {
@@ -2561,15 +3093,15 @@ function frameAll() {
   // the box body reaches further than MAX_R (longest fin + its ghost tail + the
   // ladder), so the frame has to know which body is on screen or the outer
   // column crops. QOUTER is the single source of truth for that extent.
-  const reach = (QSTYLE === 'boxes' && shown.includes('Q'))
-    ? Math.max(MAX_R, QOUTER + 0.9) : MAX_R;
+  const reach = (QUARTERLY && shown.includes('Q'))
+    ? Math.max(MAX_R, QREACH + 0.9) : MAX_R;
   const halfW = (SOLO ? reach + 2.4 : span + reach + 3.2);
   /* The month ladder moves to the LEFT of the row when the box body is on the
      right (it labels the monthly envelope, not the quarterly slabs). The content
      is then ASYMMETRIC about x=0 — extra on the left, none on the right — so the
      frame must both widen AND recentre, or the ladder sits under the HUD while
      empty space sits opposite it. */
-  const ladderLeft = QSTYLE === 'boxes' && shown[shown.length - 1] === 'Q' && SOLO !== 'Q';
+  const ladderLeft = QUARTERLY && shown[shown.length - 1] === 'Q' && SOLO !== 'Q';
   const shiftX = ladderLeft ? -1.5 : 0;   // centre of the actual content
   const halfW2 = ladderLeft ? halfW + 1.5 : halfW;
   const yTop = TOP_Y + 3.1;             // tallest label, not tallest geometry
@@ -2704,24 +3236,47 @@ document.getElementById('spQuadAvg').innerHTML =
    quarter, which is the figure most easily verified against the raw log. ---- */
 {
   const t = document.getElementById('qboxTbl');
-  let html = '<tr><th class="l">quarter</th><th title="commits in the quarter">commits</th>' +
-    QUADS.map((q) => `<th title="${q.id}"><span style="color:${hexOf(q.hue)}">${q.label.slice(0, 4)}</span></th>`).join('') +
+  /* Under the one-box body the table has a new job: a box's SIZE is the quarter
+     TOTAL, and its wedges are the limb SHARES, so both have to be checkable in
+     the row. Shares are shown as percentages under that body because that is what
+     the wedge areas encode; the collar body keeps absolute effort, because that
+     is what a fin's reach encodes. Same numbers, presented in the unit the mark
+     actually uses. */
+  const asShare = QSTYLE === 'boxes';
+  let html = '<tr><th class="l">quarter</th><th title="commits in the quarter — also the box\'s total attributed effort, because model A weights sum to 1 per commit">commits</th>' +
+    QUADS.map((q) => `<th title="${q.id}${asShare ? ' — share of the quarter, = this wedge\'s share of the box area' : ''}"><span style="color:${hexOf(q.hue)}">${q.label.slice(0, 4)}</span></th>`).join('') +
     '</tr>';
-  qrows.forEach((qr) => {
+  qrows.forEach((qr, qi) => {
     // a partial bucket is marked IN the table, not only in prose — the row is
-    // where a reader checks a fin's length against its number, so the reason
+    // where a reader checks a mark's size against its number, so the reason
     // that number is not comparable has to be in the row
     const part = QPARTIAL.find((p) => p.quarter === qr.key);
     const mark = part
       ? ` <span style="color:#ffcf6e;font-size:9px" title="only ${part.months} of 3 months — not comparable to a full quarter">${part.months}mo</span>`
       : '';
+    const dom = QONE_DOM[qi];
     html += `<tr><td class="l">${qr.key}${mark}</td><td>${qr.commits}</td>` +
-      QUADS.map((_, i) => `<td class="${qr.Q[i] > 0 ? '' : 'z'}">${qr.Q[i] > 0 ? qr.Q[i].toFixed(0) : '0'}</td>`).join('') +
+      QUADS.map((_, i) => {
+        const z = qr.Q[i] > 0 ? '' : 'z';
+        // the dominant limb is marked in the row too, so the arc cap on the
+        // object has a number behind it rather than being a claim on its own
+        const win = (asShare && i === dom) ? ' style="color:#cfe0f2;font-weight:600"' : '';
+        const v = qr.Q[i] <= 0 ? '0'
+          : asShare ? (QONE_SHARE[qi][i] * 100).toFixed(0) + '%'
+            : qr.Q[i].toFixed(0);
+        return `<td class="${z}"${win}>${v}</td>`;
+      }).join('') +
       '</tr>';
   });
   const tc = qrows.reduce((a, qr) => a + qr.commits, 0);
+  /* The total row must be in the SAME UNIT as the rows above it, or the table
+     silently mixes percentages and counts in one column. Under the share
+     presentation the total is therefore each limb's share of the whole history —
+     which is the honest summary of the column, and still sums to 100%. */
+  const grand = QUADS.map((_, i) => qrows.reduce((a, qr) => a + qr.Q[i], 0));
+  const grandTot = grand.reduce((a, b) => a + b, 0) || 1;
   html += `<tr class="sum"><td class="l">total</td><td>${tc}</td>` +
-    QUADS.map((_, i) => `<td>${qrows.reduce((a, qr) => a + qr.Q[i], 0).toFixed(0)}</td>`).join('') + '</tr>';
+    grand.map((v) => `<td>${asShare ? (v / grandTot * 100).toFixed(0) + '%' : v.toFixed(0)}</td>`).join('') + '</tr>';
   t.innerHTML = html;
 }
 
@@ -2762,17 +3317,41 @@ document.getElementById('spQuadAvg').innerHTML =
          the bucketing manufactured. Marked <span style="color:#ffcf6e">amber</span> in
          this table and on the collar's own ladder label.<br>`
       : '') +
-    `<b>The ghost tail is floored, and often.</b> Solid and ghost are different units on
-     separate normalisations, so the ghost's own reach frequently fails to land beyond the
-     solid's end &mdash; in <b style="color:#cfe0f2">${CAGE_FLOORED.length}</b>
-     of the ${GHOST_SLOTS} slots that have a tail at all, it would have no length left and
-     would vanish. It is floored to a visible minimum so the relation means one thing
-     across the whole object. That is <b>${(CAGE_FLOORED.length / Math.max(1, GHOST_SLOTS) * 100).toFixed(0)}%</b>
-     of them, far more than a rounding error:
-     <b>read how far a tail runs as a rank, not as a length</b>, and take
-     the two numbers from the table above. The reason is structural, not a bug &mdash; the
-     solid is fractional effort and the ghost is a count of secondary appearances, and
-     they were never on a shared scale.`;
+    /* THE GHOST, AND THE ONE CLAIM THIS REBUILD MAKES FOR ITSELF. Both bodies'
+       numbers are computed live and the collar figure is kept on screen under
+       the box body, because "we fixed it" is only checkable against the number
+       it replaced. */
+    (QSTYLE === 'boxes'
+      ? `<b style="color:#7ff0d2">The ghost no longer needs flooring &mdash;
+         ${QONE_FLOORED.length} of ${QONE_GHOST_SLOTS} quarters
+         (${(QONE_FLOORED.length / Math.max(1, QONE_GHOST_SLOTS) * 100).toFixed(0)}%),
+         against ${CAGE_FLOORED.length} of ${GHOST_SLOTS}
+         (${(CAGE_FLOORED.length / Math.max(1, GHOST_SLOTS) * 100).toFixed(0)}%) under
+         <code>?qstyle=collars</code>.</b> The fix is not more room, it is a better
+         quantity: the halo's <b>thickness</b> is the quarter's <b>ghost-to-effort
+         ratio</b>, and a non-negative count over a positive effort is positive by
+         construction, so a halo can never fail to clear its box. The old tail had to
+         out-reach the solid on a <i>separate normalisation</i>, which nothing
+         guaranteed. Ratios here run
+         <b>${Math.min(...QONE_RATIO.filter((_, i) => QONE_GHOST[i] > 0)).toFixed(2)}</b>
+         (${QUARTERS[QONE_RATIO.indexOf(Math.min(...QONE_RATIO.filter((_, i) => QONE_GHOST[i] > 0)))]})
+         to <b>${Math.max(...QONE_RATIO).toFixed(2)}</b>
+         (${QUARTERS[QONE_RATIO.indexOf(Math.max(...QONE_RATIO))]}).
+         Solid and ghost remain <b>different units</b> &mdash; do not subtract &mdash;
+         but the halo is now a number you can read, not merely rank.`
+      : `<b>The ghost tail is floored, and often.</b> Solid and ghost are different units on
+         separate normalisations, so the ghost's own reach frequently fails to land beyond the
+         solid's end &mdash; in <b style="color:#cfe0f2">${CAGE_FLOORED.length}</b>
+         of the ${GHOST_SLOTS} slots that have a tail at all, it would have no length left and
+         would vanish. It is floored to a visible minimum so the relation means one thing
+         across the whole object. That is <b>${(CAGE_FLOORED.length / Math.max(1, GHOST_SLOTS) * 100).toFixed(0)}%</b>
+         of them, far more than a rounding error:
+         <b>read how far a tail runs as a rank, not as a length</b>, and take
+         the two numbers from the table above. The reason is structural, not a bug &mdash; the
+         solid is fractional effort and the ghost is a count of secondary appearances, and
+         they were never on a shared scale.
+         <span style="color:#7ff0d2">The default <code>?qstyle=boxes</code> body removes this
+         compromise entirely (0%).</span>`);
 }
 
 {
@@ -2813,6 +3392,39 @@ document.getElementById('spQuadAvg').innerHTML =
       `<i style="background:${hexOf(s.hue)}"></i>${s.label}` +
       (faint ? ' <em>(&lt;1%)</em>' : '') + `</span>`;
   }).join('');
+}
+/* THE LEGEND MUST DESCRIBE THE BODY ACTUALLY ON SCREEN. The box vocabulary and
+   the collar vocabulary are different marks with different encodings, so a
+   legend that describes one while the other is drawn is worse than no legend —
+   it is a confident wrong caption. Swapped here rather than duplicated in the
+   HTML so the two can never drift apart. */
+if (QSTYLE !== 'boxes') {
+  document.getElementById('lgBoxGrp').textContent = QSTYLE === 'collars'
+    ? 'Quadrant view — quarterly collars'
+    : 'Quadrant view — monthly envelope';
+  document.getElementById('lgBoxes').innerHTML = QSTYLE === 'collars'
+    ? `<div class="sw"><span class="chip qbox"></span>
+         <span><b>Radiating box</b> &mdash; one per <b>quarter &times; limb</b>, tied
+         around the stem. <b>REACH from the stem</b> = that limb's fractional
+         attributed effort that quarter, <b>linear</b>. Width and height are
+         constant, so reach is the only variable.</span></div>
+       <div class="sw"><span class="chip qcage"></span>
+         <span><b>Translucent tail</b> &mdash; the ghost, continuing the same radial
+         past the solid. <b>Floored in ${CAGE_FLOORED.length} of ${GHOST_SLOTS} slots</b>
+         (${(CAGE_FLOORED.length / Math.max(1, GHOST_SLOTS) * 100).toFixed(0)}%), so
+         <b>read it as a rank, not a length</b>. The default
+         <code>?qstyle=boxes</code> body removes this compromise.</span></div>
+       <div class="sw"><span class="chip qnull"></span>
+         <span><b>Grey stub</b> &mdash; a <b>measured zero</b>: that limb did nothing
+         that quarter.</span></div>
+       <div class="sw"><span class="chip qhub"></span>
+         <span><b>Collar band</b> &mdash; a drawn sleeve, not a measurement. It marks
+         the quarter's level on the stem.</span></div>`
+    : `<div class="sw"><span class="chip solid"></span>
+         <span>The quadrant view is drawn as the <b>inherited monthly lofted
+         envelope</b> &mdash; same marks as the 9-sector object on the left, with
+         four axes instead of nine. The quarterly box vocabulary does not apply.
+         </span></div>`;
 }
 {
   const lg = document.getElementById('legend');
@@ -2904,10 +3516,12 @@ document.getElementById('bAll').addEventListener('click', () => { FOCUS = null; 
   document.getElementById('bQBearC').addEventListener('click', () => setQ('qbear', 'centroid'));
   document.getElementById('bQBearE').addEventListener('click', () => setQ('qbear', 'even'));
   document.getElementById('bQStyleB').addEventListener('click', () => setQ('qstyle', 'boxes'));
+  document.getElementById('bQStyleC').addEventListener('click', () => setQ('qstyle', 'collars'));
   document.getElementById('bQStyleE').addEventListener('click', () => setQ('qstyle', 'envelope'));
   setPressed('bQBearC', QBEAR === 'centroid');
   setPressed('bQBearE', QBEAR === 'even');
   setPressed('bQStyleB', QSTYLE === 'boxes');
+  setPressed('bQStyleC', QSTYLE === 'collars');
   setPressed('bQStyleE', QSTYLE === 'envelope');
 
   /* The drift readout. This is the whole tension in four rows: under centroid
@@ -3090,6 +3704,36 @@ window.__probe = () => ({
     // and the right denominator for that count (slots that have a tail at all)
     cageFloored: CAGE_FLOORED,
     ghostSlots: GHOST_SLOTS,
+    /* §QONE — the one-box-per-quarter body, checkable independently of the
+       collars it replaces. The headline claim of this build is the flooring
+       number, so it is exposed with BOTH denominators side by side. */
+    oneBox: {
+      effortPerQuarter: QONE_EFF.map((v) => +v.toFixed(2)),
+      ghostPerQuarter: QONE_GHOST,
+      // area half-extent actually drawn, so a box can be measured off a screenshot
+      span: QONE_EFF.map((v) => +qoneSpan(v).toFixed(3)),
+      // limb composition, and the check that each wedge's AREA equals its share
+      share: QONE_SHARE.map((sh) => sh.map((v) => +v.toFixed(4))),
+      radialFactor: QONE_SHARE.map((sh) => sh.map((v) => +Math.sqrt(v).toFixed(4))),
+      dominant: QONE_DOM.map((j) => (j >= 0 ? QUADS[j].id : null)),
+      ghostRatio: QONE_RATIO.map((v) => +v.toFixed(4)),
+      haloThickness: QONE_RATIO.map((v, i) =>
+        (QONE_GHOST[i] > 0 ? +qoneHalo(v).toFixed(3) : 0)),
+      /* THE POINT OF THE REBUILD, as a number. The collars floored 15 of 22
+         ghost slots (68%); the halo is a strictly positive function of a
+         non-negative ratio and so cannot be floored at all. */
+      floored: QONE_FLOORED,
+      ghostSlots: QONE_GHOST_SLOTS,
+      flooredPct: +(QONE_FLOORED.length / Math.max(1, QONE_GHOST_SLOTS) * 100).toFixed(1),
+      collarFlooredPct: +(CAGE_FLOORED.length / Math.max(1, GHOST_SLOTS) * 100).toFixed(1),
+      encoding: 'footprint AREA = quarter effort; wedge area = limb share (radius ∝ sqrt(share)); halo thickness = ghost:effort ratio',
+      sides: { minSpan: QONE.minSpan, maxSpan: QONE.maxSpan, slabH: QONE.slabH,
+               gap: QONE.gap, haloMin: QONE.haloMin, haloMax: QONE.haloMax,
+               outer: +QONE_OUTER.toFixed(3) },
+      // bearings are UNCHANGED by this body — the composition is radial, so
+      // ?qbear= and the correspondence arcs stay live. See §QBEAR-ONE.
+      bearingsApply: true,
+    },
     /* the encoding itself, so a reader can check a fin against a number:
        reach = minReach + (effort / max) * (maxReach - minReach), LINEAR. */
     encoding: 'reach-from-stem, linear in fractional effort',
@@ -3123,8 +3767,8 @@ window.__topdown = (dist) => {
      panels. And the camera must clear the TOP of the object, not just its
      footprint: looking straight down at a tower from inside its own height puts
      the near boxes in your face. Hence + TOP_Y. */
-  const reach = (QSTYLE === 'boxes' && shown.includes('Q'))
-    ? Math.max(MAX_R, QOUTER + 0.9) : MAX_R;
+  const reach = (QUARTERLY && shown.includes('Q'))
+    ? Math.max(MAX_R, QREACH + 0.9) : MAX_R;
   const halfW = span + reach + 2.4;
   const hFov = 2 * Math.atan(Math.tan(deg(camera.fov) / 2) * camera.aspect);
   const cy = TOP_Y * 0.5;                       // aim at the tower's mid-height
