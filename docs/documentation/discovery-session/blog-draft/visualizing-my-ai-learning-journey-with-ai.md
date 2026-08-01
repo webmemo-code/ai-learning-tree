@@ -10,9 +10,13 @@ I have spent two years learning AI in public. The evidence is sitting in GitHub:
 
 That is a learning journey. It is also, in its raw form, completely unreadable. Nobody — including me — looks at a commit log and feels anything.
 
-So I set out to make it visible. Not as a dashboard. As an **object**: a tree that grows from my actual work, where the shape itself carries the meaning. And I built it the way I now build most things: in conversation with AI, in one long session, generating and rejecting forms until one survived.
+So I set out to make it visible. Not as a dashboard. As an **object**: a tree that grows from my actual work, where the shape itself carries the meaning. You can [walk through the live tree here](https://webmemo-code.github.io/ai-learning-tree/) — it is an acacia standing in a savanna night, it replays my journey from seed in about thirty seconds, and its canopy is banded into the four proficiency levels I am trying to climb: ground haze for Novice, dusk for Experimenter, afterglow for Practitioner, starfield for Expert.
+
+That viewer is the destination. This post is about a different question — how do you find a *shape* that tells the truth? — and I built it the way I now build most things: in conversation with AI, in one long session, generating and rejecting forms until one survived.
 
 This post is about that session. Eighteen images, one afternoon and evening, and a lesson I did not expect: **the most valuable thing the AI produced was not a picture. It was a verdict.**
+
+There is a reason I care about making this visible rather than just tracking it. Section's [AI Proficiency Report](https://www.sectionai.com/ai/the-ai-proficiency-report) puts roughly 95% of the workforce below the proficiency bar — about 21% Novices, about 73% Experimenters stuck in one-off usage, and only around 5% Practitioners and Experts who have actually embedded AI into repeatable workflows. Those numbers are accurate and they move nobody. **Stories move people, and images move people.** A learning journey you can look at is an argument that a percentage cannot make.
 
 ---
 
@@ -130,8 +134,10 @@ This project is itself AI-assisted development. Every commit I made building the
 
 That is not a gimmick. It is the whole argument in miniature. The way you get from *experimenting with AI* to *working with AI* is by building things with it that are real enough to leave evidence. The evidence is the learning. Everything else is a claim.
 
-I am about 5% of the way to what I want this to become. But it is now a thing you can look at — and that is the entire point.
+I am nowhere near done. But it is now a thing you can look at — and that is the entire point.
+
+**[Walk through the live tree →](https://webmemo-code.github.io/ai-learning-tree/)** Press *Replay journey* and watch two years of learning grow from seed in thirty seconds. The shape you see is not designed. It is what my actual working history looks like when you give it a form that refuses to flatter it.
 
 ---
 
-*The AI Learning Tree grows from real, verifiable artifacts: commits, notes, and declared milestones. The long-term goal is a public repository anyone can connect to their own GitHub profile to grow their own tree. If you want to be told when that ships, [get in touch](https://webmemo.ch/kontakt/).*
+*The AI Learning Tree grows from real, verifiable artifacts: commits, notes, and declared milestones — never from self-assessment. The long-term goal is a public repository anyone with a GitHub account can connect to grow their own tree. If you want to be told when that ships, [get in touch](https://webmemo.ch/kontakt/).*

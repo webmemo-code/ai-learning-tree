@@ -88,6 +88,30 @@ excerpt: "1,749 commits, eighteen rejected 3D forms, and one sentence from an AI
 ---
 ```
 
+## Live tree links — added, with one caveat
+
+The draft now links to <https://webmemo-code.github.io/ai-learning-tree/> in two places:
+early in "The Premise" (the conversion-critical one) and as a bold CTA before the footer.
+Verified live: it is the **acacia viewer**, savanna-night, with replay / orbit / roots /
+pagoda / record-clip / sound / share controls and sector filters, and a canopy banded into
+ground haze → dusk → afterglow → starfield for Novice → Experimenter → Practitioner →
+Expert.
+
+**The caveat worth knowing before you publish:** the live tree is the *acacia* renderer.
+The eighteen images in this post are from the **time-axis board**, a different prototype
+that currently lives on the unmerged `feat/time-axis-concept-board` branch and is not on
+the live site. So a reader who clicks through will not see the object in the screenshots.
+
+The draft handles this honestly — it frames the acacia as "the destination" and the
+session as the search for a shape — so it reads correctly as-is. But if you would rather
+they line up, options are:
+
+- Merge the branch so `prototypes/time-axis-board/multi-axis.html` publishes, then link
+  it directly from Act Six. Strongest version: readers can touch the final object.
+- Leave as-is. Works, but expect some "where are the boxes?" confusion.
+
+I did **not** merge anything or link to the unpublished prototype path.
+
 ## Open questions for Walter
 
 1. **Dek wording** — currently *"What happens when you point a visualization at your own
@@ -95,9 +119,9 @@ excerpt: "1,749 commits, eighteen rejected 3D forms, and one sentence from an AI
    you want it less combative.
 2. **Closing CTA** links to `webmemo.ch/kontakt/` — verify that path, or swap for a
    newsletter/LinkedIn follow.
-3. **Is the live tree linkable yet?** The post never links to a running demo. If
-   `webmemo-code.github.io/ai-learning-tree/` is presentable, an early link would
-   convert far better than a text-only read.
-4. **LinkedIn version** — the publisher can cross-post, but this draft is ~1,800 words
-   and reads as a long-form article. A separate 300-word LinkedIn teaser pointing back
-   would likely outperform an auto-cross-post.
+3. **Section AI report link** — I cite the 95%/21%/73%/5% figures from your vision doc
+   and link `sectionai.com/ai/the-ai-proficiency-report`. Worth confirming that URL is
+   still current, since the stats now carry real weight in the opening.
+4. **LinkedIn version** — the publisher can cross-post, but this draft is ~1,900 words
+   and reads as long-form. A separate 300-word LinkedIn teaser pointing back would
+   likely outperform an auto-cross-post.
