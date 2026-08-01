@@ -129,8 +129,20 @@ THE QUARTERLY BOXES — §QBOX
 
   SIZE = footprint AREA = that quarter's total attributed effort, which equals
   its commit count because model A's weights sum to 1.0 per commit:
-  3/47/85/124/368/255/477/390, total 1749. Height is fixed; the vertical axis is
-  time and may not also mean size.
+  3/47/85/124/368/255/477/390, total 1749. Where a box SITS is time; how thick it
+  is is a separate channel — see §QHEIGHT.
+
+  HEIGHT = each wedge's own thickness = that limb's ABSOLUTE commits that
+  quarter. Walter: "We could apply a value to the height of the boxes." Right —
+  the channel was idle, and it is the answer to his other question, "where can I
+  read the number of commits per quarter per category?" The three channels are
+  now disjoint: box AREA = quarter total, wedge AREA = limb share, wedge HEIGHT =
+  limb absolute. sqrt-damped and bounded so the stack cannot collide. See
+  §QHEIGHT.
+
+  READING THE NUMBERS OFF THE OBJECT. Hover any wedge: quarter, limb, commits,
+  share, ghost, and the quarter's ghost:effort ratio, at the cursor — and the
+  matching cell in the quarterly table lights up with it. See §QHOVER.
 
   COMPOSITION = four footprint QUADRANTS, each on its limb's own bearing. Chosen
   over stacked layers (which would put composition on the time axis) and over a
@@ -146,10 +158,16 @@ THE QUARTERLY BOXES — §QBOX
   ghost tail in 15 of 22 slots (68%) because the solid was fractional effort, the
   ghost a count of secondary appearances, and nothing made the ghost's absolute
   reach clear the solid's. Here the ghost is a RING outside the box whose
-  THICKNESS is the quarter's ghost-to-effort RATIO — positive by construction,
-  therefore never floorable. Measured: 0 of 8 (0%). The ratio is also the better
-  quantity, being comparable across quarters where two separately-normalised
-  absolute tracks were not. Still a different unit from the box: do not subtract.
+  THICKNESS is that quarter's absolute secondary reach. Measured: 0 of 8 (0%).
+  The fix is the FORM, not the quantity — a ring's thickness starts at the box
+  edge and has to clear nothing, so any non-negative quantity floors at 0%. The
+  build previously encoded the ghost:EFFORT RATIO on the stated grounds that only
+  a ratio could avoid flooring; measured, the absolute count avoids it equally
+  (both 0/8, both on the probe), so the ratio bought nothing and cost the
+  reading — Walter had to ask what the halo was, and 2025Q4 drew a thin halo while
+  having the most secondary reach in the history. The ratio is now a labelled
+  number in the hover readout. Still a different unit from the box: do not
+  subtract. See §GHOSTRING.
 
   WHAT IT COSTS. Area is read less precisely than length from a shared origin,
   which is exactly what the collars had. That trade is deliberate — one object
@@ -510,6 +528,13 @@ USAGE
       margin-right: 7px; background: transparent;
       border: 3px solid rgba(150, 220, 200, 0.5);
       box-shadow: inset 0 0 0 2px rgba(10, 16, 28, 0.9); }
+  /* height-as-commits: four slabs of rising thickness, which is the mark itself */
+  #legend .chip.qtall { background: none; display: flex; align-items: flex-end; gap: 2px;
+      height: 15px; width: 30px; }
+  #legend .chip.qtall::before, #legend .chip.qtall::after {
+      content: ""; flex: 1; border-radius: 1px; }
+  #legend .chip.qtall::before { height: 4px; background: #35d0ba; }
+  #legend .chip.qtall::after  { height: 13px; background: #ffb454; }
   #legend .chip.guide { background: linear-gradient(90deg, rgba(124,230,90,0), rgba(124,230,90,0.9));
                         height: 2px; margin-top: 7px; }
 
@@ -542,6 +567,42 @@ USAGE
   #qbox td.l { text-align: left; color: #cfd8e3; }
   #qbox td.z { color: #6a7686; }
   #qbox tr.sum td { border-top: 1px solid rgba(120, 160, 230, 0.2); padding-top: 4px; color: #cfe0f2; }
+  /* commits first (= the wedge's HEIGHT), share second and quieter (= its AREA):
+     two channels, two numbers, in the cell for the wedge that carries them */
+  #qbox td em { display: block; font-style: normal; font-size: 8.5px; color: #7f93aa;
+                line-height: 1.15; margin-top: -1px; }
+  /* §QHOVER sync — the wedge under the cursor lights its own cell, so "the object
+     and the table are the same measurement" is shown rather than asserted */
+  #qbox tr.hl td { background: rgba(120, 160, 230, 0.10); }
+  #qbox td.hl { background: rgba(120, 170, 245, 0.30) !important; color: #fff; border-radius: 3px; }
+  #qbox td.hl em { color: #cfe0f2; }
+
+  /* ---- §QHOVER — the on-object readout. Deliberately compact and high-contrast:
+     it appears next to the cursor, so it has to be readable in a glance without
+     dragging the eye off the wedge it describes. pointer-events:none so it can
+     never eat the pick it is describing. */
+  #tip {
+    position: fixed; z-index: 45; pointer-events: none; display: none;
+    min-width: 168px; max-width: 250px; padding: 7px 9px 6px;
+    background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(120, 160, 230, 0.34);
+    border-radius: 7px; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.6);
+    font: 11px/1.45 "Segoe UI", system-ui, sans-serif; color: #cfd8e3;
+  }
+  #tip.on { display: block; }
+  #tip .hd { display: flex; align-items: center; gap: 5px; margin-bottom: 5px;
+             padding-bottom: 4px; border-bottom: 1px solid rgba(120, 160, 230, 0.18); }
+  #tip .hd i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  #tip .hd b { color: #eaf2fb; font-size: 11.5px; font-weight: 600; }
+  #tip .hd span { color: #8fa3ba; font-size: 10.5px; }
+  #tip .rows { display: grid; grid-template-columns: auto 1fr; gap: 1px 9px; }
+  #tip .rows .k { color: #7f93aa; font-size: 10px; }
+  #tip .rows .v { color: #eaf2fb; text-align: right; font-variant-numeric: tabular-nums; }
+  #tip .rows .v em { color: #7f93aa; font-style: normal; font-size: 9.5px; }
+  #tip .rows .big { color: #fff; font-size: 13px; font-weight: 600; }
+  #tip .ft { margin-top: 5px; padding-top: 4px; color: #7f93aa; font-size: 9.5px;
+             line-height: 1.4; border-top: 1px solid rgba(120, 160, 230, 0.14); }
+  #tip .ft b { color: #ffcf6e; font-weight: 600; }
+  #tip .ft .zero { color: #ff9d9d; font-weight: 600; }
 
   #err {
     position: fixed; inset: 0; display: none; place-items: center; z-index: 50;
@@ -678,14 +739,23 @@ USAGE
       </div>
       <div class="grp" id="lgBoxGrp">Quadrant view &mdash; one box per quarter</div>
       <div id="lgBoxes">
+        <div class="sw" style="color:#cfe0f2">
+          <span class="chip" style="background:none"></span>
+          <span><b style="color:#7ff0d2">Three questions, three channels &mdash;
+          hover any wedge to read all of them as numbers.</b><br>
+          <b>AREA</b> of the whole box = how big the quarter was.<br>
+          <b>ANGLE/AREA</b> of a wedge = what the quarter was made of.<br>
+          <b>HEIGHT</b> of a wedge = how many commits that limb had.</span>
+        </div>
         <div class="sw">
           <span class="chip qbox"></span>
           <span><b>One box = one quarter.</b> Eight boxes, stacked bottom&rarr;top up
           the time axis and threaded on the stem. Its <b>FOOTPRINT AREA</b> is that
           quarter's total attributed effort (model A weights, commits only) &mdash;
           which equals its commit count, because the weights sum to 1 per commit:
-          <b>3 / 47 / 85 / 124 / 368 / 255 / 477 / 390</b>. Height is
-          <b>constant</b>, because the vertical axis is time.</span>
+          <b>3 / 47 / 85 / 124 / 368 / 255 / 477 / 390</b>. Where a box <b>sits</b>
+          is time; how <b>thick</b> it is is not on that axis &mdash; see
+          height, below.</span>
         </div>
         <div class="sw">
           <span class="chip qquad"></span>
@@ -697,20 +767,33 @@ USAGE
           the area encoding is honest but compresses near-ties.</span>
         </div>
         <div class="sw">
+          <span class="chip qtall"></span>
+          <span><b>Wedge HEIGHT = that limb's commits that quarter</b> &mdash; the
+          absolute number, not its share. A taller wedge did more work. Damped
+          (&radic;, so the tallest is <span id="lgHR"></span> the shortest where the
+          counts are <span id="lgHRT"></span> apart), so <b>read height as rank and
+          magnitude, not as a ratio</b> &mdash; the same contract the &radic;
+          footprint carries.
+          <b style="color:#7ff0d2">Hover a wedge for the exact count</b>; it is also
+          in the quarterly table, first number in each cell.</span>
+        </div>
+        <div class="sw">
           <span class="chip qhalo"></span>
-          <span><b>Halo ring</b> &mdash; the ghost. Its <b>THICKNESS</b> is that
-          quarter's <b>ghost-to-effort ratio</b>: secondary reach per unit of
-          captured effort. A ratio is positive by construction, so unlike the old
-          fin-and-tail this <b>never needs flooring</b> (0%, against 68% before) and
-          is comparable across quarters. Still a <b>different unit</b> from the
-          box &mdash; do not subtract.</span>
+          <span><b>Halo ring = the ghost.</b> Its <b>THICKNESS</b> is that quarter's
+          <b>total secondary appearances</b> &mdash; the absolute count, &radic;-damped.
+          <b>Thicker ring = more reach beyond the captured effort</b>, which is what
+          it looks like it means. (It used to be the ghost:effort <i>ratio</i>, which
+          made the quarter with the <i>most</i> reach draw a thin halo; that ratio is
+          now a labelled number in the hover readout instead.) Still a
+          <b>different unit</b> from the box &mdash; do not subtract.</span>
         </div>
         <div class="sw">
           <span class="chip qnull"></span>
-          <span><b>Grey stub</b> &mdash; a <b>measured zero</b>: that limb did nothing
-          that quarter. A deliberately flat, blunt wedge at the stem &mdash; a
-          different shape family from a small wedge, so &ldquo;nothing&rdquo; cannot
-          be mistaken for &ldquo;a little&rdquo;.</span>
+          <span><b>Grey wafer</b> &mdash; a <b>measured zero</b>: that limb did nothing
+          that quarter. Since height is now a quantity this matters more, not less:
+          the wafer is far flatter than the shortest real wedge and grey rather than
+          the limb's hue, so &ldquo;nothing&rdquo; is a visible break and cannot
+          grade into &ldquo;a little&rdquo;.</span>
         </div>
       </div>
       <div class="grp">Other marks</div>
@@ -856,6 +939,20 @@ USAGE
     plan view (<code>__topdown()</code>) removes perspective distortion and is
     where any size comparison should actually be made.
   </div>
+</div>
+
+<!-- ================= §QHOVER — THE ON-OBJECT READOUT =================
+     Walter: "where can I read the number of commits per quarter per category?"
+     Until now the only honest answer was "the side table", which means the object
+     could be looked at but not read. This panel follows the cursor over any wedge
+     and names, for that one wedge: the quarter, the limb, the COMMITS (the number
+     he asked for, and the number the wedge's HEIGHT now encodes), that limb's
+     share of the quarter, and its ghost. Built as a DOM element rather than a
+     sprite so it stays crisp at any zoom and costs nothing when idle. -->
+<div id="tip" aria-hidden="true">
+  <div class="hd"><i></i><b id="tipQ"></b><span id="tipL"></span></div>
+  <div class="rows" id="tipRows"></div>
+  <div class="ft" id="tipFt"></div>
 </div>
 
 <div id="err"><div class="box">
@@ -2326,15 +2423,22 @@ const GHOST_SLOTS = qrows.reduce((a, qr) => a + qr.Qs.filter((v) => v > 0).lengt
    ------------------------------------------------------------------------ */
 
 const QONE = {
-  slabH:   1.06,        // fixed box height — the vertical axis is TIME, not size
+  minH:    0.30,        // thinnest real wedge — a 1-commit limb is still a slab
+  /* maxH against a real 2.70-unit quarter step (see §QHEIGHT): 1.85 spends the
+     available headroom on making the channel readable while still leaving 0.85
+     units of clear air — a third of the step — between the tallest possible
+     neighbours, so the eight levels never read as one continuous column. */
+  maxH:    1.85,        // tallest wedge, at the biggest single limb-quarter
+  zeroH:   0.055,       // a MEASURED ZERO: a wafer, a different shape family
+  slabH:   1.85,        // the tallest a box can be — framing/ladder reader only
   minSpan: 0.95,        // half-extent of the smallest quarter, so 2024Q4 (3
                         // commits) is still a box and not a dot
   maxSpan: 4.05,        // half-extent of the fullest quarter
   radius:  0.30,        // rounded corner
   gap:     0.12,        // clear air between the box edge and its ghost halo
-  haloMin: 0.18,        // thinnest halo (lowest ghost:effort ratio)
-  haloMax: 1.30,        // thickest halo (highest ratio)
-  haloH:   0.42,        // the halo is FLATTER than the box: a different shape
+  haloMin: 0.18,        // thinnest halo (fewest ghost appearances)
+  haloMax: 1.30,        // thickest halo (most ghost appearances)
+  haloH:   0.30,        // the halo is FLATTER than any wedge: a different shape
                         // family, so it cannot be misread as more box
 };
 /* Per-quarter totals. Effort is model A re-bucketed by quarter — identical
@@ -2349,18 +2453,125 @@ const QONE_EMAX  = Math.max(1, ...QONE_EFF);
    than the stem it is threaded on. */
 const qoneSpan = (v) => (v <= 0 ? QONE.minSpan * 0.45
   : QONE.minSpan + Math.sqrt(v / QONE_EMAX) * (QONE.maxSpan - QONE.minSpan));
-/* THE GHOST AS A RATIO — the whole reason flooring disappears. thickness is a
-   strictly positive function of a non-negative ratio, so a halo always clears
-   the box. Compare boxReach()/GHOST_TAIL_MIN above, where nothing guaranteed it. */
+
+/* --------------------------------------------------------------------------
+   §QHEIGHT — WEDGE HEIGHT = THAT LIMB'S ABSOLUTE COMMITS THAT QUARTER.
+   --------------------------------------------------------------------------
+   Walter: "We could apply a value to the height of the boxes." He is right, and
+   the old comment ("the vertical axis is TIME, not size") was answering a
+   different question than the one he asked. The vertical AXIS — where a box SITS
+   in the stack — is time and must stay time. A box's own THICKNESS is not on that
+   axis: it is a local extent about a fixed level, and it was carrying nothing.
+
+   So the three channels are now disjoint, and each answers one question:
+     footprint AREA   = the quarter's total effort       "how big was the quarter"
+     wedge ANGLE/AREA = that limb's SHARE of the quarter "what was it made of"
+     wedge HEIGHT     = that limb's ABSOLUTE commits     "how many, for that limb"
+   The third is the number Walter asked for — "where can I read the number of
+   commits per quarter per category?" — and until now the only honest answer was
+   "the side table".
+
+   WHY SQRT AND NOT LINEAR OR LOG. The values run 0.2 to 222.0 commits, a ratio
+   of about 1100:1. Linear makes 222 a 5.4-unit skyscraper that eats the 1.05-unit
+   band spacing and collides with the box above; log compresses so hard that
+   150 and 222 become indistinguishable AND it misrepresents zero-adjacent values.
+   sqrt(v/max) over a floored band is the middle: the biggest wedge is about 6x
+   the height of the smallest real one where the underlying ratio is over 1000x,
+   so the ordering is preserved and readable while the vertical rhythm survives.
+   (Both figures are computed and printed in the legend, so neither can go stale.)
+   Damped, therefore READ HEIGHT AS RANK AND MAGNITUDE, NOT AS A RATIO — which is
+   the same contract the sqrt footprint already carries, so the object speaks one
+   language. The exact numbers are one hover away (§QHOVER) and in the table.
+
+   THE COLLISION BUDGET, COMPUTED NOT ASSERTED — and this is where the first
+   attempt was wrong, which is exactly why it is computed. Quarters do NOT sit
+   BAND_H apart: BAND_H is the MONTHLY band, and QY() spreads 8 quarters over the
+   same TOP_Y that 19 months occupy, so the real step is TOP_Y / 7 = 2.70 units,
+   not 1.05. Checking against BAND_H reported a collision that does not exist and
+   would have shrunk the whole channel for nothing. The margin is therefore
+   derived from QY ITSELF — the function that actually places the boxes — rather
+   than from any constant that merely looks like the spacing.
+
+   A wedge is centred on its level and reaches maxH/2 above it; the next quarter's
+   tallest reaches maxH/2 below its own. So the clear air between the tallest
+   possible neighbours is step - maxH. QONE_HCLEAR below is that margin, computed
+   live and on the probe — if the data or the layout ever moves so two boxes would
+   touch, the page says so instead of quietly overlapping.
+
+   A MEASURED ZERO IS NOT A SHORT WEDGE. With height now a quantity, "flat" would
+   otherwise grade continuously into "a little", which is the one thing a measured
+   zero must never do. A zero limb keeps drawing on its bearing — omitting it and
+   failing to notice it look identical — but as a grey WAFER at zeroH, well below
+   minH and in a different hue family, so the discontinuity is visible.
+   -------------------------------------------------------------------------- */
+// the largest single (quarter x limb) effort — the height scale's denominator
+const QONE_LIMB_MAX = Math.max(1e-9, ...qrows.flatMap((qr) => qr.Q));
+const qoneWedgeH = (v) => (v <= 0 ? QONE.zeroH
+  : QONE.minH + Math.sqrt(v / QONE_LIMB_MAX) * (QONE.maxH - QONE.minH));
+/* The ACTUAL vertical step between two quarters, taken from the placement
+   function so it cannot drift from where the boxes really are. */
+const QONE_STEP = QUARTERS.length > 1 ? Math.abs(QY(1) - QY(0)) : TOP_Y;
+/* Clear air between the tallest wedge of one quarter and the tallest of the next.
+   Positive means no collision is possible anywhere in the stack. */
+const QONE_HCLEAR = QONE_STEP - QONE.maxH;
+
+/* --------------------------------------------------------------------------
+   §GHOSTRING — THE HALO IS ABSOLUTE GHOST REACH, and the ratio is retired.
+   --------------------------------------------------------------------------
+   Walter, looking at the built object: "And what is the halo, i.e. effort ratio?"
+   He had to ask. That is the finding: the mark failed, and a mark that needs its
+   own footnote read aloud is not carrying its meaning.
+
+   The ratio was chosen for one stated reason — that a ratio can never need
+   flooring, unlike the collars' ghost tail (68% floored). MEASURED, THAT REASON
+   IS VOID. The collars floored because the ghost was a radial EXTENSION that had
+   to out-reach the solid: two lengths on separate normalisations competing for
+   the same axis, with nothing guaranteeing the ghost won. This build already
+   removed that structure — the halo is a ring starting at span + gap, and its
+   THICKNESS is its own independent quantity. Thickness never has to clear
+   anything. So ANY non-negative quantity mapped into [haloMin, haloMax] floors at
+   0%, and absolute ghost reach measures 0 of 8 floored, exactly like the ratio.
+   Both are computed and both are on the probe, so this is checkable.
+
+   The ratio therefore bought nothing the absolute does not also buy, and it cost
+   the reading. 2025Q4 has the MOST secondary reach in the whole history — 422
+   appearances — and drew the fourth-thinnest halo, because its own effort was
+   large enough to divide the ratio down to 1.15. 2025Q3, with 239, drew the
+   thickest. A viewer reading "widest halo = most reach" was reading it wrong, and
+   that is exactly backwards from what a halo looks like it means.
+
+   So the halo is now ABSOLUTE GHOST APPEARANCES, sqrt-damped like every other
+   magnitude on this object. Thicker ring = more secondary reach, full stop, which
+   is what the mark already looked like it said. The ratio has not been deleted —
+   it is a genuinely useful derived figure — it has been MOVED to where a derived
+   figure belongs: the hover readout and the table, per quarter, labelled.
+
+   STILL A DIFFERENT UNIT. The solid is fractional attributed effort; the ghost is
+   a COUNT of secondary appearances. Do not subtract one from the other. That was
+   true under the ratio and it is true now; the halo is drawn flatter and fainter
+   than any wedge so it stays legible and stays subordinate.
+   -------------------------------------------------------------------------- */
+const QONE_GMAX  = Math.max(1e-9, ...QONE_GHOST);
+const qoneHalo = (ghost) => (ghost <= 0 ? 0
+  : QONE.haloMin + Math.sqrt(ghost / QONE_GMAX) * (QONE.haloMax - QONE.haloMin));
+/* The ratio, kept as a NUMBER for the hover readout and the table. It stopped
+   being a geometric channel; it did not stop being informative. */
 const QONE_RATIO = QONE_EFF.map((e, i) => (e > 0 ? QONE_GHOST[i] / e : 0));
-const QONE_RMAX  = Math.max(1e-9, ...QONE_RATIO);
-const qoneHalo = (ratio) => QONE.haloMin + (ratio / QONE_RMAX) * (QONE.haloMax - QONE.haloMin);
-/* The count that replaces CAGE_FLOORED. Kept as a live computation rather than a
-   typed zero: if the data ever moves so that a halo would vanish, the page says
-   so instead of carrying a stale boast. */
+/* The flooring count that replaces CAGE_FLOORED. Kept as a live computation
+   rather than a typed zero: if the data ever moves so that a halo would vanish,
+   the page says so instead of carrying a stale boast. Measured against the NEW
+   absolute encoding, so the claim is about what is actually drawn. */
 const QONE_FLOORED = qrows.flatMap((qr, i) =>
-  (QONE_GHOST[i] > 0 && qoneHalo(QONE_RATIO[i]) <= 0) ? [qr.key] : []);
+  (QONE_GHOST[i] > 0 && qoneHalo(QONE_GHOST[i]) < QONE.haloMin) ? [qr.key] : []);
 const QONE_GHOST_SLOTS = QONE_GHOST.filter((v) => v > 0).length;
+/* The counterfactual: what the retired RATIO encoding would have floored, on the
+   same halo band. Both are 0 — which is the evidence that the ratio's one
+   advantage was never real, and why switching to the intuitive quantity is free. */
+const QONE_RMAX  = Math.max(1e-9, ...QONE_RATIO);
+const QONE_RATIO_FLOORED = qrows.flatMap((qr, i) =>
+  (QONE_GHOST[i] > 0 &&
+   QONE.haloMin + (QONE_RATIO[i] / QONE_RMAX) * (QONE.haloMax - QONE.haloMin) < QONE.haloMin)
+    ? [qr.key] : []);
 // per-quarter limb shares, and the dominant limb where one exists
 const QONE_SHARE = qrows.map((qr, i) =>
   qr.Q.map((v) => (QONE_EFF[i] > 0 ? v / QONE_EFF[i] : 0)));
@@ -2379,8 +2590,73 @@ const QONE_OUTER = QONE.maxSpan + QONE.gap + QONE.haloMax + 1.15;
    The outer edge is a rounded-square profile rather than a circular arc, so four
    wedges at full extent compose into a SQUIRCLE — an abstract, executive box —
    instead of a pie chart. A pie is the one reading to avoid here: it would say
-   the angles carry the quantity, and they do not; the angles are bearings. */
-function wedgeGeometry(a0, a1, span, h, corner, inner) {
+   the angles carry the quantity, and they do not; the angles are bearings.
+
+   ------------------------------------------------------------------------
+   §QZFIGHT — THE Z-FIGHTING, ITS ACTUAL CAUSE, AND WHY THE FIX IS GEOMETRIC.
+   ------------------------------------------------------------------------
+   Walter: "In the quadrants, we have some y-fighting between faces." Real, and
+   the cause is arithmetic rather than depth-buffer precision, so it is fixable
+   properly instead of by nudging a bias.
+
+   There were TWO overlapping causes, and the bigger one was not the one it looked
+   like. Both are fixed; both are asserted on the probe.
+
+   CAUSE 1, THE DOMINANT ONE — WEDGES CLAIMED MORE ARC THAN THE CIRCLE HAS.
+   Every wedge was built at a fixed +/-45 degrees about its bearing. That tiles a
+   circle exactly ONLY IF the four bearings are 90 apart, which is precisely what
+   ?qbear=even produces — and even is not the default. Under the default centroid
+   bearings the limbs sit at 75/195/275/335, so the separations are 120/80/60/100.
+   Two 90-wide wedges whose bearings are only 60 apart MUST overlap, by a full 30
+   degrees, and no inset or bevel tuning can rescue that: four wedges were
+   claiming 360 degrees of arc out of a circle their bearings did not divide
+   evenly. That overlap ran the whole radial depth of the smaller wedge, and
+   inside it the tops were coplanar. See §QSECTOR for the fix — each wedge now
+   takes half the gap to each neighbour, so the four tile the circle exactly once
+   under any bearing arrangement, and reduce to the old +/-45 under `even`.
+
+   CAUSE 2 — THE BEVEL CROSSED THE INSET GAP near the stem. An angular gap has an
+   arc-length that SHRINKS TOWARD THE STEM: at radius r the clear air between two
+   neighbours is r * 2 * INSET. But the extrude carried bevelSize = corner * 0.5,
+   and a bevel expands the profile outward by that amount in EVERY direction,
+   including sideways across the gap. With the old numbers — INSET 2.6 deg,
+   bevelSize 0.051 — the lateral gap only exceeded the two facing bevels beyond
+
+     r > bevelSize / INSET(rad) = 0.051 / 0.0454 = 1.12 units
+
+   and every box's inner region is well inside that.
+
+   THE FIX IS TO REMOVE THE COINCIDENCE, not to hide it. polygonOffset and
+   depth-bias nudges were rejected: they are magic numbers that leave the surfaces
+   interpenetrating and merely pick a winner, so the artefact returns at a
+   different camera distance. Four real changes, all of which had to hold:
+
+     1. EACH WEDGE OWNS ONLY ITS OWN ARC (§QSECTOR) — the dominant fix, and the
+        one that makes overlap impossible rather than merely small.
+     2. THE BEVEL NO LONGER CROSSES THE GAP. bevelSize is clamped so that the two
+        facing bevels always fit inside the lateral gap at the wedge's INNERMOST
+        radius — the tightest point — so no two wedges of a quarter share a single
+        point of space at any radius. Computed from the inset and the inner radius
+        rather than typed, so it stays true if either is retuned.
+     3. THE INSET IS WIDER (2.6 -> 4.2 deg), which buys the clamp enough room to
+        keep a visible bevel instead of clamping it to nothing, and independently
+        improves the composition read from the 3/4 view.
+     4. HEIGHTS NOW DIFFER PER WEDGE (§QHEIGHT). Four wedges of four different
+        heights have no coplanar top faces left to fight over even if something
+        later reintroduced an overlap — so the class of bug is unreachable, not
+        merely absent on today's data.
+
+   MEASURED, reproducing the file's own formulas: interpenetrating wedge pairs
+   went 29 -> 0 and pairs sharing a top-face plane went 43 -> 0 across all eight
+   quarters. probe().qbox.oneBox carries sectorTiles, bevelOk and coplanarTops. */
+/* The largest bevel that cannot cross the inter-wedge gap. Two neighbouring
+   wedges each expand by bevelSize toward each other, so they stay clear while
+   2*bevelSize < gapArc at the tightest radius. The 0.72 keeps a margin rather
+   than landing exactly on the touching case. */
+function wedgeBevel(corner, inset, innerR) {
+  return Math.max(0, Math.min(corner * 0.5, innerR * inset * 0.72));
+}
+function wedgeGeometry(a0, a1, span, h, corner, inner, bevel) {
   const seg = 26;
   const sh = new THREE.Shape();
   // rounded-square radius at angle t: the profile that makes 4 full wedges a squircle
@@ -2396,9 +2672,18 @@ function wedgeGeometry(a0, a1, span, h, corner, inner) {
   }
   sh.lineTo(Math.cos(a1) * inner, Math.sin(a1) * inner);
   sh.closePath();
+  /* HEIGHT IS NOW A QUANTITY, so the bevel must not silently add to it. A bevelled
+     extrude is (depth + 2 * bevelThickness) tall, which under §QHEIGHT would make
+     every wedge over-report its commits by a constant — small, but it would put a
+     systematic error in the one channel Walter asked to be able to read. The depth
+     is therefore reduced by the bevel it will grow back, and clamped so a very
+     short wedge cannot invert. Result: the drawn extent is exactly h. */
+  const bv = (bevel === undefined ? corner * 0.5 : bevel);
+  const useBevel = corner > 0 && bv > 1e-4;
+  const bt = useBevel ? Math.min(bv, h * 0.32) : 0;   // bevelThickness, vertical
   const g = new THREE.ExtrudeGeometry(sh, {
-    depth: h, bevelEnabled: corner > 0, bevelThickness: corner * 0.5,
-    bevelSize: corner * 0.5, bevelSegments: 2, curveSegments: 6,
+    depth: Math.max(1e-3, h - 2 * bt), bevelEnabled: useBevel,
+    bevelThickness: bt, bevelSize: bv, bevelSegments: 2, curveSegments: 6,
   });
   g.rotateX(-Math.PI / 2);
   g.translate(0, h / 2, 0);
@@ -2413,32 +2698,71 @@ function buildQuarterOneBox() {
   const markGrp = new THREE.Group();    // -> roseGrp: edges, halos, caps
 
   const edgeP = [], edgeC = [], tc = new THREE.Color();
-  // each limb owns the 90 degrees CENTRED on its bearing, so a wedge points where
-  // its limb points in every other view on the page
-  const HALF = deg(45);
+  /* §QSECTOR — HOW WIDE A WEDGE IS, and a real bug this fixed.
+     Every wedge used to claim a fixed +/-45 degrees. That is only correct when the
+     four bearings are 90 apart, which is exactly what ?qbear=even produces — but
+     the DEFAULT is centroid, where the bearings are 75/195/275/335 and so the
+     separations are 120/80/60/100. Two 90-wide wedges on bearings only 60 apart
+     MUST overlap, by 30 degrees, no matter what the inset or the bevel do. That
+     is why the inner region interpenetrated: the dominant cause was never the
+     bevel, it was four wedges claiming 360 degrees of arc out of a circle whose
+     bearings did not divide it evenly.
+
+     Each wedge now takes HALF THE GAP TO EACH NEIGHBOUR, so the four tile the
+     circle exactly once: no overlap under either bearing mode, and under `even`
+     this reduces to the old +/-45 exactly, so nothing changes there. The wedges
+     are asymmetric under centroid, which is not a defect — it is the bearing
+     drift made visible, the same drift the correspondence arcs already draw and
+     the bearings panel already prints as "span 120 / 80 / 60 / 100". */
+  const QGAP_NEXT = QUADS.map((q, i) =>
+    deg(((QUADS[(i + 1) % QUADS.length].az - q.az) % 360 + 360) % 360));
+  const QGAP_PREV = QUADS.map((q, i) =>
+    QGAP_NEXT[(i - 1 + QUADS.length) % QUADS.length]);
+  // half-widths on each side of the bearing; they sum to the full separation
+  const HALF_CW  = QGAP_NEXT.map((g) => g / 2);
+  const HALF_CCW = QGAP_PREV.map((g) => g / 2);
+  /* The angular INSET between neighbouring wedges. Without it the four wedges of
+     a quarter fuse into one silhouette from the 3/4 view — the composition was
+     only legible from directly overhead, which is half a mark. The gap is angular
+     and equal for all four, so it costs each wedge the same fraction of its arc
+     and does not disturb the area encoding's proportionality between limbs.
+     WIDENED from 2.6 to 4.2 deg as part of §QZFIGHT: the bevel clamp scales with
+     the inset, so a wider gap is what lets the corners keep a visible bevel while
+     still guaranteeing the wedges never touch. */
+  const INSET = deg(4.2);
+  const HOVER = [];   // §QHOVER — one record per pickable mark, filled below
 
   qrows.forEach((qr, qi) => {
     const y = QY(qi);
     const eff = QONE_EFF[qi];
     const span = qoneSpan(eff);
     const inner = CORE_R * 0.55;
+    // §QZFIGHT fix 1: the bevel is clamped so the two facing bevels of any two
+    // neighbours always fit inside the lateral gap at the tightest radius.
+    const bevel = wedgeBevel(QONE.radius * 0.34, INSET, inner);
 
     /* ---- the four composition wedges ---------------------------------- */
     QUADS.forEach((q, j) => {
       const share = QONE_SHARE[qi][j];
       const a = deg(q.az);
-      // sqrt(share) => wedge AREA is exactly the limb's share of the box
-      const wspan = share > 0 ? Math.max(inner + 0.06, span * Math.sqrt(share)) : 0;
+      /* AREA MUST STILL BE THE SHARE, and §QSECTOR complicates that. A wedge's
+         area is (its angular width / 2pi) * (the full footprint's area) * r^2 —
+         so once the widths differ per limb, a radius of span*sqrt(share) no
+         longer makes area equal share: a limb on a 60-degree bearing gap would
+         under-report against one on 120. The radius is therefore divided by the
+         wedge's share OF THE CIRCLE, which cancels the width exactly and restores
+         area == share for any bearing arrangement. Under ?qbear=even every width
+         is 90 degrees, angFrac is 0.25 for all four, and this reduces to the
+         original span*sqrt(share). Verified on the probe to <1e-12. */
+      const angFrac = (HALF_CW[j] + HALF_CCW[j]) / (Math.PI * 2);
+      const wspan = share > 0
+        ? Math.max(inner + 0.06, span * Math.sqrt(share * 0.25 / angFrac)) : 0;
       if (wspan <= 0) return;                 // a true zero draws no wedge; the
-                                              // stub below marks it instead
-      /* A small angular INSET between neighbouring wedges. Without it the four
-         wedges of a quarter fuse into one silhouette from the 3/4 view — the
-         composition was only legible from directly overhead, which is half a
-         mark. The gap is angular and equal for all four, so it costs each wedge
-         the same fraction of its arc and does not disturb the area encoding's
-         proportionality between limbs. */
-      const INSET = deg(2.6);
-      const geo = wedgeGeometry(a - HALF + INSET, a + HALF - INSET, wspan, QONE.slabH, QONE.radius * 0.34, inner);
+                                              // wafer below marks it instead
+      // §QHEIGHT — the wedge's own thickness is that limb's ABSOLUTE commits
+      const wh = qoneWedgeH(qr.Q[j]);
+      const geo = wedgeGeometry(a - HALF_CCW[j] + INSET, a + HALF_CW[j] - INSET,
+        wspan, wh, QONE.radius * 0.34, inner, bevel);
       tc.setHex(q.hue);
       const mat = new THREE.MeshStandardMaterial({
         color: tc.getHex(), emissive: tc.clone().multiplyScalar(0.30).getHex(),
@@ -2449,6 +2773,18 @@ function buildQuarterOneBox() {
       const m = new THREE.Mesh(geo, mat);
       m.position.set(0, y, 0);
       m.renderOrder = 2;
+      /* §QHOVER — the mesh carries its own numbers. The readout reads them off
+         the picked object rather than re-deriving from an index, so a tooltip can
+         never describe a different wedge than the one under the cursor. */
+      m.userData.pick = {
+        quarter: qr.key, limb: q.label, hue: q.hue,
+        commits: qr.Q[j], share: share, ghost: qr.Qs[j],
+        qCommits: eff, qGhost: QONE_GHOST[qi],
+        ratio: QONE_RATIO[qi], height: wh, zero: false,
+        partial: (QPARTIAL.find((p) => p.quarter === qr.key) || null),
+        dom: QONE_DOM[qi] === j,
+      };
+      HOVER.push(m);
       solidGrp.add(m);
 
       // crisp edges, baked to one shared buffer (same reasoning as the collars)
@@ -2464,15 +2800,19 @@ function buildQuarterOneBox() {
     });
 
     /* ---- measured zeros. A limb that did nothing this quarter gets a flat grey
-           stub on its bearing at the stem — same honesty rule as the collars, and
+           WAFER on its bearing at the stem — same honesty rule as the collars, and
            the same reason: an omitted mark and a mark you failed to notice look
-           identical. Deliberately flat and blunt so "nothing" cannot grade into
-           "a little". ---- */
+           identical. Now that HEIGHT is a quantity this matters more, not less:
+           the wafer is at QONE.zeroH, roughly a fifth of the shortest real wedge,
+           and grey rather than the limb's hue, so "nothing" is a visible
+           discontinuity and cannot grade into "a little". ---- */
     QUADS.forEach((q, j) => {
       if (QONE_SHARE[qi][j] > 0) return;
       const a = deg(q.az);
-      const geo = wedgeGeometry(a - HALF * 0.5, a + HALF * 0.5,
-        inner + 0.30, QONE.slabH * 0.16, 0, inner);
+      // half the limb's own sector, so a wafer sits inside its bearing's arc
+      // whatever the bearing spacing does (§QSECTOR)
+      const geo = wedgeGeometry(a - HALF_CCW[j] * 0.5, a + HALF_CW[j] * 0.5,
+        inner + 0.30, QONE.zeroH, 0, inner, 0);
       const mat = new THREE.MeshStandardMaterial({
         color: 0x55637a, emissive: 0x1b2331, roughness: 0.9, metalness: 0.0,
         transparent: true, opacity: 0.7, depthWrite: true,
@@ -2481,6 +2821,17 @@ function buildQuarterOneBox() {
       const m = new THREE.Mesh(geo, mat);
       m.position.set(0, y, 0);
       m.renderOrder = 2;
+      // a measured zero is pickable too — "is that really nothing?" is a question
+      // the object should answer, not deflect
+      m.userData.pick = {
+        quarter: qr.key, limb: q.label, hue: 0x8fa3ba,
+        commits: 0, share: 0, ghost: qr.Qs[j],
+        qCommits: eff, qGhost: QONE_GHOST[qi],
+        ratio: QONE_RATIO[qi], height: QONE.zeroH, zero: true,
+        partial: (QPARTIAL.find((p) => p.quarter === qr.key) || null),
+        dom: false,
+      };
+      HOVER.push(m);
       solidGrp.add(m);
     });
 
@@ -2493,17 +2844,26 @@ function buildQuarterOneBox() {
     if (dj >= 0) {
       const q = QUADS[dj];
       const a = deg(q.az);
-      const wspan = span * Math.sqrt(QONE_SHARE[qi][dj]);
+      // the same radius the wedge itself is built at, §QSECTOR correction included
+      const angFracD = (HALF_CW[dj] + HALF_CCW[dj]) / (Math.PI * 2);
+      const wspan = span * Math.sqrt(QONE_SHARE[qi][dj] * 0.25 / angFracD);
       const pts = [];
       const N = 22;
       const prof = (t) => {
         const c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t)), n = 4.2;
         return wspan / Math.pow(Math.pow(c, n) + Math.pow(s, n), 1 / n);
       };
+      // the cap rides the DOMINANT WEDGE'S OWN top face, not a fixed level —
+      // heights vary per wedge now (§QHEIGHT), so a constant would float the cap
+      // off its wedge or bury it inside one
+      const capY = y + qoneWedgeH(qrows[qi].Q[dj]) * 0.5 + 0.02;
+      // spans the wedge's own arc (inset by the same margin), so the cap cannot
+      // overhang a neighbour when the bearing gaps are uneven
+      const c0 = a - HALF_CCW[dj] + INSET, c1 = a + HALF_CW[dj] - INSET;
       for (let i = 0; i <= N; i++) {
-        const t = a - HALF * 0.82 + (HALF * 1.64) * (i / N);
+        const t = c0 + (c1 - c0) * (i / N);
         const r = prof(t) * 1.012;
-        pts.push(new THREE.Vector3(Math.cos(t) * r, y + QONE.slabH * 0.5 + 0.02, Math.sin(t) * r));
+        pts.push(new THREE.Vector3(Math.cos(t) * r, capY, Math.sin(t) * r));
       }
       const cg2 = new THREE.BufferGeometry().setFromPoints(pts);
       const cap = new THREE.Line(cg2, new THREE.LineBasicMaterial({
@@ -2514,15 +2874,18 @@ function buildQuarterOneBox() {
       markGrp.add(cap);
     }
 
-    /* ---- THE GHOST HALO. Thickness = ghost:effort ratio, and because that is a
-           strictly positive function of a non-negative ratio the halo can never
-           need flooring — which is the single biggest win of this rebuild over
-           the fin-and-tail collars (0% floored against 68%). Drawn as a flat ring
-           outside the box, in the mixed hue of the quarter's own composition so
-           it reads as belonging to that box. ---- */
+    /* ---- THE GHOST HALO. Thickness = that quarter's ABSOLUTE ghost appearances,
+           sqrt-damped — thicker ring means more secondary reach, which is what a
+           halo looks like it means. Was the ghost:effort RATIO; Walter had to ask
+           what it was, and the ratio's one stated advantage (never needs flooring)
+           turned out to be a property of the RING FORM rather than of the ratio —
+           both encodings measure 0% floored on this data, and both counts are on
+           the probe. See §GHOSTRING. Drawn as a flat ring outside the box, in the
+           mixed hue of the quarter's own composition so it reads as belonging to
+           that box. ---- */
     if (QONE_GHOST[qi] > 0) {
       const t0 = span + QONE.gap;
-      const t1 = t0 + qoneHalo(QONE_RATIO[qi]);
+      const t1 = t0 + qoneHalo(QONE_GHOST[qi]);
       const sh = new THREE.Shape();
       const prof = (r) => (t) => {
         const c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t)), n = 4.2;
@@ -2587,8 +2950,13 @@ function buildQuarterOneBox() {
       /* Sat at the box's mid-height the halo competed with the box for the same
          depth band and read as a second, brighter box. Dropped to the box's BASE
          it reads as what it is — a footprint annotation lying on the quarter's
-         level, like a contour drawn on the ground around the object. */
-      hmesh.position.set(0, y - QONE.slabH * 0.5 + QONE.haloH * 0.5, 0);
+         level, like a contour drawn on the ground around the object.
+         Since §QHEIGHT the wedges no longer share one base, so "the box's base"
+         is no longer a single number. The halo is pinned to the SHORTEST possible
+         wedge base (minH), which is the quarter's own level plus a constant: it
+         stays a ground contour, it stays below every real wedge's top, and it is
+         the same offset on all eight quarters so the ring never encodes height. */
+      hmesh.position.set(0, y - QONE.minH * 0.5 + QONE.haloH * 0.5, 0);
       hmesh.renderOrder = 3;
       markGrp.add(hmesh);
     }
@@ -2657,7 +3025,8 @@ function buildQuarterOneBox() {
   grp.add(correspondenceGuides(QUADS));
 
   grp.userData = { model: 'Q', dimU, skinGrp: solidGrp, roseGrp: markGrp,
-                   monthRings: null, meta, axes: QUADS, boxes: true, onebox: true };
+                   monthRings: null, meta, axes: QUADS, boxes: true, onebox: true,
+                   hover: HOVER };
   return grp;
 }
 
@@ -3243,8 +3612,15 @@ document.getElementById('spQuadAvg').innerHTML =
      is what a fin's reach encodes. Same numbers, presented in the unit the mark
      actually uses. */
   const asShare = QSTYLE === 'boxes';
+  /* THE COMMIT NUMBER IS BACK IN THE CELL. Under the one-box body this table
+     showed shares ONLY — which meant Walter's question ("where can I read the
+     number of commits per quarter per category?") had no answer anywhere on the
+     page, not even here. Since §QHEIGHT the wedge's HEIGHT encodes exactly that
+     absolute number, so the cell now carries BOTH: the count the height encodes,
+     and the share the wedge area encodes, in that order. Every geometric channel
+     on the object has its number in the row underneath it. */
   let html = '<tr><th class="l">quarter</th><th title="commits in the quarter — also the box\'s total attributed effort, because model A weights sum to 1 per commit">commits</th>' +
-    QUADS.map((q) => `<th title="${q.id}${asShare ? ' — share of the quarter, = this wedge\'s share of the box area' : ''}"><span style="color:${hexOf(q.hue)}">${q.label.slice(0, 4)}</span></th>`).join('') +
+    QUADS.map((q) => `<th title="${q.id}${asShare ? ' — commits (= this wedge\'s HEIGHT) and share of the quarter (= this wedge\'s AREA)' : ''}"><span style="color:${hexOf(q.hue)}">${q.label.slice(0, 4)}</span></th>`).join('') +
     '</tr>';
   qrows.forEach((qr, qi) => {
     // a partial bucket is marked IN the table, not only in prose — the row is
@@ -3255,28 +3631,35 @@ document.getElementById('spQuadAvg').innerHTML =
       ? ` <span style="color:#ffcf6e;font-size:9px" title="only ${part.months} of 3 months — not comparable to a full quarter">${part.months}mo</span>`
       : '';
     const dom = QONE_DOM[qi];
-    html += `<tr><td class="l">${qr.key}${mark}</td><td>${qr.commits}</td>` +
+    // data-q / data-j let the §QHOVER readout light the matching cell, so the
+    // object and the table are visibly the same measurement
+    html += `<tr data-q="${qi}"><td class="l">${qr.key}${mark}</td><td>${qr.commits}</td>` +
       QUADS.map((_, i) => {
         const z = qr.Q[i] > 0 ? '' : 'z';
         // the dominant limb is marked in the row too, so the arc cap on the
         // object has a number behind it rather than being a claim on its own
         const win = (asShare && i === dom) ? ' style="color:#cfe0f2;font-weight:600"' : '';
         const v = qr.Q[i] <= 0 ? '0'
-          : asShare ? (QONE_SHARE[qi][i] * 100).toFixed(0) + '%'
+          : asShare
+            ? `${qr.Q[i].toFixed(0)}<em>${(QONE_SHARE[qi][i] * 100).toFixed(0)}%</em>`
             : qr.Q[i].toFixed(0);
-        return `<td class="${z}"${win}>${v}</td>`;
+        return `<td class="${z}" data-j="${i}"${win}>${v}</td>`;
       }).join('') +
       '</tr>';
   });
   const tc = qrows.reduce((a, qr) => a + qr.commits, 0);
   /* The total row must be in the SAME UNIT as the rows above it, or the table
-     silently mixes percentages and counts in one column. Under the share
-     presentation the total is therefore each limb's share of the whole history —
-     which is the honest summary of the column, and still sums to 100%. */
+     silently mixes percentages and counts in one column. The cells above now
+     carry BOTH count and share, so the total does too — the column's absolute
+     total, and that limb's share of the whole history, which still sums to 100%.
+     The two columns' absolute totals also sum to 1749, so the table's own
+     arithmetic is checkable without leaving it. */
   const grand = QUADS.map((_, i) => qrows.reduce((a, qr) => a + qr.Q[i], 0));
   const grandTot = grand.reduce((a, b) => a + b, 0) || 1;
   html += `<tr class="sum"><td class="l">total</td><td>${tc}</td>` +
-    grand.map((v) => `<td>${asShare ? (v / grandTot * 100).toFixed(0) + '%' : v.toFixed(0)}</td>`).join('') + '</tr>';
+    grand.map((v) => `<td>${asShare
+      ? `${v.toFixed(0)}<em>${(v / grandTot * 100).toFixed(0)}%</em>`
+      : v.toFixed(0)}</td>`).join('') + '</tr>';
   t.innerHTML = html;
 }
 
@@ -3327,18 +3710,33 @@ document.getElementById('spQuadAvg').innerHTML =
          (${(QONE_FLOORED.length / Math.max(1, QONE_GHOST_SLOTS) * 100).toFixed(0)}%),
          against ${CAGE_FLOORED.length} of ${GHOST_SLOTS}
          (${(CAGE_FLOORED.length / Math.max(1, GHOST_SLOTS) * 100).toFixed(0)}%) under
-         <code>?qstyle=collars</code>.</b> The fix is not more room, it is a better
-         quantity: the halo's <b>thickness</b> is the quarter's <b>ghost-to-effort
-         ratio</b>, and a non-negative count over a positive effort is positive by
-         construction, so a halo can never fail to clear its box. The old tail had to
-         out-reach the solid on a <i>separate normalisation</i>, which nothing
-         guaranteed. Ratios here run
-         <b>${Math.min(...QONE_RATIO.filter((_, i) => QONE_GHOST[i] > 0)).toFixed(2)}</b>
-         (${QUARTERS[QONE_RATIO.indexOf(Math.min(...QONE_RATIO.filter((_, i) => QONE_GHOST[i] > 0)))]})
-         to <b>${Math.max(...QONE_RATIO).toFixed(2)}</b>
-         (${QUARTERS[QONE_RATIO.indexOf(Math.max(...QONE_RATIO))]}).
-         Solid and ghost remain <b>different units</b> &mdash; do not subtract &mdash;
-         but the halo is now a number you can read, not merely rank.`
+         <code>?qstyle=collars</code>.</b> The fix is the <b>form</b>, not the
+         quantity, and that correction matters. The collars' tail was a radial
+         <i>extension</i> that had to out-reach the solid on a separate
+         normalisation, which nothing guaranteed. A <b>halo's thickness starts at the
+         box edge and clears nothing</b>, so <i>any</i> non-negative quantity mapped
+         into the band floors at 0%. Measured both ways on this data: absolute ghost
+         floors ${QONE_FLOORED.length}/${QONE_GHOST_SLOTS}, the ghost:effort ratio
+         floors ${QONE_RATIO_FLOORED.length}/${QONE_GHOST_SLOTS} &mdash; identical.
+         <b>So the halo encodes absolute secondary reach</b>, the intuitive reading,
+         since the ratio's one advantage was never real. Under the ratio, 2025Q4 had
+         the <i>most</i> reach in the history (422) and drew the fourth-<i>thinnest</i>
+         halo; that inversion is gone. Ghost counts run
+         <b>${Math.min(...QONE_GHOST.filter((v) => v > 0))}</b>
+         (${QUARTERS[QONE_GHOST.indexOf(Math.min(...QONE_GHOST.filter((v) => v > 0)))]})
+         to <b>${Math.max(...QONE_GHOST)}</b>
+         (${QUARTERS[QONE_GHOST.indexOf(Math.max(...QONE_GHOST))]}); the ratio is kept
+         as a labelled number in the <b>hover readout</b>.
+         Solid and ghost remain <b>different units</b> &mdash; do not subtract.<br>
+         <b style="color:#7ff0d2">Wedge HEIGHT is that limb's commits that quarter.</b>
+         The channel was idle &mdash; every box was the same thickness &mdash; and it
+         is the one number the object could not previously be read for. &radic;-damped
+         so a ${Math.max(...qrows.flatMap((qr) => qr.Q)).toFixed(0)}-commit limb stays
+         a slab and not a spike:
+         <b>${QONE_HCLEAR.toFixed(2)}</b> units of clear air remain between the
+         tallest possible wedge of one quarter and the tallest of the next, so no two
+         boxes can collide. <b>Hover any wedge</b> for quarter, limb, commits, share
+         and ghost &mdash; and the matching table cell lights up with it.`
       : `<b>The ghost tail is floored, and often.</b> Solid and ghost are different units on
          separate normalisations, so the ghost's own reach frequently fails to land beyond the
          solid's end &mdash; in <b style="color:#cfe0f2">${CAGE_FLOORED.length}</b>
@@ -3392,6 +3790,18 @@ document.getElementById('spQuadAvg').innerHTML =
       `<i style="background:${hexOf(s.hue)}"></i>${s.label}` +
       (faint ? ' <em>(&lt;1%)</em>' : '') + `</span>`;
   }).join('');
+}
+/* The height channel's damping factor, filled in LIVE rather than typed. A
+   hand-written "5.4x" went stale the moment maxH was retuned, and a legend that
+   quotes a stale number is worse than one that quotes none. */
+{
+  const hr = document.getElementById('lgHR');
+  if (hr) {
+    const nz = qrows.flatMap((qr) => qr.Q).filter((v) => v > 0);
+    hr.textContent = (QONE.maxH / QONE.minH).toFixed(1) + '×';
+    document.getElementById('lgHRT').textContent =
+      (QONE_LIMB_MAX / Math.min(...nz)).toFixed(0) + '×';
+  }
 }
 /* THE LEGEND MUST DESCRIBE THE BODY ACTUALLY ON SCREEN. The box vocabulary and
    the collar vocabulary are different marks with different encodings, so a
@@ -3636,9 +4046,148 @@ addEventListener('resize', () => {
 });
 
 /* ==========================================================================
+   8b · §QHOVER — READING THE NUMBERS OFF THE OBJECT
+   ==========================================================================
+   Walter asked, directly: "where can I read the number of commits per quarter per
+   category?" The honest answer was "only in the side panel", which is a way of
+   saying the object could be looked at but not read. Three things fix that, and
+   all three are needed:
+
+     1. HEIGHT now encodes that exact number (§QHEIGHT), so the object carries it
+        geometrically rather than only implying it through an area.
+     2. THIS READOUT names it. Hover any wedge and get the quarter, the limb, the
+        commits, the share, and the ghost — for that one wedge, at the cursor.
+     3. THE TABLE LIGHTS UP in sync. The matching row and cell highlight while the
+        cursor is on a wedge, so "the object and the table are the same
+        measurement" is demonstrated instead of claimed, and a reader who found
+        the number on the object knows where to find its neighbours.
+
+   COST, MEASURED NOT GUESSED. A raycast per mousemove against ~32 wedges is
+   trivial (the whole pickable set is one flat array, no scene traversal), and it
+   only runs while the pointer is over the canvas and the one-box body is drawn.
+   It is throttled to one test per animation frame so a fast drag cannot queue
+   work, and the readout is a DOM node so it costs nothing at all when idle.
+   ========================================================================== */
+// null unless the one-box body is on screen, so the loop pays nothing otherwise
+let QHOVER_TICK = null;
+{
+  const qenv = envelopes.Q;
+  const picks = (qenv && qenv.userData.hover) || [];
+  const tip = document.getElementById('tip');
+  const tipQ = document.getElementById('tipQ');
+  const tipL = document.getElementById('tipL');
+  const tipRows = document.getElementById('tipRows');
+  const tipFt = document.getElementById('tipFt');
+  const hueDot = tip.querySelector('.hd i');
+  const ray = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  let pending = null, shownKey = null;
+
+  // the table cells this readout lights, resolved once
+  const qTbl = document.getElementById('qboxTbl');
+  const clearTable = () => {
+    qTbl.querySelectorAll('tr.hl').forEach((r) => r.classList.remove('hl'));
+    qTbl.querySelectorAll('td.hl').forEach((c) => c.classList.remove('hl'));
+  };
+  const lightTable = (qi, j) => {
+    clearTable();
+    const row = qTbl.querySelector(`tr[data-q="${qi}"]`);
+    if (!row) return;
+    row.classList.add('hl');
+    const cell = row.querySelector(`td[data-j="${j}"]`);
+    if (cell) cell.classList.add('hl');
+  };
+
+  const hide = () => {
+    if (shownKey === null) return;
+    shownKey = null; tip.classList.remove('on'); tip.setAttribute('aria-hidden', 'true');
+    clearTable();
+  };
+
+  const show = (d, px, py) => {
+    const key = d.quarter + '/' + d.limb;
+    if (key !== shownKey) {
+      shownKey = key;
+      hueDot.style.background = hexOf(d.hue);
+      tipQ.textContent = d.quarter;
+      tipL.textContent = d.limb + (d.dom ? '  ▲ dominant' : '');
+      /* THE COMMIT COUNT IS THE HEADLINE, in the biggest type in the panel,
+         because it is the number that was asked for. Everything under it is
+         context for it. Each row names WHICH CHANNEL carries it, so the readout
+         also teaches the encoding — the legend should not be the only place the
+         mapping exists. */
+      const rows = [];
+      if (d.zero) {
+        rows.push(['commits', '<span class="big">0</span> <em>measured zero</em>']);
+      } else {
+        rows.push(['commits <em>= height</em>', `<span class="big">${d.commits.toFixed(1)}</span>`]);
+        rows.push(['share <em>= wedge area</em>', `${(d.share * 100).toFixed(1)}%`]);
+      }
+      rows.push(['ghost <em>secondary</em>', `${d.ghost}`]);
+      rows.push(['quarter total', `${d.qCommits.toFixed(0)} <em>commits</em>`]);
+      /* THE RATIO LIVES HERE NOW. It was the halo's encoding and Walter had to ask
+         what it meant (§GHOSTRING); as a labelled number in a readout it is
+         genuinely useful and needs no interpreting. */
+      rows.push(['q ghost:effort', `${d.ratio.toFixed(2)} <em>per commit</em>`]);
+      tipRows.innerHTML = rows.map(([k, v]) =>
+        `<span class="k">${k}</span><span class="v">${v}</span>`).join('');
+      /* The honesty notes travel WITH the number, not only in a panel the reader
+         may not have open. A partial quarter's count is not comparable to a full
+         one, and that has to be said where the count is read. */
+      const notes = [];
+      if (d.zero) notes.push('<span class="zero">This limb did nothing this quarter.</span> Drawn as a grey wafer, not omitted.');
+      if (d.partial) notes.push(`<b>${d.partial.months} of 3 months only</b> &mdash; not comparable to a full quarter.`);
+      notes.push('Solid and ghost are <b>different units</b> &mdash; do not subtract.');
+      tipFt.innerHTML = notes.join(' ');
+      tip.classList.add('on'); tip.setAttribute('aria-hidden', 'false');
+      lightTable(d.qi, d.j);
+    }
+    // keep the panel on screen: flip to the other side of the cursor near an edge
+    const r = tip.getBoundingClientRect();
+    const x = (px + 16 + r.width > innerWidth) ? px - r.width - 14 : px + 16;
+    const y = (py + 14 + r.height > innerHeight) ? py - r.height - 12 : py + 14;
+    tip.style.left = Math.max(4, x) + 'px';
+    tip.style.top = Math.max(4, y) + 'px';
+  };
+
+  // resolve each pick's table coordinates once, so the hover path stays a lookup
+  picks.forEach((m) => {
+    const d = m.userData.pick;
+    d.qi = QUARTERS.indexOf(d.quarter);
+    d.j = QUADS.findIndex((q) => q.label === d.limb);
+  });
+
+  if (picks.length) {
+    const cv = renderer.domElement;
+    cv.addEventListener('pointermove', (e) => { pending = e; }, { passive: true });
+    cv.addEventListener('pointerleave', () => { pending = null; hide(); }, { passive: true });
+    /* One test per frame, driven by the loop rather than by the event, so a fast
+       pointer cannot queue more raycasts than there are frames to draw. */
+    QHOVER_TICK = () => {
+      const e = pending; pending = null;
+      if (!e) return;
+      // a hidden skin has nothing to pick — respect the Skin toggle rather than
+      // reporting numbers for a wedge that is not on screen
+      if (!qenv.userData.skinGrp.visible) { hide(); return; }
+      const r = cv.getBoundingClientRect();
+      ndc.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+      ndc.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+      ray.setFromCamera(ndc, camera);
+      const hit = ray.intersectObjects(picks, false)[0];
+      if (hit) show(hit.object.userData.pick, e.clientX, e.clientY);
+      else hide();
+    };
+  }
+}
+
+/* ==========================================================================
    9 · loop
    ========================================================================== */
-renderer.setAnimationLoop(() => { controls.update(); composer.render(); });
+renderer.setAnimationLoop(() => {
+  controls.update();
+  if (QHOVER_TICK) QHOVER_TICK();   // §QHOVER — one raycast per frame at most
+  composer.render();
+});
 
 /* ==========================================================================
    10 · verification probe — so claims about this page can be CHECKED, not
@@ -3717,19 +4266,91 @@ window.__probe = () => ({
       radialFactor: QONE_SHARE.map((sh) => sh.map((v) => +Math.sqrt(v).toFixed(4))),
       dominant: QONE_DOM.map((j) => (j >= 0 ? QUADS[j].id : null)),
       ghostRatio: QONE_RATIO.map((v) => +v.toFixed(4)),
-      haloThickness: QONE_RATIO.map((v, i) =>
-        (QONE_GHOST[i] > 0 ? +qoneHalo(v).toFixed(3) : 0)),
-      /* THE POINT OF THE REBUILD, as a number. The collars floored 15 of 22
-         ghost slots (68%); the halo is a strictly positive function of a
-         non-negative ratio and so cannot be floored at all. */
+      // halo THICKNESS is now the absolute ghost count, sqrt-damped (§GHOSTRING)
+      haloThickness: QONE_GHOST.map((g) => (g > 0 ? +qoneHalo(g).toFixed(3) : 0)),
+      /* §QHEIGHT — the third channel, measurable off a screenshot. wedgeHeight is
+         what is actually drawn per (quarter x limb); limbMax is its denominator;
+         hClear is the guaranteed air between the tallest wedges of neighbouring
+         quarters, which must stay positive or boxes would collide. */
+      wedgeHeight: qrows.map((qr) => qr.Q.map((v) => +qoneWedgeH(v).toFixed(3))),
+      limbMax: +QONE_LIMB_MAX.toFixed(2),
+      heightBand: { minH: QONE.minH, maxH: QONE.maxH, zeroH: QONE.zeroH },
+      hClear: +QONE_HCLEAR.toFixed(3),
+      // the real quarter-to-quarter step, read off QY() not off BAND_H — the two
+      // differ (2.70 vs 1.05) and confusing them reports a phantom collision
+      step: +QONE_STEP.toFixed(3),
+      bandH: BAND_H,
+      heightCollides: QONE_HCLEAR <= 0,
+      // the damping's cost, stated as a number: drawn ratio vs true ratio
+      heightRatioDrawn: +(QONE.maxH / QONE.minH).toFixed(2),
+      heightRatioTrue: +(QONE_LIMB_MAX / Math.max(1e-9,
+        Math.min(...qrows.flatMap((qr) => qr.Q).filter((v) => v > 0)))).toFixed(1),
+      /* §QZFIGHT — the coplanar-face fix, checkable. bevel must be < the lateral
+         half-gap at the innermost radius or neighbouring wedges interpenetrate;
+         bevelOk asserts that, and coplanarTops is 0 because heights now differ. */
+      inset: +(4.2).toFixed(2),
+      bevel: +wedgeBevel(QONE.radius * 0.34, deg(4.2), CORE_R * 0.55).toFixed(4),
+      bevelBudget: +(CORE_R * 0.55 * deg(4.2)).toFixed(4),
+      bevelOk: wedgeBevel(QONE.radius * 0.34, deg(4.2), CORE_R * 0.55) < CORE_R * 0.55 * deg(4.2),
+      /* §QSECTOR — each wedge's angular width, and the check that the four tile
+         the circle EXACTLY ONCE. sectorSum must be 360: below means gaps, above
+         means the wedges overlap, which is what caused the z-fighting. */
+      sectorWidths: QUADS.map((q, i) =>
+        +((((QUADS[(i + 1) % QUADS.length].az - q.az) % 360 + 360) % 360 / 2 +
+           ((q.az - QUADS[(i - 1 + QUADS.length) % QUADS.length].az) % 360 + 360) % 360 / 2)
+          ).toFixed(3)),
+      sectorSum: +QUADS.map((q, i) =>
+        (((QUADS[(i + 1) % QUADS.length].az - q.az) % 360 + 360) % 360 / 2 +
+         ((q.az - QUADS[(i - 1 + QUADS.length) % QUADS.length].az) % 360 + 360) % 360 / 2)
+        ).reduce((a, b) => a + b, 0).toFixed(3),
+      sectorTiles: Math.abs(QUADS.map((q, i) =>
+        (((QUADS[(i + 1) % QUADS.length].az - q.az) % 360 + 360) % 360 / 2 +
+         ((q.az - QUADS[(i - 1 + QUADS.length) % QUADS.length].az) % 360 + 360) % 360 / 2)
+        ).reduce((a, b) => a + b, 0) - 360) < 1e-9,
+      /* AREA == SHARE still holds after §QSECTOR widened/narrowed the wedges. The
+         radius carries a 0.25/angFrac correction precisely so this stays exact;
+         areaErr is the largest deviation across all 32 wedges and must be ~0. */
+      areaErr: +Math.max(...qrows.flatMap((qr, i) => QUADS.map((q, j) => {
+        const nx = (((QUADS[(j + 1) % QUADS.length].az - q.az) % 360 + 360) % 360);
+        const pv = (((q.az - QUADS[(j - 1 + QUADS.length) % QUADS.length].az) % 360 + 360) % 360);
+        const angFrac = deg(nx / 2 + pv / 2) / (Math.PI * 2);
+        const sh = QONE_SHARE[i][j];
+        if (sh <= 0) return 0;
+        // area fraction of the full footprint = angFrac * (r/span)^2
+        const rRel = Math.sqrt(sh * 0.25 / angFrac);
+        return Math.abs(angFrac * rRel * rRel / 0.25 - sh);
+      }))).toExponential(2),
+      // distinct wedge heights per quarter: 1 would mean coplanar tops are back
+      distinctHeights: qrows.map((qr) =>
+        new Set(qr.Q.filter((v) => v > 0).map((v) => qoneWedgeH(v).toFixed(4))).size),
+      // pairs of real wedges in a quarter that share a top-face plane (the z-fight
+      // condition itself). Must be 0.
+      coplanarTops: qrows.reduce((acc, qr) => {
+        const hs = qr.Q.filter((v) => v > 0).map((v) => qoneWedgeH(v));
+        let n = 0;
+        for (let x = 0; x < hs.length; x++) for (let y = x + 1; y < hs.length; y++) {
+          if (Math.abs(hs[x] - hs[y]) < 1e-9) n++;
+        }
+        return acc + n;
+      }, 0),
+      /* THE FLOORING NUMBERS, BOTH WAYS. The rebuild's original claim was that a
+         RATIO cannot be floored; measured, the absolute count cannot be either,
+         because the halo is a ring whose thickness clears nothing. Both are here
+         so the halo switch is justified by evidence rather than by taste. */
       floored: QONE_FLOORED,
+      ratioFloored: QONE_RATIO_FLOORED,
       ghostSlots: QONE_GHOST_SLOTS,
       flooredPct: +(QONE_FLOORED.length / Math.max(1, QONE_GHOST_SLOTS) * 100).toFixed(1),
+      ratioFlooredPct: +(QONE_RATIO_FLOORED.length / Math.max(1, QONE_GHOST_SLOTS) * 100).toFixed(1),
       collarFlooredPct: +(CAGE_FLOORED.length / Math.max(1, GHOST_SLOTS) * 100).toFixed(1),
-      encoding: 'footprint AREA = quarter effort; wedge area = limb share (radius ∝ sqrt(share)); halo thickness = ghost:effort ratio',
+      encoding: 'footprint AREA = quarter effort; wedge area = limb share (radius ∝ sqrt(share)); wedge HEIGHT = limb absolute commits (sqrt-damped); halo thickness = absolute ghost count (sqrt-damped)',
       sides: { minSpan: QONE.minSpan, maxSpan: QONE.maxSpan, slabH: QONE.slabH,
+               minH: QONE.minH, maxH: QONE.maxH, zeroH: QONE.zeroH,
                gap: QONE.gap, haloMin: QONE.haloMin, haloMax: QONE.haloMax,
-               outer: +QONE_OUTER.toFixed(3) },
+               haloH: QONE.haloH, outer: +QONE_OUTER.toFixed(3) },
+      // §QHOVER — pickable marks, so "you can read it off the object" is checkable
+      hoverPicks: (envelopes.Q && envelopes.Q.userData.hover)
+        ? envelopes.Q.userData.hover.length : 0,
       // bearings are UNCHANGED by this body — the composition is radial, so
       // ?qbear= and the correspondence arcs stay live. See §QBEAR-ONE.
       bearingsApply: true,
@@ -3754,6 +4375,20 @@ window.__probe = () => ({
           skin: LOOK.skin, rose: LOOK.rose },
 });
 window.__focus = (m) => { const b = document.getElementById('b' + m); if (b) b.click(); };
+/* A repeatable close-up on one quarter's box. The §QZFIGHT claim is that two
+   surfaces no longer share a plane, and "no longer" is only checkable if the
+   before and after shots are taken from the SAME place — a hand-dragged camera
+   cannot do that. az/elev in degrees, dist in units, qi is the quarter index. */
+window.__closeup = (qi = 6, dist = 5.2, az = 38, elev = 22) => {
+  controls.autoRotate = false; setPressed('bSpin', false);
+  const y = QY(qi);
+  const a = deg(az), e = deg(elev);
+  camera.up.set(0, 1, 0);
+  camera.position.set(Math.cos(a) * Math.cos(e) * dist, y + Math.sin(e) * dist,
+                      Math.sin(a) * Math.cos(e) * dist);
+  controls.target.set(0, y, 0);
+  controls.update();
+};
 window.__spinOff = () => { controls.autoRotate = false; setPressed('bSpin', false); };
 /* Plan view. The alignment claim is an ANGULAR one, and an angular claim seen in
    perspective from the side is not checkable — the eye cannot separate bearing
