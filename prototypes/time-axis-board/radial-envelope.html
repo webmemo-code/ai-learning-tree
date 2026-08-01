@@ -107,14 +107,58 @@ HONEST WEAKNESSES
     does flatter the quiet stretch of mid-2025.
   - The object is a solid of revolution-ish form, and solids of that kind read
     as "vase" almost automatically. Whether the spiky base survives that
-    association is exactly what this prototype is for.
+    association is exactly what this prototype is for. VERDICT AFTER THE GLASS
+    PASS: the transparent skin helps but does not fully win. What actually
+    breaks the vase reading is the INTERIOR ROSETTES — once you can see 19
+    stacked cross-sections, the eye reads a sequence of measurements rather
+    than a profile. Turn the skin off (Skin button, or ?opacity=0) and the
+    object stops being a vase entirely. That is a real result and the reason
+    the toggle exists rather than a fixed choice being baked in.
+  - The bloom is doing aesthetic work, not analytic work. It makes the lobe
+    dots findable at a glance and gives the silhouette a rim, but no reading in
+    this page depends on it; ?bloom=0 loses beauty and no information.
+
+TRANSPARENCY + BLOOM (the lantern pass)
+  The first build used an OPAQUE MeshStandardMaterial and no post-processing.
+  It read as a lumpy vase: the character change (spiky base -> round top) was
+  measurable in the cut view but invisible in the solid, because an opaque skin
+  destroys depth. Every cross-section but the silhouette was thrown away.
+
+  The fix is two changes that only work together:
+
+  1. THE SKIN IS NOW GLASS. A custom ShaderMaterial rendered in TWO passes —
+     back faces first (BackSide, renderOrder 1), then front faces (FrontSide,
+     renderOrder 2), both with depthWrite:false. Naive DoubleSide transparency
+     sorts per-triangle and tears; front/back separation gives a clean lantern.
+     A fresnel term (pow(1 - |n.v|, 2.4)) keeps the SILHOUETTE bright while the
+     flanks go transparent, so the outline you were reading before survives
+     while the interior opens up.
+
+  2. THERE IS NOW SOMETHING INSIDE TO SEE. 19 interior ROSETTES: each month's
+     true cross-section drawn as a glowing outline plus per-sector spokes and
+     lobe dots at the measured radii. Looking through the skin you now see the
+     whole stack of cut views at once, which is exactly the thing the cut view
+     could only show one at a time. The rosettes are DATA at true radii — no
+     vertical interpolation, no Catmull-Rom flanks — so they are the most
+     honest geometry on screen.
+
+  Bloom is EffectComposer/RenderPass/UnrealBloomPass/OutputPass, configured
+  from prototypes/acacia-sketch/index.html (0.9 / 0.55 / 0.6) and then dialled
+  DOWN. Hard-won lesson from a sibling prototype: bloom is multiplicative on
+  alpha, so a skin bright enough to see is a skin bright enough to wash the
+  whole frame to white and destroy the sector colour key. The defaults here
+  (skin alpha 0.13, bloom 0.62, threshold 0.42) are picked so the ten hues
+  stay TELLABLE APART under glow. If you raise opacity, lower bloom.
 
 USAGE
   Must be SERVED (it fetches ../../data/growth-log.jsonl). From the repo root:
     python -m http.server 8123
   then open /prototypes/time-axis-board/radial-envelope.html
-  Params: ?seed=<n> jitters the organic surface noise deterministically.
-          ?cut=<0..18> opens on that month's cross-section.
+  Params: ?seed=<n>       jitters the organic surface noise deterministically.
+          ?cut=<0..18>    opens on that month's cross-section.
+          ?opacity=<0..1> skin alpha (0 = rosettes only, the "drop the solid" test).
+          ?bloom=<0..2>   bloom strength.  ?thresh=<0..1> bloom threshold.
+          ?skin=0         start with the skin off.  ?rose=0 start with rosettes off.
 ================================================================================
 -->
 <html lang="en">
@@ -146,6 +190,15 @@ USAGE
   }
   button:hover { background: rgba(120, 170, 245, 0.34); }
   button[aria-pressed="true"] { background: rgba(120, 200, 245, 0.4); border-color: rgba(170, 220, 255, 0.65); }
+
+  /* ---- look controls (transparency / bloom) ---- */
+  #look { margin-top: 10px; border-top: 1px solid rgba(120, 160, 230, 0.16); padding-top: 9px; }
+  #look .sl { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  #look .sl label { font-size: 10.5px; color: #9fb2c8; width: 62px; flex: none; }
+  #look .sl input[type="range"] { flex: 1; accent-color: #ffcf6e; height: 14px; }
+  #look .sl .v { font-size: 10.5px; color: #cfe0f2; width: 30px; text-align: right;
+                 font-variant-numeric: tabular-nums; flex: none; }
+  #look .note { font-size: 10px; color: #7f93aa; line-height: 1.5; margin-top: 6px; }
 
   /* ---- cut slider ---- */
   #cutbar { bottom: 14px; left: 50%; transform: translateX(-50%); width: min(560px, calc(100vw - 32px)); }
@@ -209,6 +262,7 @@ USAGE
   <div class="enc">
     <b>radius</b> commits only, sqrt-scaled &middot; <b>bearing</b> sector &middot; <b>height</b> month<br>
     <b>skin</b> commit/pr/review/issue mix (colour + banding, never size)<br>
+    <b>rosettes</b> the 19 cross-sections at their TRUE radii, inside the glass<br>
     <span class="warn">base spiky &amp; lopsided &rarr; top rounder</span> = the finding
   </div>
   <div class="btnrow">
@@ -217,6 +271,32 @@ USAGE
     <button id="bSpin" type="button" aria-pressed="true">&#9199; Orbit</button>
     <button id="bWire" type="button" aria-pressed="false" title="Show the 96-point rings the surface is lofted through">&#9638; Rings</button>
     <button id="bFrame" type="button" title="Reset the camera to frame the whole solid">&#8982; Fit</button>
+  </div>
+  <div class="btnrow" style="margin-top:6px">
+    <button id="bSkin" type="button" aria-pressed="true" title="The translucent outer envelope. Turn it off to test the rosette stack on its own.">&#9673; Skin</button>
+    <button id="bRose" type="button" aria-pressed="true" title="The 19 monthly cross-sections drawn inside the solid at their TRUE measured radii">&#10052; Rosettes</button>
+    <button id="bShare" type="button" title="Copy a link that reproduces exactly this look">&#128279; Link</button>
+  </div>
+  <div id="look">
+    <div class="sl">
+      <label for="sOpacity">skin alpha</label>
+      <input id="sOpacity" type="range" min="0" max="0.6" step="0.005" value="0.13">
+      <span class="v" id="vOpacity">.13</span>
+    </div>
+    <div class="sl">
+      <label for="sBloom">bloom</label>
+      <input id="sBloom" type="range" min="0" max="2" step="0.02" value="0.62">
+      <span class="v" id="vBloom">.62</span>
+    </div>
+    <div class="sl">
+      <label for="sThresh">threshold</label>
+      <input id="sThresh" type="range" min="0" max="1" step="0.01" value="0.42">
+      <span class="v" id="vThresh">.42</span>
+    </div>
+    <div class="note">
+      Alpha 0 = rosettes alone. Bloom is multiplicative on alpha: raise one, lower the
+      other, or the ten sector hues wash to a single white.
+    </div>
   </div>
 </div>
 
@@ -235,7 +315,10 @@ USAGE
     <b>sqrt scale</b> on radius: 155 commits is ~12x the radius of 1, not 155x.<br>
     <b>Core radius</b> is a drawn floor, not data — every zero rests on it.<br>
     <b>2025-02</b> is missing from the log entirely: a real pinch, never interpolated.<br>
-    <b>no-code / low-code</b> have zero events ever — permanently flat flank.
+    <b>no-code / low-code</b> have zero events ever — permanently flat flank.<br>
+    <b>Rosettes are the measurement.</b> Their outlines and lobe dots sit on true
+    radii at true month heights. The skin between two rosettes is Catmull-Rom
+    inference — which is why the skin is the faint thing and the rosettes glow.
   </div>
 </div>
 
@@ -267,12 +350,29 @@ USAGE
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 /* ==========================================================================
    0 · constants, params, palette
    ========================================================================== */
 const PARAMS = new URLSearchParams(location.search);
 const SEED = (() => { const v = parseInt(PARAMS.get('seed'), 10); return Number.isFinite(v) ? v : 7; })();
+
+// ---- look defaults. Tuned together, not independently (see header). ----
+const numParam = (name, def, lo, hi) => {
+  const v = parseFloat(PARAMS.get(name));
+  return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : def;
+};
+const LOOK = {
+  opacity: numParam('opacity', 0.13, 0, 0.6),   // per-face skin alpha, DELIBERATELY low
+  bloom:   numParam('bloom',   0.62, 0, 2),
+  thresh:  numParam('thresh',  0.42, 0, 1),
+  skin:    PARAMS.get('skin') !== '0',
+  rose:    PARAMS.get('rose') !== '0',
+};
 
 // savanna-night palette, lifted from prototypes/acacia-sketch/index.html
 const PAL = {
@@ -522,17 +622,54 @@ controls.minDistance = 5;
 controls.maxDistance = 90;
 frameAll();
 
+/* ---- bloom pipeline ------------------------------------------------------
+   Structure copied from prototypes/acacia-sketch/index.html (which took it from
+   ai-periodic-cube's bloomComposer): RenderPass -> UnrealBloomPass -> OutputPass.
+   Acacia's numbers are 0.9 / 0.55 / 0.6. Those are tuned for sparse bright
+   fireflies against black. This object is a large continuous surface, so the
+   same strength floods it; strength comes down to 0.62 and the THRESHOLD comes
+   down too (0.42), which sounds backwards but is not — a lower threshold with a
+   lower strength glows the mid-tone lobes gently instead of blowing out only the
+   peaks into white blobs. Keeping the peaks distinguishable is the whole game:
+   ten sector hues that all bloom to white are no colour key at all.
+   ------------------------------------------------------------------------- */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(innerWidth, innerHeight), LOOK.bloom, 0.5, LOOK.thresh);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
+
 scene.add(new THREE.HemisphereLight(0x9fc4ff, 0x1a2418, 0.85));
 const key = new THREE.DirectionalLight(0xfff0d6, 1.15); key.position.set(6, 14, 8); scene.add(key);
 const rim = new THREE.DirectionalLight(0x6ea8ff, 0.55); rim.position.set(-9, 5, -7); scene.add(rim);
 
-/* ---- ground haze disc, for the savanna-night family look ---- */
+/* ---- ground haze disc, for the savanna-night family look ----
+   NOTE the bloom interaction: at the pre-bloom opacity (0.05 of a saturated
+   green) this 26-unit disc sat just above the bloom threshold and bloomed into
+   an enormous glowing dome that swallowed the bottom third of the frame — and
+   the bottom of this object is exactly where the spiky, lopsided early months
+   live. It is now dark enough to stay UNDER the threshold at every bloom
+   setting the slider offers, so it grounds the object without competing.       */
 {
-  const g = new THREE.RingGeometry(0.4, 26, 64);
+  // Radially faded so there is no hard horizon line cutting across the base of
+  // the object. A flat-alpha disc reads as a floor edge exactly where the
+  // earliest, most asymmetric months are, and it survived bloom as a bright arc.
+  const g = new THREE.RingGeometry(0.4, 22, 96, 8);
+  const p = g.attributes.position, col = [];
+  for (let i = 0; i < p.count; i++) {
+    const d = Math.hypot(p.getX(i), p.getY(i));
+    const f = Math.max(0, 1 - (d - 0.4) / (22 - 0.4));
+    const a = Math.pow(f, 2.2) * 0.36;
+    col.push(0.055 * a, 0.16 * a, 0.10 * a);   // pre-multiplied against black
+  }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   const m = new THREE.MeshBasicMaterial({
-    color: PAL.haze, transparent: true, opacity: 0.05, side: THREE.DoubleSide, depthWrite: false,
+    vertexColors: true, transparent: true, opacity: 1, side: THREE.DoubleSide,
+    depthWrite: false, blending: THREE.AdditiveBlending,
   });
   const disc = new THREE.Mesh(g, m); disc.rotation.x = -Math.PI / 2; disc.position.y = -0.02;
+  disc.renderOrder = -1;
   scene.add(disc);
 }
 
@@ -580,8 +717,91 @@ function hueAt(k, radii, commits) {
   return new THREE.Color(wr / wsum, wg / wsum, wb / wsum);
 }
 
-let surfMesh = null, wireMesh = null;
+/* --------------------------------------------------------------------------
+   THE GLASS SKIN
+   --------------------------------------------------------------------------
+   A standard lit material cannot do this job: we need the SILHOUETTE to stay
+   bright (that is the outline the whole reading depends on) while the flanks
+   go see-through (so the interior rosettes read). That is a fresnel, and it is
+   cheaper and more controllable as a small custom shader than as a patched
+   MeshPhysicalMaterial.
+
+   Rendering strategy — this matters more than the shader does:
+     pass 1  BackSide  (renderOrder 1) — the far wall of the lantern
+     pass 2  FrontSide (renderOrder 2) — the near wall, drawn over it
+   Both depthWrite:false, NormalBlending, so nothing occludes the rosettes and
+   nothing z-fights. Naive side:DoubleSide + transparent sorts per-DRAW not
+   per-triangle, so the far and near walls fight and the surface visibly tears
+   as the camera orbits. Two passes is the fix, and it also gives the correct
+   "thicker where you look through more glass" cue for free.
+   -------------------------------------------------------------------------- */
+const skinUniforms = {
+  uOpacity: { value: LOOK.opacity },
+  uRim:     { value: 1.0 },
+  uBack:    { value: 0.0 },     // 1 on the back-face pass: dimmer, cooler
+};
+function makeSkinMaterial(side, back) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uOpacity: skinUniforms.uOpacity,
+      uRim: skinUniforms.uRim,
+      uBack: { value: back ? 1 : 0 },
+    },
+    vertexColors: true,
+    transparent: true,
+    depthWrite: false,
+    depthTest: true,
+    side,
+    blending: THREE.NormalBlending,
+    clipping: true,          // REQUIRED: custom shaders opt in to clipping planes
+    clippingPlanes: [],
+    vertexShader: `
+      #include <common>
+      #include <clipping_planes_pars_vertex>
+      varying vec3 vCol;
+      varying vec3 vNrm;
+      varying vec3 vView;
+      void main() {
+        #include <begin_vertex>
+        #include <project_vertex>
+        #include <clipping_planes_vertex>
+        vCol  = color;
+        vNrm  = normalize(normalMatrix * normal);
+        vView = normalize(-mvPosition.xyz);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      #include <common>
+      #include <clipping_planes_pars_fragment>
+      uniform float uOpacity;
+      uniform float uRim;
+      uniform float uBack;
+      varying vec3 vCol;
+      varying vec3 vNrm;
+      varying vec3 vView;
+      void main() {
+        #include <clipping_planes_fragment>
+        // fresnel: 0 face-on, 1 at the silhouette. The exponent decides how much
+        // of the flank stays readable — 2.4 keeps a wide-enough band that lobes
+        // still show their hue, rather than only a hairline outline.
+        float f = pow(1.0 - clamp(abs(dot(normalize(vNrm), normalize(vView))), 0.0, 1.0), 2.4);
+        // Back wall is dimmed so the near wall reads as "in front" without a
+        // depth test doing it. Without this the lantern looks inside-out.
+        float dim = mix(1.0, 0.55, uBack);
+        float a = uOpacity * dim * (0.32 + uRim * 2.15 * f);
+        // Rim gets a touch of the sector hue pushed toward white so edges stay
+        // crisp under bloom, but NEVER fully white: that is where the colour key dies.
+        vec3 c = mix(vCol, vCol * 0.45 + vec3(0.55, 0.72, 0.95) * 0.55, f * 0.55);
+        gl_FragColor = vec4(c * (0.85 + f * 1.5), clamp(a, 0.0, 1.0));
+      }
+    `,
+  });
+}
+
+let surfMesh = null, surfBack = null, wireMesh = null;
 const surfGroup = new THREE.Group(); scene.add(surfGroup);
+const capMeshes = [];
 
 function buildSurface() {
   const L = levels.length;
@@ -635,15 +855,16 @@ function buildSurface() {
   g.setIndex(idx);
   g.computeVertexNormals();
 
-  const m = new THREE.MeshStandardMaterial({
-    vertexColors: true, roughness: 0.72, metalness: 0.06,
-    side: THREE.DoubleSide, flatShading: false,
-    clippingPlanes: [], clipShadows: false,
-  });
-  surfMesh = new THREE.Mesh(g, m);
-  surfGroup.add(surfMesh);
+  // TWO meshes over ONE geometry: far wall then near wall (see makeSkinMaterial).
+  surfBack = new THREE.Mesh(g, makeSkinMaterial(THREE.BackSide, true));
+  surfBack.renderOrder = 1;
+  surfMesh = new THREE.Mesh(g, makeSkinMaterial(THREE.FrontSide, false));
+  surfMesh.renderOrder = 2;
+  surfGroup.add(surfBack, surfMesh);
 
-  // caps so the solid reads closed at bottom and top
+  // caps so the solid reads closed at bottom and top. They are now barely-there
+  // glazing: an opaque cap would seal the lantern and hide the top rosettes,
+  // which are the rounder, more interesting end of the finding.
   for (const [lev, dir] of [[levels[0], -1], [levels[L - 1], 1]]) {
     const cp = [], ci = [];
     cp.push(0, lev.y, 0);
@@ -658,10 +879,18 @@ function buildSurface() {
     const cg = new THREE.BufferGeometry();
     cg.setAttribute('position', new THREE.Float32BufferAttribute(cp, 3));
     cg.setIndex(ci); cg.computeVertexNormals();
-    const cm = new THREE.MeshStandardMaterial({
-      color: dir > 0 ? 0x2c3a52 : 0x1d2635, roughness: 0.85, side: THREE.DoubleSide,
+    // Very faint: an opaque or even semi-opaque cap sits flat across the top
+    // rosette, which is the ROUNDEST and most interesting cross-section in the
+    // whole object. The cap's only job now is to stop the lantern reading as an
+    // open pipe; it must not be a lid.
+    const cm = new THREE.MeshBasicMaterial({
+      color: dir > 0 ? 0x243448 : 0x1a222e,
+      transparent: true, opacity: 0.30, depthWrite: false,
+      side: THREE.DoubleSide, clippingPlanes: [],
     });
-    surfGroup.add(new THREE.Mesh(cg, cm));
+    const cap = new THREE.Mesh(cg, cm);
+    cap.renderOrder = 1;
+    surfGroup.add(cap); capMeshes.push(cap);
   }
 
   // ring wireframe — shows the 96-point rings the loft passes through
@@ -686,14 +915,174 @@ function buildSurface() {
 }
 buildSurface();
 
+/* ==========================================================================
+   5b · INTERIOR ROSETTES — the stack of cross-sections, seen all at once
+   --------------------------------------------------------------------------
+   This is the point of making the skin transparent. Each of the 19 months gets
+   its true cross-section drawn INSIDE the solid:
+
+     - the rosette OUTLINE at that month's 96 resampled radii, hue-blended per
+       bearing exactly like the skin, so a lobe glows in its sector's colour;
+     - a SPOKE from the core out to each non-zero sector's measured radius;
+     - a LOBE DOT at the spoke tip, sized by nothing (it is a marker, not a
+       datum) but brightened by the month's share of its own total.
+
+   Everything here sits at TRUE data radii on TRUE month heights. No vertical
+   Catmull-Rom, no 8x substeps, no organic noise. Where the skin between two
+   rings is inference, the rosettes are measurement — which is why they get to
+   be the bright thing and the skin gets to be the dim one.
+
+   The gap month (2025-02) draws NO rosette, only a dim red core ring: there is
+   nothing to cross-section. It stays a hole, and the eye reads the vertical
+   run of rosettes stopping dead as the pinch.
+   ========================================================================== */
+const roseGroup = new THREE.Group(); scene.add(roseGroup);
+let dotScaleUniform = null;
+
+function buildRosettes() {
+  roseGroup.clear();
+
+  // --- one merged LineSegments for all 19 outlines (cheap, and one material
+  // --- to swap clipping planes on) ---
+  const op = [], oc = [];
+  const tmp = new THREE.Color();
+  rows.forEach((r, i) => {
+    const y = yOf(i);
+    const radii = monthRings[i];
+    for (let k = 0; k < RING_N; k++) {
+      const k2 = (k + 1) % RING_N;
+      const a1 = (k / RING_N) * Math.PI * 2, a2 = (k2 / RING_N) * Math.PI * 2;
+      const r1 = r.present ? radii[k] : CORE_R, r2 = r.present ? radii[k2] : CORE_R;
+      op.push(Math.cos(a1) * r1, y, Math.sin(a1) * r1);
+      op.push(Math.cos(a2) * r2, y, Math.sin(a2) * r2);
+      for (const kk of [k, k2]) {
+        if (!r.present) { oc.push(0.55, 0.16, 0.16); continue; }
+        tmp.copy(hueAt(kk, radii, r.commits));
+        // lift toward white ONLY on the strong lobes, so bloom has something to
+        // catch at the peaks without flooding the near-core stretches
+        const strength = (radii[kk] - CORE_R) / (MAX_R - CORE_R);
+        tmp.multiplyScalar(0.55 + strength * 1.25);
+        oc.push(tmp.r, tmp.g, tmp.b);
+      }
+    }
+  });
+  const og = new THREE.BufferGeometry();
+  og.setAttribute('position', new THREE.Float32BufferAttribute(op, 3));
+  og.setAttribute('color', new THREE.Float32BufferAttribute(oc, 3));
+  const outlines = new THREE.LineSegments(og, new THREE.LineBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.92,
+    depthWrite: false, blending: THREE.AdditiveBlending, clippingPlanes: [],
+  }));
+  outlines.renderOrder = 3;
+  roseGroup.add(outlines);
+
+  // --- spokes to each measured sector value ---
+  const sp = [], sc = [];
+  rows.forEach((r, i) => {
+    if (!r.present) return;
+    const y = yOf(i);
+    SECTORS.forEach((s, si) => {
+      const c = r.commits[si]; if (!c) return;
+      const a = deg(s.az), rr = radiusOf(c);
+      const col = sectorColors[si];
+      sp.push(Math.cos(a) * CORE_R, y, Math.sin(a) * CORE_R);
+      sp.push(Math.cos(a) * rr, y, Math.sin(a) * rr);
+      // fade from dim at the core to full at the measured radius, so the eye
+      // travels outward along the spoke to where the number actually is
+      sc.push(col.r * 0.20, col.g * 0.20, col.b * 0.20);
+      sc.push(col.r * 1.25, col.g * 1.25, col.b * 1.25);
+    });
+  });
+  const sg = new THREE.BufferGeometry();
+  sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
+  sg.setAttribute('color', new THREE.Float32BufferAttribute(sc, 3));
+  const spokes = new THREE.LineSegments(sg, new THREE.LineBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.8,
+    depthWrite: false, blending: THREE.AdditiveBlending, clippingPlanes: [],
+  }));
+  spokes.renderOrder = 3;
+  roseGroup.add(spokes);
+
+  // --- lobe dots at the spoke tips: the actual measured points ---
+  const dp = [], dc = [], ds = [];
+  rows.forEach((r, i) => {
+    if (!r.present) return;
+    const y = yOf(i);
+    SECTORS.forEach((s, si) => {
+      const c = r.commits[si]; if (!c) return;
+      const a = deg(s.az), rr = radiusOf(c);
+      dp.push(Math.cos(a) * rr, y, Math.sin(a) * rr);
+      const col = sectorColors[si];
+      const share = c / (r.total || 1);          // this sector's share of the month
+      const b = 0.75 + share * 1.05;
+      dc.push(col.r * b, col.g * b, col.b * b);
+      ds.push(4.2 + share * 8.0);
+    });
+  });
+  const dg = new THREE.BufferGeometry();
+  dg.setAttribute('position', new THREE.Float32BufferAttribute(dp, 3));
+  dg.setAttribute('color', new THREE.Float32BufferAttribute(dc, 3));
+  dg.setAttribute('psize', new THREE.Float32BufferAttribute(ds, 1));
+  const dots = new THREE.Points(dg, new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    clipping: true, clippingPlanes: [],
+    uniforms: { uScale: { value: renderer.getPixelRatio() * innerHeight * 0.5 } },
+    vertexShader: `
+      #include <common>
+      #include <clipping_planes_pars_vertex>
+      attribute float psize;
+      uniform float uScale;
+      varying vec3 vCol;
+      void main() {
+        #include <begin_vertex>
+        #include <project_vertex>
+        #include <clipping_planes_vertex>
+        vCol = color;
+        // 0.09 rather than a "physically correct" 1.0: these are markers, not
+        // areas. At framing distance (~30 units) this lands a small lobe at
+        // ~3px and 2026-07's geo lobe at ~9px, which is enough for bloom to
+        // catch a highlight without the dot ever reading as a size encoding.
+        gl_PointSize = clamp(psize * (uScale / -mvPosition.z) * 0.09, 1.5, 22.0);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      #include <common>
+      #include <clipping_planes_pars_fragment>
+      varying vec3 vCol;
+      void main() {
+        #include <clipping_planes_fragment>
+        float d = length(gl_PointCoord - vec2(0.5));
+        if (d > 0.5) discard;
+        // soft core + hard centre: the centre is what bloom picks up
+        float a = smoothstep(0.5, 0.06, d);
+        gl_FragColor = vec4(vCol * (0.7 + a * 0.9), a * 0.9);
+      }
+    `,
+    vertexColors: true,
+  }));
+  dots.renderOrder = 4;
+  dotScaleUniform = dots.material.uniforms.uScale;
+  roseGroup.add(dots);
+
+  roseGroup.visible = LOOK.rose;
+}
+buildRosettes();
+
 /* ---- the drawn core: the floor every zero rests on (toggleable, honest) ---- */
 let coreMesh;
 {
   const g = new THREE.CylinderGeometry(CORE_R * 0.985, CORE_R * 0.985, TOP_Y, 40, 1, true);
-  const m = new THREE.MeshStandardMaterial({
-    color: 0x8a6b4a, roughness: 0.9, transparent: true, opacity: 0.95, side: THREE.DoubleSide,
+  // Now translucent too: an opaque core would be a solid wall right through the
+  // middle of the lantern, hiding the far half of every rosette. It stays warm
+  // and clearly VISIBLE (it is a drawn floor and must never look like absence),
+  // just no longer occluding.
+  const m = new THREE.MeshBasicMaterial({
+    color: 0x4a3a29, transparent: true, opacity: 0.42,
+    side: THREE.DoubleSide, depthWrite: false, clippingPlanes: [],
   });
   coreMesh = new THREE.Mesh(g, m);
+  coreMesh.renderOrder = 0;
   coreMesh.position.y = TOP_Y / 2;
   scene.add(coreMesh);
 }
@@ -753,8 +1142,10 @@ SECTORS.forEach((s) => {
     new THREE.Vector3(Math.cos(a) * CORE_R, 0.01, Math.sin(a) * CORE_R),
     new THREE.Vector3(Math.cos(a) * (MAX_R + 0.9), 0.01, Math.sin(a) * (MAX_R + 0.9)),
   ]);
+  // dimmed relative to the pre-bloom build: these are annotation, not data, and
+  // at 0.34 they bloomed into ten bright rays competing with the object itself
   scene.add(new THREE.Line(gm, new THREE.LineBasicMaterial({
-    color: empty ? PAL.dead : s.hue, transparent: true, opacity: empty ? 0.16 : 0.34,
+    color: empty ? PAL.dead : s.hue, transparent: true, opacity: empty ? 0.12 : 0.22,
   })));
 });
 
@@ -841,8 +1232,19 @@ function buildCut(i) {
 function applyCut() {
   clipPlane.constant = yOf(cutIndex) + 0.001;
   const planes = cutOn ? [clipPlane] : [];
-  surfGroup.traverse((o) => { if (o.material) o.material.clippingPlanes = planes; });
-  if (coreMesh) coreMesh.material.clippingPlanes = planes;
+  // ShaderMaterials need needsUpdate when the plane COUNT changes (the count is
+  // baked into the compiled program via NUM_CLIPPING_PLANES), so set it always.
+  const clipIt = (o) => {
+    if (!o.material) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of mats) {
+      if (m.clippingPlanes && m.clippingPlanes.length === planes.length) { m.clippingPlanes = planes; continue; }
+      m.clippingPlanes = planes; m.needsUpdate = true;
+    }
+  };
+  surfGroup.traverse(clipIt);
+  roseGroup.traverse(clipIt);          // rosettes must be sliced with the solid
+  if (coreMesh) clipIt(coreMesh);
   cutGroup.visible = cutOn;
   buildCut(cutIndex);
   // Keep the visible stump centred: when the cut is low, framing the whole 20-unit
@@ -987,9 +1389,73 @@ document.getElementById('cutRange').max = String(rows.length - 1);
 
 document.getElementById('bFrame').addEventListener('click', frameAll);
 
+/* ---- look controls -------------------------------------------------------
+   Every one of these writes back to the URL (replaceState, so the back button
+   is not spammed) so a good-looking state is a link you can paste.
+   ------------------------------------------------------------------------- */
+function pushLookURL() {
+  const p = new URLSearchParams(location.search);
+  p.set('opacity', LOOK.opacity.toFixed(3));
+  p.set('bloom', LOOK.bloom.toFixed(2));
+  p.set('thresh', LOOK.thresh.toFixed(2));
+  if (LOOK.skin) p.delete('skin'); else p.set('skin', '0');
+  if (LOOK.rose) p.delete('rose'); else p.set('rose', '0');
+  history.replaceState(null, '', location.pathname + '?' + p.toString());
+}
+
+const fmt = (v) => (v >= 1 ? v.toFixed(2) : v.toFixed(2).replace(/^0/, ''));
+
+function applyLook(push = true) {
+  skinUniforms.uOpacity.value = LOOK.opacity;
+  surfGroup.visible = LOOK.skin;
+  roseGroup.visible = LOOK.rose;
+  bloomPass.strength = LOOK.bloom;
+  bloomPass.threshold = LOOK.thresh;
+  // The core belongs to the skin conceptually — with the skin off you are looking
+  // at pure measurement, and the drawn floor is scaffolding. But the Core button
+  // still wins if the user turned it off explicitly.
+  document.getElementById('vOpacity').textContent = fmt(LOOK.opacity);
+  document.getElementById('vBloom').textContent = fmt(LOOK.bloom);
+  document.getElementById('vThresh').textContent = fmt(LOOK.thresh);
+  document.getElementById('sOpacity').value = String(LOOK.opacity);
+  document.getElementById('sBloom').value = String(LOOK.bloom);
+  document.getElementById('sThresh').value = String(LOOK.thresh);
+  setPressed('bSkin', LOOK.skin);
+  setPressed('bRose', LOOK.rose);
+  if (push) pushLookURL();
+}
+
+document.getElementById('sOpacity').addEventListener('input', (e) => {
+  LOOK.opacity = parseFloat(e.target.value); applyLook();
+});
+document.getElementById('sBloom').addEventListener('input', (e) => {
+  LOOK.bloom = parseFloat(e.target.value); applyLook();
+});
+document.getElementById('sThresh').addEventListener('input', (e) => {
+  LOOK.thresh = parseFloat(e.target.value); applyLook();
+});
+document.getElementById('bSkin').addEventListener('click', () => {
+  LOOK.skin = !LOOK.skin; applyLook();
+});
+document.getElementById('bRose').addEventListener('click', () => {
+  LOOK.rose = !LOOK.rose; applyLook();
+});
+document.getElementById('bShare').addEventListener('click', async (e) => {
+  pushLookURL();
+  const btn = e.currentTarget, was = btn.textContent;
+  try { await navigator.clipboard.writeText(location.href); btn.textContent = 'copied'; }
+  catch { btn.textContent = 'see URL bar'; }
+  setTimeout(() => { btn.textContent = was; }, 1400);
+});
+
+applyLook(false);   // no history write on load: respect the link exactly as given
+
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+  bloomPass.setSize(innerWidth, innerHeight);
+  if (dotScaleUniform) dotScaleUniform.value = renderer.getPixelRatio() * innerHeight * 0.5;
 });
 
 setPressed('bCut', cutOn);
@@ -1006,7 +1472,7 @@ renderer.setAnimationLoop(() => {
     sp.position.x = Math.cos(camAz) * (MAX_R + 1.5);
     sp.position.z = Math.sin(camAz) * (MAX_R + 1.5);
   });
-  renderer.render(scene, camera);
+  composer.render();
 });
 
 // expose a tiny probe so headless verification can assert the numbers
@@ -1019,6 +1485,11 @@ window.__probe = () => ({
   sectors: SECTORS.map((s) => s.id),
   maxCell: MAX_CELL,
   levels: levels.length,
+  look: {
+    opacity: LOOK.opacity, bloom: bloomPass.strength, thresh: bloomPass.threshold,
+    skin: surfGroup.visible, rose: roseGroup.visible,
+    skinAlphaUniform: skinUniforms.uOpacity.value,
+  },
 });
 </script>
 </body>
