@@ -156,7 +156,7 @@ THE QUARTERLY BOXES — §QBOX
   over stacked layers (which would put composition on the time axis) and over a
   banded skin (arc length with no baseline is the hardest read there is) for one
   decisive reason: quadrants KEEP EVERY LIMB ON ITS BEARING, so the bearings and
-  sector->limb correspondence arcs keep working and the "same object at two
+  the ground spokes that mark them keep working and the "same object at two
   altitudes" reading survives. Wedge radius goes as sqrt(share) so wedge AREA is
   exactly the limb's share — verified to <1e-12. The sqrt is honest and it
   compresses near-ties, so the dominant limb also gets a bright arc cap: rank
@@ -387,7 +387,8 @@ USAGE
                              collars = the previous build, 4 radiating fins per
                              quarter. envelope = the inherited monthly lofted
                              body. The 9-sector view ignores this. See §QBOX.
-          ?guides=0          hide the ground arcs joining sectors to their limbs
+          ?guides=0          hide the ground bearing spokes. (The correspondence
+                             ARCS these used to accompany are deleted, §GMARK-D.)
           ?ghost=<0..1.6>    ghost visual weight. Default .62 (was effectively
                              .40 when the ghost only existed inside model C).
           ?legend=0          collapse the colour legend
@@ -674,8 +675,8 @@ USAGE
         title="the inherited monthly lofted envelope">envelope</button>
     </div>
     <div class="qrow">
-      <span class="qlab" title="ground arcs joining each sector to its parent limb">links</span>
-      <button id="bGuides" type="button">&#8631; sector&rarr;limb guides</button>
+      <span class="qlab" title="the ground bearing ray each limb is drawn on">links</span>
+      <button id="bGuides" type="button">&#8631; ground bearing spokes</button>
     </div>
     <div class="qdrift" id="qdrift"></div>
   </div>
@@ -2152,37 +2153,43 @@ function buildEnvelope(model) {
   }));
   core.position.y = TOP_Y / 2; core.renderOrder = 0; grp.add(core);
 
-  /* ---- every ground mark for this body, from the one owner (§GMARK). The
-         spoke loop that used to sit here is gone; groundMarks draws it, sized by
-         the radius this body actually reaches. ---- */
-  grp.add(groundMarks(axes, MAX_R));
-
+  /* ---- every ground mark for this body, from the one owner (§GMARK). This call
+         used to pass the global MAX_R with no opts at all — the last surviving
+         pre-unification call site, and the reason A+C regressed onto default
+         radii at the default height (§GMARK-E). It now hands over the body's own
+         userData exactly as the other two do, so the three calls differ only in
+         which axes array they pass. userData is built here rather than after the
+         call, so groundMarks reads the SAME object the probe later reads. ---- */
   grp.userData = { model, dimU, skinGrp, roseGrp, monthRings, meta, axes };
+  grp.add(groundMarks(axes, grp.userData));
   return grp;
 }
 
 /* ==========================================================================
-   4b · CORRESPONDENCE GUIDES — making "these are the same data" legible
+   4b · GROUND MARKS — making "these are the same data" legible
    ==========================================================================
    Rotating the quadrants onto their centroids makes the alignment TRUE. It does
    not by itself make it VISIBLE: a viewer looking at two objects with different
    numbers of spokes has no way to see which spoke belongs to which without being
    told, and being told is exactly the assertion this page tries never to make.
 
-   So both objects carry the same ground mark. On the NINE-sector object each
-   sector's ground spoke is joined by a faint arc, in its parent limb's hue, that
-   sweeps from the sector's own bearing to its parent quadrant's bearing — a
-   literal drawn line from "where this sector is" to "where its limb points". On
-   the FOUR-quadrant object the same limb hue is laid down as an arc spanning the
-   whole angular range its members occupy, so the quadrant's wedge visibly covers
-   its sectors' arc rather than merely claiming to.
+   This used to be answered with correspondence ARCS on the floor — a sweep in
+   the parent limb's hue from each sector's bearing to its quadrant's. They are
+   gone (§GMARK-D): six rounds of reports established that a mark drawn flat on
+   the ground reads as floor decoration no matter how correctly it is sized,
+   because nothing connects it vertically to the solid it annotates.
 
-   The sector arcs converge EXACTLY on the quadrant marks, because every limb sits
-   on its members' circular centroid. That convergence is the alignment claim made
-   visible: if a bearing ever drifted, these arcs would visibly miss.
+   What is left below a body is the BEARING SPOKE — one ray per axis, from the
+   core out to that body's own edge, in that axis's own hue — plus the axis
+   label at the end of it. The correspondence claim is carried where it can
+   actually be checked: both objects put a spoke at the same bearing, and every
+   quadrant wedge is built from the QUAD_ARC span its member sectors occupy, so
+   the wedge above a quadrant's spoke visibly covers the sector spokes on the
+   other object. If a bearing ever drifted, the two spoke fans would visibly
+   disagree — which is the falsifiability the arcs were there for.
 
-   These are DRAWN AIDS at ground level, not measurement. They carry no radius
-   information and sit just under the body they annotate.
+   These are DRAWN AIDS at the body's own base level, not measurement. They carry
+   no radius information beyond "this is how far the body reaches".
 
    ==========================================================================
    §GMARK — ONE OWNER FOR EVERY GROUND MARK, SIZED BY ITS OWN BODY
@@ -2205,18 +2212,21 @@ function buildEnvelope(model) {
    (C) REDUNDANT MARKS. A radial tick was drawn AT each limb's own bearing while
        the spoke code drew a line at that SAME bearing — two marks saying one
        thing at slightly different radius and height. Walter's "double entries".
+   (D) THE ARCS THEMSELVES. Rounds A-C all assumed the correspondence arcs were
+       a mark that had to be sized right. They were a mark that had to go: see
+       §GMARK-D in groundMarks(). Only bearing spokes and labels remain.
+   (E) A RADIUS PARAMETER. The signature took `outerR` plus an `opts` bag with
+       its own `y`, so a caller could supply any radius and any height — and the
+       A+C call site supplied the global MAX_R and no opts at all, which is how
+       a body that had been fixed regressed without any of its own code
+       changing. The parameter is gone; groundMarks takes the BODY and derives
+       both numbers itself. See §GMARK-E.
 
-   THE RULE, which makes all three unrepeatable: every ground mark for a body is
-   drawn HERE, ONCE, and every radius is derived from `outerR` — that body's own
-   drawn extent, passed in by its builder. Nothing in this function reads MAX_R.
-   Adding a body means passing its outer radius; it means no new mark code.
-
-   TICK DIRECTION IS ONE CONVENTION ACROSS BOTH BODIES. The quadrant view's
-   member ticks point INWARD from the arc, and Walter approved that reading; the
-   nine-sector view pointed its ticks OUTWARD toward the labels, so the same
-   graphic said two different things on two objects the page asks you to compare.
-   Both now point inward, and the ground labels move out by TICK_CLEAR so the
-   ticks have their own air and never collide with the text. ---------------- */
+   THE RULE, which makes all five unrepeatable: every ground mark for a body is
+   drawn HERE, ONCE, from that body's own userData. No call site passes a radius
+   or a height, so none can pass a wrong one. Nothing in this function reads
+   MAX_R. Adding a body means teaching bodyOuterR/bodyMarkY about it; it means no
+   new mark code and no new call-site arguments. ---------------------------- */
 /* A body's own outer radius — the last radius at which it actually draws. This
    is the single number every ground mark is sized from, so a mark can never
    again be scaled by an object other than the one it annotates. */
@@ -2239,109 +2249,76 @@ function bodyOuterR(ud) {
 function bodyMarkY(ud) {
   return (ud && ud.onebox) ? QY(0) : 0.005;
 }
-/* Ground-mark radii for a body of outer radius R. Named so the relationships
-   (ticks sit between the arc and the body; labels clear the ticks) survive any
-   change of body without being re-derived by hand. */
+/* Ground-mark radii for a body of outer radius R. Only two marks are left below
+   a body (§GMARK-D), so only two radii are named — the arc ring, the member-tick
+   ring and the tick's inner end went with the arcs. Keeping dead radii around is
+   how a deleted mark comes back: the next reader finds `arc: R + 0.79` and
+   assumes something is meant to be drawn there.
+
+   THE SPOKE NOW STOPS AT THE BODY'S OWN EDGE, not 0.70 past it. That +0.70 was
+   reaching out to meet the guide ring, which no longer exists; without it the
+   overhang is just a bearing ray outrunning the object it belongs to — the
+   §GMARK-A defect at a smaller scale. A spoke ends where its body ends. */
 const TICK_CLEAR = 0.53;
 const gmarkRadii = (R) => ({
-  R0: R + 0.34,          // inner end of a member tick
-  R1: R + 0.62,          // the guide arc / where member ticks meet it
-  arc: R + 0.79,         // the limb's own bright span arc, outboard of the ticks
-  spoke: R + 0.70,       // bearing spokes stop with the marks, not past them
-  label: R + 1.15 + TICK_CLEAR,  // ground labels, clear of the inward ticks
+  spoke: R,                      // bearing spokes stop AT the body's outer edge
+  label: R + 1.15 + TICK_CLEAR,  // ground labels, with their own air past it
 });
-function groundMarks(axes, outerR, opts = {}) {
+/* EVERY CALL SITE PASSES A BODY, NOT A RADIUS (§GMARK-E). The signature used to
+   take `outerR` and an `opts` bag, which let a caller hand over any number it
+   liked — and one of the three handed over the global MAX_R with no opts at all,
+   which is exactly how the A+C body regressed onto default radii at the default
+   height while the other two were correct. Taking the body's OWN userData and
+   deriving both the radius and the base height in here makes that class of call
+   site unwriteable: there is no radius parameter left to get wrong. The three
+   calls now differ only in which axes array they pass. */
+function groundMarks(axes, ud, opts = {}) {
   const g = new THREE.Group();
-  const pts = [], cols = [], tc = new THREE.Color();
-  const RR = gmarkRadii(outerR);
-  const R0 = RR.R0, R1 = RR.R1;
-  const spokeY = opts.spokeY !== undefined ? opts.spokeY : 0.01;
-  const spokeR = opts.spokeR !== undefined ? opts.spokeR : RR.spoke;
+  /* THE MARKS RIDE THE BODY'S OWN BASE LEVEL (§GMARK-A). Under ?qstyle=boxes the
+     whole stack is lifted to QY(0)=0.57 by §QLIFT; marks pinned to y=0.005 sat on
+     an empty floor with the object floating above them. bodyMarkY() is the one
+     place that answers "where is this body's base", so no caller can disagree
+     with it. `opts` carries LOOK only — alpha — and no geometry at all, so there
+     is nothing a call site can pass that moves or resizes a mark. */
+  const spokeR = gmarkRadii(bodyOuterR(ud)).spoke;
+  const spokeY = bodyMarkY(ud) + 0.005;
   const spokeAlpha = opts.spokeAlpha !== undefined ? opts.spokeAlpha : 0.2;
-  /* THE MARKS RIDE THE BODY'S OWN BASE LEVEL (§GMARK-A). This was the other half
-     of the stray: under ?qstyle=boxes the whole stack is lifted to QY(0)=0.57 by
-     §QLIFT, but these arcs stayed pinned to the ground plane at y=0.005 — a ring
-     of coloured arcs lying on an empty floor with the object floating above it
-     and nothing connecting the two. Resizing them was necessary and not
-     sufficient; they also have to sit at the height of the thing they annotate. */
-  const gy = opts.y !== undefined ? opts.y : 0.005;
   const spokes = new THREE.Group();
-  const arc = (a1, a2, r, hue, bright) => {
-    const n = Math.max(2, Math.ceil(Math.abs(signedDelta(a2, a1)) / 2) + 1);
-    tc.setHex(hue);
-    for (let i = 0; i < n; i++) {
-      const t1 = i / n, t2 = (i + 1) / n;
-      const b1 = a1 + signedDelta(a2, a1) * t1, b2 = a1 + signedDelta(a2, a1) * t2;
-      pts.push(Math.cos(deg(b1)) * r, gy, Math.sin(deg(b1)) * r);
-      pts.push(Math.cos(deg(b2)) * r, gy, Math.sin(deg(b2)) * r);
-      for (let k = 0; k < 2; k++) cols.push(tc.r * bright, tc.g * bright, tc.b * bright);
-    }
-  };
-  const radial = (a, ra, rb, hue, bright) => {
-    tc.setHex(hue);
-    pts.push(Math.cos(deg(a)) * ra, gy, Math.sin(deg(a)) * ra);
-    pts.push(Math.cos(deg(a)) * rb, gy, Math.sin(deg(a)) * rb);
-    for (let k = 0; k < 2; k++) cols.push(tc.r * bright, tc.g * bright, tc.b * bright);
-  };
 
-  if (axes === SECTORS) {
-    /* THE NINE-SECTOR BODY, now carrying the SAME arc treatment as the quadrant
-       body (§GMARK). Each limb gets its wedge's actual span as a bright arc with
-       its two ends ticked, and each member sector gets an INWARD tick — the
-       direction the quadrant view already used, so the two objects the page asks
-       you to compare no longer say the same thing two different ways.
-       The per-limb centre tick that used to sit at R1..R1+0.34 is GONE: it
-       duplicated the bearing spoke drawn at that identical bearing. */
-    QUADS.forEach((q, i) => {
-      const r = QUAD_ARC[i];
-      const N = Math.max(2, Math.ceil(r.width / 4));
-      for (let k = 0; k < N; k++) {
-        const b1 = r.a0 + r.width * (k / N), b2 = r.a0 + r.width * ((k + 1) / N);
-        tc.setHex(q.hue);
-        pts.push(Math.cos(deg(b1)) * RR.arc, gy, Math.sin(deg(b1)) * RR.arc);
-        pts.push(Math.cos(deg(b2)) * RR.arc, gy, Math.sin(deg(b2)) * RR.arc);
-        for (let z = 0; z < 2; z++) cols.push(tc.r * 0.95, tc.g * 0.95, tc.b * 0.95);
-      }
-      // the arc's two ENDS stay ticked — they mark the handover between limbs
-      radial(r.a0, RR.arc - 0.26, RR.arc, q.hue, 0.7);
-      radial(r.a1, RR.arc - 0.26, RR.arc, q.hue, 0.7);
-    });
-    // one arc per sector: from its own bearing to its parent limb's bearing,
-    // with the sector's tick pointing INWARD off the guide ring
-    SECTORS.forEach((s, i) => {
-      const q = QUADS[SEC2QUAD[i]];
-      radial(s.az, R0, R1, q.hue, 0.85);
-      arc(s.az, q.az, R1, q.hue, 0.55);
-    });
-  } else {
-    /* The quadrant object. Each limb still gets its spoke and a tick per member
-       sector, but the limb's arc is now drawn as ITS WEDGE'S ACTUAL SPAN
-       (§QARC) — a0 to a1, the same angles the wedge above is built on. That is
-       the point of the sector-derived rule: the ground mark and the solid it
-       sits under cover the same arc, so "this wedge is these sectors" is drawn
-       rather than asserted. Swept in short steps so the wrap at 360 (create runs
-       355 -> 155, across zero) draws the short way round its own arc. */
-    QUADS.forEach((q, i) => {
-      const azs = QUAD_MEMBER_AZ[q.id];
-      const r = QUAD_ARC[i];
-      /* NO CENTRE TICK (§GMARK-C). A radial at q.az here duplicated the bearing
-         spoke drawn below at exactly that bearing — the "double entries". */
-      // the limb's own span, as a bright arc on the outer ring
-      const N = Math.max(2, Math.ceil(r.width / 4));
-      for (let k = 0; k < N; k++) {
-        const b1 = r.a0 + r.width * (k / N), b2 = r.a0 + r.width * ((k + 1) / N);
-        tc.setHex(q.hue);
-        pts.push(Math.cos(deg(b1)) * RR.arc, gy, Math.sin(deg(b1)) * RR.arc);
-        pts.push(Math.cos(deg(b2)) * RR.arc, gy, Math.sin(deg(b2)) * RR.arc);
-        for (let z = 0; z < 2; z++) cols.push(tc.r * 0.95, tc.g * 0.95, tc.b * 0.95);
-      }
-      // the arc's two ENDS, ticked, so where one limb hands over to the next is
-      // readable rather than inferred from a colour change
-      radial(r.a0, RR.arc - 0.26, RR.arc, q.hue, 0.7);
-      radial(r.a1, RR.arc - 0.26, RR.arc, q.hue, 0.7);
-      azs.forEach((a) => { radial(a, R0, R1, q.hue, 0.85); arc(a, q.az, R1, q.hue, 0.55); });
-    });
-  }
+  /* §GMARK-D — THE CORRESPONDENCE ARCS ARE GONE FROM BOTH BODIES.
+     ------------------------------------------------------------------------
+     Walter, twice, on two different bodies: "Remove them on both ground items."
+     Not "make them smaller" — five rounds had already tried re-scaling them
+     (§GMARK-A sized them by the body instead of MAX_R, §QSCAFF sized the
+     per-quarter ring by its own quarter) and each time the same graphic came
+     back as a ring of coloured arcs lying on the floor beside the object.
+
+     The re-scaling was not wrong, it was beside the point. An arc drawn at
+     ground level under a body is FLOOR DECORATION at any radius: it is a mark
+     with no vertical relationship to the solid above it, so the eye files it
+     with the grid and the horizon rather than with the object. Sizing it
+     correctly only makes it a well-sized piece of floor decoration.
+
+     What the arcs were FOR — showing that a nine-sector bearing and its parent
+     quadrant's bearing are the same claim — is already carried by two marks
+     that survive: the BEARING SPOKES below (one ray per axis, at that axis's
+     own bearing, on both bodies) and the wedge spans themselves, which are
+     drawn from the same QUAD_ARC angles. The arcs were a third statement of a
+     thing already said twice, and the one statement that had to lie on the
+     floor to be said at all.
+
+     Deleted rather than defaulted off behind `?guides=1`. An opt-in for a
+     graphic Walter has asked twice to remove is a way of keeping it, and the
+     next reader would find a flag, turn it on, and reintroduce the bug. If the
+     correspondence argument ever needs a drawn form again it should be found in
+     the air beside the wedges, where it can be seen against them, not on the
+     ground where it can only be seen against the floor.
+
+     The `arc()` and `radial()` helpers went with their only callers, and so did
+     the empty LineSegments they fed. `?guides=0` and the Guides button now gate
+     the BEARING SPOKES — the only ground mark left, and the mark that was
+     always doing the real correspondence work. The flag keeps a referent
+     instead of becoming a switch that changes nothing. */
 
   /* ---- THE BEARING SPOKES, drawn HERE and nowhere else (§GMARK-B). Three
          builders used to carry their own near-identical copy of this loop. They
@@ -2359,23 +2336,10 @@ function groundMarks(axes, outerR, opts = {}) {
     ln.userData.markName = 'bearing spoke ' + s.label;
     spokes.add(ln);
   });
-  const bg = new THREE.BufferGeometry();
-  bg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-  bg.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
-  const lines = new THREE.LineSegments(bg, new THREE.LineBasicMaterial({
-    vertexColors: true, transparent: true, opacity: 0.62,
-    depthWrite: false, blending: THREE.AdditiveBlending,
-  }));
-  lines.renderOrder = 2;
-  lines.userData.markName = 'correspondence guides';
-  /* ?guides=0 hides the CORRESPONDENCE argument (arcs + ticks). The bearing
-     spokes are not part of that argument — they are the body's own axes — so
-     they stay visible, exactly as they did when each builder drew them itself. */
-  const guides = new THREE.Group();
-  guides.add(lines);
-  guides.visible = GUIDES;
-  guides.userData.isGuides = true;
-  g.add(guides);
+  /* ?guides=0 / the Guides button. The spokes ARE the ground guides now
+     (§GMARK-D), so the toggle hides them and nothing else lives down here. */
+  spokes.visible = GUIDES;
+  spokes.userData.isGuides = true;
   g.add(spokes);
   return g;
 }
@@ -2671,8 +2635,8 @@ const GHOST_SLOTS = qrows.reduce((a, qr) => a + qr.Qs.filter((v) => v > 0).lengt
    ------------------------------------------------------------------------
    This was the open question the one-box design raised, and the answer is the
    good one: because the composition is arranged RADIALLY, every limb still has a
-   bearing, so the centroid bearings and the sector->limb correspondence arcs stay
-   meaningful and stay ON. The wedge boundaries and the ground arcs are computed
+   bearing, so the centroid bearings and the ground spokes that mark them stay
+   meaningful and stay ON. The wedge boundaries and the ground spokes are computed
    from the same QUADS bearings the collar and envelope bodies use. Nothing had to
    be disabled, and the "same object at two altitudes" reading survives the
    change of body — which is exactly why quadrants beat layers and bands.
@@ -3103,6 +3067,11 @@ function buildQuarterOneBox() {
      still guaranteeing the wedges never touch. */
   const INSET = deg(4.2);
   const HOVER = [];   // §QHOVER — one record per pickable mark, filled below
+  /* §QLABEL-ANCHOR — every mesh that belongs to a quarter and is NOT pickable,
+     i.e. the ghost halos. The pickable ones are already in HOVER. Together the
+     two lists are "everything this quarter draws", which is what the ladder
+     label has to be measured against. */
+  const QEXTENT_PARTS = [];
 
   qrows.forEach((qr, qi) => {
     const y = QY(qi);
@@ -3331,9 +3300,79 @@ function buildQuarterOneBox() {
          the same offset on all eight quarters so the ring never encodes height. */
       hmesh.position.set(0, y - QONE.minH * 0.5 + QONE.haloH * 0.5, 0);
       hmesh.renderOrder = 3;
+      /* tagged so §QLABEL-ANCHOR's measurement includes it. The halo is part of
+         what this quarter draws — it is its ghost footprint — so a caption that
+         ignored it would start its leader INSIDE the ring, and on a quarter with
+         a big ghost the leader would vanish under it entirely. */
+      hmesh.userData.qkey = qr.key;
+      QEXTENT_PARTS.push(hmesh);
       markGrp.add(hmesh);
     }
   });
+
+  /* ==========================================================================
+     §QLABEL-ANCHOR — the ladder label is placed from the box it names, MEASURED.
+     ==========================================================================
+     "The stray '2024Q4 (1 mo)' is still there, after 5 rounds of fixing."
+
+     Every previous attempt placed this label from a FORMULA — first the shared
+     QONE_OUTER (6.62 for all eight, so 2024Q4's caption sat five units past its
+     own box), then §QSCAFF's per-quarter qoneTickR(qi)+0.55. The second was much
+     better and still not anchored: qoneTickR is derived from qoneSpan/qoneHalo,
+     which are what the box is SUPPOSED to reach, and it stands off by a constant
+     margin regardless of how small the box actually is. On 2024Q4 — 3 commits,
+     three of its four limbs measured zeros drawn as 0.055 wafers — the box's real
+     drawn radius is barely more than the wafers', and the difference between
+     "what the formula predicts" and "what is on screen" is the gap the eye reads
+     as float.
+
+     So the anchor is now MEASURED off the drawn meshes: the largest radius any of
+     this quarter's own wedges and wafers actually reaches, in world space, after
+     every transform. That is a number no formula drift can get wrong, and it
+     shrinks with the box automatically.
+
+     Measured is necessary and not sufficient — 2024Q4's box is genuinely tiny, so
+     even a correctly-placed caption has almost nothing beside it. The label
+     therefore also gets a LEADER: a short line from the box's measured edge to
+     the text. A caption on the end of a leader reads as that object's caption at
+     any box size, because the leader is the drawn statement of "this text belongs
+     to that". It is what makes the honesty rule affordable: 2024Q4 keeps its real
+     size, keeps its "(1 mo)" mark, and still cannot be read as floor furniture.
+
+     Stored on userData so §5's label pass reads the SAME measurement the builder
+     took rather than re-deriving it and drifting — the §GMARK-E rule applied to
+     labels: one owner for the number, and no second computation of it. */
+  /* Read straight off each mesh's own position attribute rather than via
+     Box3.setFromObject: at this point solidGrp is not yet in `grp` and `grp` is
+     not yet in the scene, so no world matrix is current and setFromObject would
+     silently measure an identity transform. Every wedge and wafer is built in
+     local space AROUND THE STEM and only translated in y, so a local vertex
+     radius IS its world radius — the one case where reading vertices is reading
+     the drawn result, not reading the inputs.
+
+     Declared as a local and folded into the single grp.userData assignment
+     below. Written as `grp.userData.qExtent = ...` here it was silently wiped by
+     that assignment, and the label quietly fell back to the qoneTickR formula
+     this whole section exists to replace — the same class of failure as the A+C
+     call site: correct code defeated by an assignment order nobody re-read. */
+  const QEXTENT = (() => {
+    const vq = new THREE.Vector3();
+    const all = HOVER.concat(QEXTENT_PARTS);
+    return qrows.map((qr) => {
+      let rmax = 0;
+      all.forEach((m) => {
+        const key = (m.userData.pick && m.userData.pick.quarter) || m.userData.qkey;
+        if (key !== qr.key) return;
+        const pa = m.geometry && m.geometry.getAttribute && m.geometry.getAttribute('position');
+        if (!pa) return;
+        for (let i = 0; i < pa.count; i++) {
+          vq.set(pa.getX(i), 0, pa.getZ(i));
+          rmax = Math.max(rmax, Math.hypot(vq.x, vq.z));
+        }
+      });
+      return rmax;
+    });
+  })();
 
   solidGrp.visible = LOOK.skin;
   grp.add(solidGrp);
@@ -3396,10 +3435,9 @@ function buildQuarterOneBox() {
   }));
   core.position.y = TOP_Y / 2; core.renderOrder = 0; grp.add(core);
 
-  /* ---- bearing spokes + the correspondence guides. THEY STILL APPLY: the
-         composition is radial, so every limb still has a bearing and the
-         sector->limb arcs still land on something real. Nothing is disabled for
-         this body — see §QBEAR-ONE.
+  /* ---- the ground bearing spokes. THEY STILL APPLY: the composition is radial,
+         so every limb still has a bearing and a spoke still lands on something
+         real. Nothing is disabled for this body — see §QBEAR-ONE.
 
          MOVED OFF THE GROUND PLANE (§QSCAFF). These four ran at y=0.01 out to
          MAX_R + 0.7 = 4.9, in full limb hue. Since §QLIFT the whole stack starts
@@ -3415,23 +3453,22 @@ function buildQuarterOneBox() {
          themselves carry the bearings at full strength now that the labels are
          mirrored correctly, so the spokes only have to hint.
 
-         SIZED BY THIS BODY (§GMARK). The correspondence arcs beside them were
-         still scaled by MAX_R — the nine-sector envelope's radius — so they ran
-         out to 4.82 while the stack's own widest tick ring is 1.99 and the
-         bottom quarter's is 1.99. Those were the three stranded arcs. Both the
-         spokes and the arcs now come from groundMarks(), sized by the stack's
-         own outer radius, and they ride the bottom quarter's level so a bearing
-         ray is a bearing ray for the box it passes under. ---- */
-  {
-    const ud = { onebox: true, boxes: true };
-    grp.add(groundMarks(QUADS, bodyOuterR(ud), {
-      spokeY: QY(0), spokeR: qoneTickR(0), spokeAlpha: 0.14, y: bodyMarkY(ud),
-    }));
-  }
-
+         THE ARCS THAT SAT BESIDE THEM ARE DELETED (§GMARK-D), on this body and
+         on the nine-sector one. Sizing them by the stack instead of by MAX_R was
+         the right fix for the wrong problem: correctly-sized floor decoration is
+         still floor decoration. What is left below the bottom quarter is four
+         dim bearing rays ending at that quarter's own edge, and nothing else.
+         ---- */
   grp.userData = { model: 'Q', dimU, skinGrp: solidGrp, roseGrp: markGrp,
                    monthRings: null, meta, axes: QUADS, boxes: true, onebox: true,
-                   hover: HOVER };
+                   hover: HOVER, qExtent: QEXTENT };
+  /* Same call shape as the other two (§GMARK-E): the body, not a radius, and not
+     a height. bodyOuterR/bodyMarkY read `onebox` off this userData and return the
+     bottom quarter's own tick ring and level, which is what the explicit spokeY/
+     spokeR/y arguments used to spell out by hand. Only the dimming survives as an
+     option, because it is a look choice and not a geometry one: the wedges carry
+     the bearings at full strength here, so the spokes only have to hint. */
+  grp.add(groundMarks(QUADS, grp.userData, { spokeAlpha: 0.14 }));
   return grp;
 }
 
@@ -3674,13 +3711,11 @@ function buildQuarterBoxes() {
   core.position.y = TOP_Y / 2; core.renderOrder = 0; grp.add(core);
 
   /* ---- the same ground marks the envelope carries, so the alignment argument
-         survives the change of body — but sized by THIS body (§GMARK). The
-         second copy of the spoke loop that used to sit here is gone; QOUTER is
-         the collars' own outer radius, where MAX_R was the envelope's. ---- */
-  grp.add(groundMarks(QUADS, bodyOuterR({ boxes: true })));
-
+         survives the change of body — sized by THIS body (§GMARK). Same call
+         shape as the other two (§GMARK-E): the userData, nothing else. ---- */
   grp.userData = { model: 'Q', dimU, skinGrp: solidGrp, roseGrp: markGrp,
                    monthRings: null, meta, axes: QUADS, boxes: true };
+  grp.add(groundMarks(QUADS, grp.userData));
   return grp;
 }
 
@@ -3791,15 +3826,15 @@ shown.forEach((m, i) => {
       col: empty ? '#5c6672' : '#' + s.hue.toString(16).padStart(6, '0'),
       bold: !empty,
     });
-    /* PUSHED OUT BY TICK_CLEAR (§GMARK). The nine-sector view's ticks used to
-       point OUTWARD, into the space between the guide ring and these labels;
-       now that every tick points inward and the limb's span arc sits outboard at
-       R+0.79, the labels move out to gmarkRadii().label so the text keeps its
-       own air and the arc's end ticks never run into it. Sized by the body's own
-       radius, not MAX_R, so a label tracks the object it names. */
+    /* CLEAR OF THE SPOKE BY TICK_CLEAR (§GMARK). The ticks and the guide ring
+       this gap used to negotiate around are gone (§GMARK-D); what is left is a
+       bearing spoke ending at the body's own edge, and the label sits past it
+       with its own air so the ray reads as pointing AT the word rather than
+       through it. Sized by the body's own radius, not MAX_R, so a label tracks
+       the object it names. */
     const a = deg(s.az), rr = gmarkRadii(bodyOuterR(env.userData)).label;
     // and at the marks' own height, so on the lifted box stack the limb label
-    // travels with the arcs it names instead of staying on the empty floor
+    // travels with the spoke it names instead of staying on the empty floor
     const ly = bodyMarkY(env.userData) + 0.115;
     sp.position.set(x + Math.cos(a) * rr, ly, Math.sin(a) * rr);
     sp.userData.axisLabel = s.label;    // so §QALIGN-PROBE can find it by limb
@@ -3819,26 +3854,55 @@ shown.forEach((m, i) => {
          rather than as one month of a bucket that holds three. */
       const partial = QPARTIAL.find((p) => p.quarter === qr.key);
       const txt = partial ? `${qr.key} (${partial.months} mo)` : qr.key;
-      /* ANCHORED TO ITS OWN BOX (§QSCAFF), not to the stack's outer column.
-         Parked at the shared QONE_OUTER (6.62) every label sat at the radius of
-         the BIGGEST quarter, which for 2026Q2 is a caption beside its box and
-         for 2024Q4 was a caption five units out over empty floor with nothing
-         between it and the stem — the "stray label" itself. Riding each
-         quarter's own tick radius means a label is always the next thing
-         outboard of the box it names, at every size, so it cannot float free.
-         Size and alpha ride the same weight so a three-commit quarter is
-         labelled without being announced. The one-box body sizes per quarter;
-         the collars keep their shared column, which is correct for them because
-         a collar's reach is a per-LIMB quantity and has no single outer edge. */
+      /* ANCHORED TO ITS OWN BOX BY MEASUREMENT (§QLABEL-ANCHOR), not by formula
+         and not to the stack's outer column. Three placements have been tried
+         here: the shared QONE_OUTER (6.62 for all eight — a caption five units
+         out over empty floor on 2024Q4, the original "stray label"), then
+         §QSCAFF's per-quarter qoneTickR(qi)+0.55, which was much closer and
+         still predicted rather than measured. The builder now records what each
+         quarter's wedges and wafers ACTUALLY reach (grp.userData.qExtent) and
+         the label is set from that, with a LEADER LINE drawn from the box's own
+         edge to the text so the association is drawn rather than inferred.
+         Size and alpha ride the §QSCAFF weight so a three-commit quarter is
+         labelled without being announced. The collars keep their shared column,
+         which is correct for them because a collar's reach is a per-LIMB
+         quantity and has no single outer edge to measure. */
       const onebox = !!env.userData.onebox;
       const sp = makeLabel(txt, {
         size: onebox ? qoneLabelSize(qi) : 28,
         col: partial ? '#ffcf6e' : '#9fb2c8',
       });
       if (onebox) sp.material.opacity = qoneLabelAlpha(qi);
-      const lx = onebox ? qoneTickR(qi) + 0.55 : QOUTER + 0.55;
-      sp.position.set(x + lx, QY(qi), 0);
+      const ext = env.userData.qExtent;
+      /* the measured edge, with a fixed 0.42 of air. Fixed, not scaled: the gap
+         is a typographic constant, and scaling it by the quarter would put the
+         smallest label closest to its box exactly when it needs the clearest
+         separation from the stem. */
+      const GAP = 0.42;
+      const edge = (onebox && ext && ext[qi] > 0) ? ext[qi] : (onebox ? qoneTickR(qi) : QOUTER);
+      const lx = onebox ? edge + GAP : QOUTER + 0.55;
+      const y = QY(qi);
+      sp.position.set(x + lx + sp.scale.x / 2, y, 0);
       scene.add(sp);
+      /* THE LEADER. Only the one-box body gets it: the collars' labels sit
+         against a shared column of eight fins and already read as a ladder,
+         whereas here the boxes vary by a factor of five in radius and the small
+         ones need the association stated. Drawn in the label's own hue at the
+         label's own alpha, so it is as quiet as the caption it serves and can
+         never out-shout the box. */
+      if (onebox) {
+        const lg = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(x + edge, y, 0),
+          new THREE.Vector3(x + lx, y, 0),
+        ]);
+        const ln = new THREE.Line(lg, new THREE.LineBasicMaterial({
+          color: partial ? 0xffcf6e : 0x9fb2c8,
+          transparent: true, opacity: qoneLabelAlpha(qi) * 0.55, depthWrite: false,
+        }));
+        ln.renderOrder = 5;
+        ln.userData.markName = 'ladder leader ' + qr.key;
+        scene.add(ln);
+      }
     });
   }
 });
@@ -4861,12 +4925,22 @@ window.__probe = () => ({
         weight: qrows.map((_, i) => +qoneWeight(i).toFixed(3)),
         labelSize: qrows.map((_, i) => qoneLabelSize(i)),
         labelAlpha: qrows.map((_, i) => +qoneLabelAlpha(i).toFixed(3)),
-        labelX: qrows.map((_, i) => +(qoneTickR(i) + 0.55).toFixed(3)),
         // the ring must never cut into the box+halo it annotates, on any quarter
         ringClearsBox: qrows.every((_, i) => qoneTickR(i) > qoneEdge(i)),
         // and the standoff must not itself encode size — constant by construction
         standoffConstant: new Set(qrows.map((_, i) =>
           (qoneTickR(i) - qoneEdge(i)).toFixed(6))).size === 1,
+        /* §QLABEL-ANCHOR, ON THE PROBE. `labelX` used to be reported here as
+           qoneTickR(i) + 0.55 — the FORMULA, recomputed, which is the mistake
+           §QALIGN-PROBE was written to stop: a probe that recomputes its subject
+           agrees with itself no matter what is drawn. It is now the MEASURED
+           extent the builder recorded off the wedges and halos, and the label's
+           anchor is that plus the fixed gap. If the two ever part company the
+           label has come loose, and this row says so. */
+        drawnExtent: (envelopes.Q && envelopes.Q.userData.qExtent)
+          ? envelopes.Q.userData.qExtent.map((r) => +r.toFixed(3)) : null,
+        labelX: (envelopes.Q && envelopes.Q.userData.qExtent)
+          ? envelopes.Q.userData.qExtent.map((r) => +(r + 0.42).toFixed(3)) : null,
         // the old constants, kept so the change is legible on the probe
         wasTickR: +(QONE.maxSpan + QONE.gap + QONE.haloMax + 0.4).toFixed(3),
         wasLabelX: +(QONE_OUTER + 0.55).toFixed(3),
@@ -4875,7 +4949,8 @@ window.__probe = () => ({
       hoverPicks: (envelopes.Q && envelopes.Q.userData.hover)
         ? envelopes.Q.userData.hover.length : 0,
       // bearings are UNCHANGED by this body — the composition is radial, so
-      // ?qbear= and the correspondence arcs stay live. See §QBEAR-ONE.
+      // ?qbear= and the ground bearing spokes stay live. See §QBEAR-ONE. (The
+      // correspondence arcs that used to accompany them are gone, §GMARK-D.)
       bearingsApply: true,
     },
     /* the encoding itself, so a reader can check a fin against a number:
@@ -4913,6 +4988,23 @@ window.__closeup = (qi = 6, dist = 5.2, az = 38, elev = 22) => {
   controls.update();
 };
 window.__spinOff = () => { controls.autoRotate = false; setPressed('bSpin', false); };
+/* A generic ORBIT camera, so a shot can be taken from where a VIEWER stands.
+   __closeup() aims at one quarter of the box stack and __topdown() looks straight
+   down; neither can frame the A+C body's base, which is exactly where the last
+   regression lived and therefore exactly the view a verification pass has to be
+   able to reach. camera.up stays (0,1,0) — a plan view flips it, and a mark lying
+   ON the floor is indistinguishable from a mark floating above it when seen from
+   directly overhead, which is how a stray arc survives a "clean" plan shot. */
+window.__cam = ({ tx = 0, ty = 1, dist = 8, az = 34, elev = 12 } = {}) => {
+  controls.autoRotate = false; setPressed('bSpin', false);
+  const a = deg(az), e = deg(elev);
+  camera.up.set(0, 1, 0);
+  camera.position.set(tx + Math.cos(a) * Math.cos(e) * dist,
+                      ty + Math.sin(e) * dist,
+                      Math.sin(a) * Math.cos(e) * dist);
+  controls.target.set(tx, ty, 0);
+  controls.update();
+};
 /* Screen position of one named wedge, so a test can put the real cursor on a
    known mark instead of sweeping pixels and hoping. §QHOVER is a pointer
    behaviour; verifying it any other way verifies something else. */
@@ -4976,25 +5068,38 @@ window.__floor = () => {
    four times while three coloured arcs sat in plain sight. This one walks lines,
    points and sprites too, reports each mark's radial extent against the BODY'S OWN
    outer radius (§GMARK), and is the thing to run before claiming a floor is clean.
-   Returns marks whose lowest vertex sits below `yMax` in the body's local frame. */
-window.__marks = (yMax = 0.5) => {
+
+   §MARKS-BASE — THE CUTOFF IS PER-BODY. This probe had its own version of the
+   §GMARK-E defect: it took ONE `yMax` for every body, defaulting to 0.5, while
+   the one-box stack's base is bodyMarkY() = QY(0) = 0.57. So every mark on the
+   body under investigation was ABOVE the cutoff and the probe reported that body
+   as almost empty — a second probe that could not see the failure mode, on top
+   of the mesh-only one already recorded above. The cutoff is now each body's own
+   base height plus a margin, exactly as every other number here is now derived,
+   and `yMax` (when passed) is the MARGIN above that base rather than an absolute
+   world height. Rows carry the absolute y as well, so a table is comparable
+   across two bodies standing at different levels. */
+window.__marks = (margin = 0.5) => {
   scene.updateMatrixWorld(true);
   const v = new THREE.Vector3();
   const bodies = [];
   scene.traverse((o) => { if (o.userData && o.userData.model && o.userData.axes) bodies.push(o); });
   return {
-    yMax,
+    margin,
     bodies: bodies.map((body) => {
       const org = new THREE.Vector3(); body.getWorldPosition(org);
+      const base = bodyMarkY(body.userData);
+      const yMax = base + margin;
       const rows = [];
       const scan = (o, inBody) => {
         if (o.isSprite) {
           const p = new THREE.Vector3(); o.getWorldPosition(p);
-          if (p.y - org.y >= yMax) return;
-          rows.push({ kind: 'sprite', name: o.userData.axisLabel || o.userData.markName || 'label',
+          if (p.y >= yMax) return;
+          rows.push({ kind: 'sprite',
+            name: o.userData.axisLabel || o.userData.markName || o.userData.text || 'label',
             rmin: +Math.hypot(p.x - org.x, p.z - org.z).toFixed(2),
             rmax: +Math.hypot(p.x - org.x, p.z - org.z).toFixed(2),
-            y: +(p.y - org.y).toFixed(3), n: 1, visible: o.visible });
+            y: +p.y.toFixed(3), n: 1, visible: o.visible });
           return;
         }
         const pa = o.geometry && o.geometry.getAttribute && o.geometry.getAttribute('position');
@@ -5003,7 +5108,7 @@ window.__marks = (yMax = 0.5) => {
         for (let i = 0; i < pa.count; i++) {
           v.set(pa.getX(i), pa.getY(i), pa.getZ(i));
           o.localToWorld(v);
-          const y = v.y - org.y;
+          const y = v.y;
           if (y >= yMax) continue;
           const r = Math.hypot(v.x - org.x, v.z - org.z);
           if (r < lo) lo = r; if (r > hi) hi = r;
@@ -5021,19 +5126,52 @@ window.__marks = (yMax = 0.5) => {
         });
       };
       body.traverse((o) => scan(o, o.parent));
-      // ground labels are parented to the SCENE, not the body — find the ones
-      // whose footprint belongs to this body's column
+      /* Labels and leaders are parented to the SCENE, not to the body — claim
+         the ones in this body's column. This used to filter on `axisLabel`,
+         which is why the "2024Q4 (1 mo)" ladder sprite never appeared in a
+         single one of the five tables that were supposed to be looking for it:
+         the ladder labels carry no axisLabel, so the probe skipped exactly the
+         object under investigation. It now takes EVERY scene-level sprite and
+         line in the column and names it by its text. */
+      const claimed = new Set();
+      body.traverse((o) => claimed.add(o));
       scene.traverse((o) => {
-        if (!o.isSprite || !o.userData.axisLabel) return;
-        const p = new THREE.Vector3(); o.getWorldPosition(p);
-        if (Math.abs(p.x - org.x) > MAX_R + 3 || p.y - org.y >= yMax) return;
-        rows.push({ kind: 'sprite', name: 'axisLabel ' + o.userData.axisLabel,
-          rmin: +Math.hypot(p.x - org.x, p.z - org.z).toFixed(2),
-          rmax: +Math.hypot(p.x - org.x, p.z - org.z).toFixed(2),
-          y: +(p.y - org.y).toFixed(3), n: 1, visible: o.visible });
+        if (claimed.has(o)) return;
+        const isSp = o.isSprite;
+        const isLn = (o.isLine || o.isLineSegments) && o.geometry
+          && o.geometry.getAttribute && o.geometry.getAttribute('position');
+        if (!isSp && !isLn) return;
+        const nm = o.userData.axisLabel ? 'axisLabel ' + o.userData.axisLabel
+          : o.userData.markName ? o.userData.markName
+            : o.userData.text ? 'label "' + o.userData.text + '"' : (o.name || o.type);
+        if (isSp) {
+          const p = new THREE.Vector3(); o.getWorldPosition(p);
+          if (Math.abs(p.x - org.x) > MAX_R + 3 || p.y >= yMax) return;
+          rows.push({ kind: 'sprite', name: nm,
+            rmin: +Math.hypot(p.x - org.x, p.z - org.z).toFixed(2),
+            rmax: +Math.hypot(p.x - org.x, p.z - org.z).toFixed(2),
+            y: +p.y.toFixed(3), n: 1, visible: o.visible });
+          return;
+        }
+        const pa = o.geometry.getAttribute('position');
+        let lo = Infinity, hi = -Infinity, ylo = Infinity, yhi = -Infinity, n = 0;
+        for (let i = 0; i < pa.count; i++) {
+          v.set(pa.getX(i), pa.getY(i), pa.getZ(i)); o.localToWorld(v);
+          if (v.y >= yMax || Math.abs(v.x - org.x) > MAX_R + 3) continue;
+          const r = Math.hypot(v.x - org.x, v.z - org.z);
+          if (r < lo) lo = r; if (r > hi) hi = r;
+          if (v.y < ylo) ylo = v.y; if (v.y > yhi) yhi = v.y;
+          n++;
+        }
+        if (!n) return;
+        rows.push({ kind: o.isLineSegments ? 'lineseg' : 'line', name: nm,
+          rmin: +lo.toFixed(2), rmax: +hi.toFixed(2),
+          y: +ylo.toFixed(3) + (yhi !== ylo ? '..' + (+yhi.toFixed(3)) : ''),
+          n, visible: o.visible });
       });
       rows.sort((a, b2) => a.rmax - b2.rmax);
       return { model: body.userData.model, onebox: !!body.userData.onebox,
+               base: +base.toFixed(3), yMax: +yMax.toFixed(3),
                outerR: +(bodyOuterR(body.userData) || 0).toFixed(2), rows };
     }),
   };
