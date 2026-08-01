@@ -35,7 +35,24 @@ WHY IT EXISTS — the classification error that forced the question
   inequality across sectors falls from Gini 0.515 today to 0.375 under model A,
   create.images goes 1 -> 136, and automate.agents arrives at 184.
 
-THE THREE MODELS
+THE CHOSEN MODEL — AC, and why it is the default
+  Walter, after seeing all three side by side: "I agree, A with C it is."
+
+  AC · MERGED. A's fractional weights are the SOLID geometry; C's secondary
+      contributions are drawn as GHOST geometry layered on the same object. The
+      solid lobe is that sector's fractional attributed effort; the ghost lobe is
+      the secondary reach BEYOND it. THE GAP BETWEEN SOLID AND GHOST IS THE
+      INFORMATION THE OLD SINGLE-SECTOR MODEL WAS LOSING — that gap is the entire
+      argument for reclassifying, made visible instead of asserted.
+
+      A alone answers "how much effort, honestly counted". C alone answers "what
+      is this repo also about". Neither answers both. Merged, one object carries
+      the honest total AND the reach it does not capture.
+
+A, B and C remain viewable alone — they are the EVIDENCE for the choice, and
+  deleting the evidence once a decision is made is how a decision stops being
+  auditable. ?model=AC (default) | A | B | C.
+
   A · FRACTIONAL WEIGHTS   one commit is split across sectors, weights sum to
       1.0. Totals stay honest — 1749 commits stays 1749 — radius means
       "attributed effort", and counts become non-integers (136.2 images).
@@ -48,8 +65,24 @@ THE THREE MODELS
       ghost contribution. Two visual weights: solid lobe = primary, faint lobe =
       secondary.
 
-  All three run off ONE weight table. They are three READINGS of the same
-  assignment, not three assignments — which is why they can be compared fairly.
+  All of them run off ONE weight table. They are READINGS of the same
+  assignment, not different assignments — which is why they compare fairly.
+
+THE QUADRANT ROLLUP — the same data at a coarser altitude
+  Walter: "How does it compare if on a second model we abstract to the four
+  quadrants create, automate, distribute, build?"
+
+  Q aggregates model A's fractional weights up to the four limbs. Sectors sum
+  into their quadrant exactly — no reweighting, no second assignment — so Q and
+  AC are the SAME measurement at two altitudes, which is what makes the
+  comparison legitimate rather than decorative.
+
+  WHAT THE ROLLUP BUYS AND WHAT IT COSTS, measured live in this page and printed
+  in the side panel rather than claimed here. The headline trade-off: inequality
+  drops sharply (the four limbs are far more evenly loaded than the nine
+  sectors), but the SERIAL->PARALLEL story flattens, because with only four
+  buckets almost every month lights up most of them. Both asymmetry sparklines
+  are drawn side by side so the loss is visible, not argued. See §Q.
 
 THE RULESET — Walter's actual question, answered from evidence
   "How do we systematically assign the distribution per classification?"
@@ -136,9 +169,23 @@ HONEST WEAKNESSES
   - MODEL A'S NON-INTEGERS. "136.2 commits" is not a thing that happened. The
     quantity is real (attributed effort) but the unit invites misreading as a
     count, and every tooltip on this page has to say ".2" to stay honest.
-  - THE ENVELOPES ARE SMALLER THAN THE SINGLE-OBJECT PAGE. Three-up costs
-    roughly two thirds of the linear resolution each. Use ?solo=A|B|C for a
-    full-size look once the comparison has done its job.
+  - THE ENVELOPES ARE SMALLER THAN THE SINGLE-OBJECT PAGE. Multi-up costs
+    linear resolution each. Use ?solo=AC|A|B|C|Q for a full-size look once the
+    comparison has done its job.
+  - THE QUADRANT ROLLUP HIDES THE FINDING IT IS DERIVED FROM. Rolling up to four
+    limbs makes the tree look well-balanced and evenly grown. That is TRUE at
+    quadrant altitude and MISLEADING as a summary, because the imbalance has not
+    gone anywhere — it has been averaged inside the buckets. distribute.seo and
+    create.video are near-dead sectors that vanish completely into healthy-
+    looking DISTRIBUTE and CREATE limbs. A viewer shown only the quadrant view
+    would conclude the tree grows evenly in every direction; the sector view says
+    otherwise, and the sector view is the one with the evidence in it.
+  - AC's SOLID AND GHOST ARE DIFFERENT UNITS. The solid is fractional attributed
+    effort (sums to 1749); the ghost is a COUNT of secondary appearances (sums to
+    something else entirely). They are deliberately NOT on a shared scale — the
+    ghost is normalised to its own maximum — so the gap between them reads as
+    "there is more reach here than effort captured", NOT as a subtractable
+    quantity. Do not read ghost-minus-solid as a number.
   - Every caveat radial-envelope.html carries still applies: bearing is an
     ordered categorical axis and NOT a compass direction, only the 9 values at
     the bearings are measurement (the 96 resampled ring points are inference),
@@ -149,9 +196,16 @@ USAGE
   Must be SERVED (it fetches ../../data/growth-log.jsonl):
     python -m http.server 8123      (from the repo root)
   then open /prototypes/time-axis-board/multi-axis.html
-  Params: ?model=A|B|C   highlight one model (dims the other two)
-          ?solo=A|B|C    render ONLY that model, full size
-          ?seed=<n>      deterministic surface noise
+  Params: ?model=AC|A|B|C|Q  highlight one model (dims the others). AC is the
+                             DEFAULT view: A solid + C ghost, beside Q.
+          ?solo=AC|A|B|C|Q   render ONLY that model, full size
+          ?evidence=1        also show A, B and C alone (the comparison that
+                             produced the choice). Default off — the decision is
+                             made; the evidence is one click away, not in the way.
+          ?ghost=<0..1.6>    ghost visual weight. Default .62 (was effectively
+                             .40 when the ghost only existed inside model C).
+          ?legend=0          collapse the colour legend
+          ?seed=<n>          deterministic surface noise
           ?opacity= ?bloom= ?thresh=   same look levers as radial-envelope
           ?rose=0 ?skin=0 ?spin=0
 ================================================================================
@@ -233,6 +287,56 @@ USAGE
   #numbers .rep table td { font-size: 10px; }
   #numbers .rep td.l { max-width: 168px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+  /* ---- colour legend: the visual language, for someone who has never seen
+         this project. Compact and collapsible because the side panels are
+         already dense (Walter's note). ---- */
+  #legend { margin-top: 10px; border-top: 1px solid rgba(120, 160, 230, 0.16); padding-top: 9px; }
+  #legend .lgHd {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none; font-size: 11.5px; color: #cfe0f2; font-weight: 600;
+  }
+  #legend .lgHd .tw { color: #7f93aa; font-size: 10px; font-weight: 400; }
+  #legend .body { margin-top: 7px; }
+  #legend.collapsed .body { display: none; }
+  #legend .grp { color: #7f93aa; font-size: 9.5px; letter-spacing: 0.06em;
+                 text-transform: uppercase; margin: 7px 0 3px; }
+  #legend .hues { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 8px; }
+  #legend .hu { display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: #cfd8e3; }
+  #legend .hu i { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; }
+  #legend .hu em { color: #6f8398; font-style: normal; font-size: 9.5px; }
+  #legend .sw { display: flex; align-items: flex-start; gap: 7px; margin-bottom: 5px; font-size: 10.5px;
+                color: #9fb2c8; line-height: 1.45; }
+  #legend .sw b { color: #cfe0f2; font-weight: 600; }
+  /* the solid/ghost chips imitate the 3D treatment: bright crisp line vs faint wide one */
+  #legend .chip { flex: none; width: 30px; height: 14px; border-radius: 3px; position: relative; margin-top: 1px; }
+  #legend .chip.solid { background: linear-gradient(90deg, rgba(255,110,199,0.15), rgba(255,110,199,0.95)); }
+  #legend .chip.ghost { background: linear-gradient(90deg, rgba(255,110,199,0.05), rgba(255,110,199,0.34));
+                        outline: 1px dashed rgba(255,110,199,0.45); outline-offset: -1px; }
+  #legend .chip.gap   { background: rgba(150, 42, 42, 0.85); }
+  #legend .chip.core  { background: rgba(74, 58, 41, 0.9); }
+  #legend .chip.quad  { background: linear-gradient(90deg, #ffb454, #7ce65a 42%, #35d0ba 72%, #6a8dff); }
+
+  /* ---- quadrant comparison block ---- */
+  #quad { margin-top: 10px; border-top: 1px solid rgba(120, 160, 230, 0.16); padding-top: 8px; }
+  #quad b.hd { color: #cfe0f2; font-weight: 600; display: block; margin-bottom: 6px; font-size: 11.5px; }
+  #quad table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  #quad th { color: #7f93aa; font-weight: 500; text-align: right; padding: 0 0 4px 4px; font-size: 9.5px; }
+  #quad th.l { text-align: left; }
+  #quad td { text-align: right; padding: 1.5px 0 1.5px 4px; color: #9fb2c8; font-size: 11px; }
+  #quad td.l { text-align: left; color: #cfd8e3; }
+  #quad .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  #quad tr.sum td { border-top: 1px solid rgba(120, 160, 230, 0.2); padding-top: 4px; color: #cfe0f2; }
+  #quad tr.gini td { color: #ffcf6e; }
+  /* side-by-side asymmetry sparklines — the trade-off, shown not argued */
+  #quad .spark { margin-top: 9px; }
+  #quad .spark .row { margin-bottom: 7px; }
+  #quad .spark .cap { font-size: 10px; color: #9fb2c8; margin-bottom: 3px; display: flex;
+                      justify-content: space-between; }
+  #quad .spark .cap b { color: #cfe0f2; font-weight: 600; }
+  #quad .spark svg { display: block; width: 100%; height: 34px; }
+  #quad .note { color: #7f93aa; font-size: 10.5px; line-height: 1.55; margin-top: 7px; }
+  #quad .note b { color: #ffb08a; }
+
   #err {
     position: fixed; inset: 0; display: none; place-items: center; z-index: 50;
     background: rgba(5, 7, 13, 0.94); color: #cfd8e3; text-align: center; padding: 24px;
@@ -254,22 +358,29 @@ USAGE
 <div id="app"></div>
 
 <div class="panel" id="hud">
-  <h1>Multi-axis attribution</h1>
+  <h1>Attribution &mdash; chosen model &amp; quadrant rollup</h1>
   <div class="sub">
-    Three envelopes, one log, three ways of attributing a commit to sectors.
-    Same geometry, same look settings, same camera — only the assignment differs.
+    <b style="color:#cfe0f2">A + C merged</b> is the model: fractional weights as
+    the solid, secondary reach as the ghost. Beside it, the same data rolled up
+    to the four quadrants &mdash; the same measurement at a coarser altitude.
   </div>
   <div class="enc">
-    <b>A fractional</b> weights sum to 1.0 &middot; totals honest &middot; non-integer<br>
-    <b>B whole</b> full commit per axis &middot; integers &middot; total inflates<br>
-    <b>C primary+secondary</b> solid lobe = primary, ghost lobe = secondary<br>
+    <b>solid</b> fractional attributed effort &mdash; the honest count<br>
+    <b>ghost</b> secondary reach beyond it &mdash; <b style="color:#cfe0f2">the gap is
+    what the old single-sector model was losing</b><br>
+    <b>Q quadrants</b> create / automate / distribute / build<br>
     <span class="warn">new sector: <b>agents</b> under AUTOMATE</span>
   </div>
   <div class="btnrow">
+    <button id="bAC" type="button" data-m="AC">A+C merged</button>
+    <button id="bQ" type="button" data-m="Q">Q quadrants</button>
+    <button id="bAll" type="button" aria-pressed="true">Both</button>
+    <button id="bEvidence" type="button">+ evidence A/B/C</button>
+  </div>
+  <div class="btnrow" style="margin-top:6px" id="evRow">
     <button id="bA" type="button" data-m="A">A fractional</button>
     <button id="bB" type="button" data-m="B">B whole</button>
     <button id="bC" type="button" data-m="C">C prim+sec</button>
-    <button id="bAll" type="button" aria-pressed="true">All three</button>
   </div>
   <div class="btnrow" style="margin-top:6px">
     <button id="bSpin" type="button" aria-pressed="true">&#9199; Orbit</button>
@@ -293,6 +404,73 @@ USAGE
       <label for="sThresh">threshold</label>
       <input id="sThresh" type="range" min="0" max="1" step="0.01" value="0.76">
       <span class="v" id="vThresh">.76</span>
+    </div>
+    <!-- ghost weight: Walter asked for "a tad more visual weight to the ghosts".
+         Default .62 against the old effective .40. Exposed as a lever rather
+         than hard-coded so he can settle it by eye instead of by request. -->
+    <div class="sl">
+      <label for="sGhost" title="how strongly the secondary-reach ghosts read against the solid">ghost weight</label>
+      <input id="sGhost" type="range" min="0" max="1.6" step="0.02" value="0.62">
+      <span class="v" id="vGhost">.62</span>
+    </div>
+  </div>
+
+  <!-- ================= COLOUR LEGEND =================
+       For a first-time viewer. Everything colour encodes on this page, in one
+       place, in the order you meet it: what the hues are, then what solid vs
+       ghost means, then the remaining marks. -->
+  <div id="legend">
+    <div class="lgHd" id="lgHd" role="button" tabindex="0" aria-expanded="true">
+      <span>What the colours mean</span><span class="tw" id="lgTw">hide</span>
+    </div>
+    <div class="body">
+      <div class="grp">Hue = which sector (9)</div>
+      <div class="hues" id="lgHues"></div>
+      <div class="grp">Brightness &amp; form = what kind of quantity</div>
+      <div class="sw">
+        <span class="chip solid"></span>
+        <span><b>Solid, bright</b> &mdash; fractional attributed effort. The honest
+        count: every commit split across sectors, weights summing to 1.</span>
+      </div>
+      <div class="sw">
+        <span class="chip ghost"></span>
+        <span><b>Ghost, faint</b> &mdash; secondary reach beyond that effort. Where
+        the ghost runs well past the solid, the old single-sector model was
+        throwing that difference away.</span>
+      </div>
+      <div class="sw">
+        <span class="chip quad"></span>
+        <span><b>Quadrant view</b> &mdash; each limb takes a representative hue from
+        its member sectors: copy, workflows, seo, coding.</span>
+      </div>
+      <div class="grp">Other marks</div>
+      <div class="sw">
+        <span class="chip gap"></span>
+        <span><b>Dark red band</b> &mdash; 2025-02, a month with no activity at all.
+        A real pinch in the solid, never interpolated over.</span>
+      </div>
+      <div class="sw">
+        <span class="chip core"></span>
+        <span><b>Brown core</b> &mdash; a drawn floor, not a measurement. Sectors at
+        zero rest on it so the object stays readable.</span>
+      </div>
+      <div class="sw" style="margin-top:6px">
+        <span style="flex:none;width:30px;text-align:center">
+          <span class="badge topics" style="padding:0 3px">t</span></span>
+        <span>Badge colour = how a repo's weights were derived:
+        <span class="badge topics">topics</span> from evidence,
+        <span class="badge authored">authored</span> asserted by hand,
+        <span class="badge single">single</span> today's sector.</span>
+      </div>
+      <div class="sw">
+        <span style="flex:none;width:30px;text-align:center;color:#ffcf6e;font-weight:600">Gini</span>
+        <span>Amber numbers are inequality figures, not counts.</span>
+      </div>
+      <div class="sw" style="color:#7f93aa">
+        <span class="chip" style="background:none"></span>
+        <span>Angle around the object is <b>which sector</b> &mdash; an ordered
+        category, <b>not</b> a compass direction. Height is time.</span>
+      </div>
     </div>
   </div>
   <div id="rules">
@@ -329,6 +507,26 @@ USAGE
 <div class="panel" id="numbers">
   <b class="hd">Per-sector totals under each model</b>
   <table id="tbl"></table>
+
+  <!-- The quadrant rollup and, directly under it, the cost of rolling up. -->
+  <div id="quad">
+    <b class="hd">Rolled up to 4 quadrants &mdash; same data, coarser altitude</b>
+    <table id="quadTbl"></table>
+    <div class="spark">
+      <div class="row">
+        <div class="cap"><span>active <b>sectors</b> per month (of 9)</span>
+          <span id="spSecAvg"></span></div>
+        <svg id="spSec" viewBox="0 0 300 34" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="row">
+        <div class="cap"><span>active <b>quadrants</b> per month (of 4)</span>
+          <span id="spQuadAvg"></span></div>
+        <svg id="spQuad" viewBox="0 0 300 34" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+    <div class="note" id="quadNote"></div>
+  </div>
+
   <div class="rep">
     <b class="hd">Per-repo derivation (top 20 by commits)</b>
     <table id="repTbl"></table>
@@ -337,6 +535,10 @@ USAGE
     <b>Gini</b> is inequality across the 9 sectors: 0 = every sector equal,
     1 = one sector has everything. Lower means the tree grows in more
     directions, which is the whole reason to do this.<br>
+    <b>Solid and ghost are different units.</b> The solid is fractional effort
+    (sums to 1749); the ghost is a count of secondary appearances, normalised to
+    its own maximum. The gap reads as &ldquo;more reach than captured
+    effort&rdquo; &mdash; do <b>not</b> subtract one from the other.<br>
     <b>Model B's total is a different unit.</b> 3405 axis-hits from 1749
     commits &mdash; the shape is fine, the sums are not comparable to A, C
     or today.<br>
@@ -391,9 +593,35 @@ const LOOK = {
   thresh:  numParam('thresh',  0.76, 0, 1),
   skin:    PARAMS.get('skin') !== '0',
   rose:    PARAMS.get('rose') !== '0',
+  // Ghost visual weight. Walter: "We might try to add a tad more visual weight
+  // to the ghosts." Was effectively 0.40 when the ghost lived only inside model
+  // C (line opacity .5 x colour scalar .42 ≈ .21 perceived); 0.62 lifts it a
+  // step without letting it rival the solid. Above ~1.0 the ghost starts
+  // competing for primacy and the reading inverts — that is the ceiling to
+  // watch, not the slider's max.
+  ghost:   numParam('ghost', 0.62, 0, 1.6),
 };
-const SOLO = (() => { const v = (PARAMS.get('solo') || '').toUpperCase(); return 'ABC'.includes(v) && v ? v : null; })();
-let FOCUS = (() => { const v = (PARAMS.get('model') || '').toUpperCase(); return 'ABC'.includes(v) && v ? v : null; })();
+// Valid render targets. AC is the merged model Walter chose; Q is the quadrant
+// rollup; A/B/C survive as the evidence behind the choice.
+const ALL_KEYS = ['AC', 'Q', 'A', 'B', 'C'];
+const keyParam = (name) => {
+  const v = (PARAMS.get(name) || '').toUpperCase();
+  return ALL_KEYS.includes(v) ? v : null;
+};
+const SOLO = keyParam('solo');
+let FOCUS = keyParam('model');
+// Evidence models are off by default: the decision is made, so A/B/C alone are
+// no longer the point of the page — but they stay one click away rather than
+// being deleted, because a choice you cannot re-audit is just an assertion.
+let EVIDENCE = PARAMS.get('evidence') === '1';
+/* Legend starts open on a roomy screen and CLOSED on a narrow one. Walter flagged
+   the side panels as already too dense for mobile, and the legend is a new panel
+   competing for the same column — but it is also the one thing a first-time
+   viewer needs, so it collapses to a one-line affordance rather than vanishing.
+   An explicit ?legend= always wins over the width heuristic. */
+let LEGEND_OPEN = PARAMS.has('legend')
+  ? PARAMS.get('legend') !== '0'
+  : innerWidth > 1200;
 
 const PAL = { sky: 0x05070d, dead: 0x5c6672, star: 0xe8ecff };
 
@@ -421,7 +649,22 @@ const PAL = { sky: 0x05070d, dead: 0x5c6672, star: 0xe8ecff };
    wholesale, cyclic order preserved: the CREATE arc, then AUTOMATE (workflows
    then agents, adjacent on purpose — they are the pair the reclassification
    moves mass between), then DISTRIBUTE, then BUILD.
-   -------------------------------------------------------------------------- */
+
+   ID vs LABEL DIVERGE ON ONE ROW, DELIBERATELY. build.pro-code is displayed as
+   "coding". Walter: "Rename the 'pro-code' label to 'coding' since we don't have
+   the previous no- low- prefixes anymore." He is right — "pro-code" was only ever
+   meaningful as the third term against no-code and low-code, and those two are
+   dropped as unobservable in a commit log. Left alone, "pro-code" is a contrast
+   with nothing to contrast against, and a first-time viewer reads it as a
+   distinct skill tier that does not exist here.
+
+   THE RENAME IS PRESENTATION ONLY. The id stays `build.pro-code` because it is
+   the join key into growth-log.jsonl (every commit carries sector:
+   "build.pro-code"), into tree.config.yml, and into taxonomy.mjs — which is
+   append-only and whose array index IS the renderer's aSector. Changing the id
+   would be a data migration; changing the label is a word on a screen. Every
+   display path below reads s.label, never s.id, so this one line does the whole
+   rename. -------------------------------------------------------------------- */
 const SECTORS = [
   { id: 'create.copy',        label: 'copy',      az: 15,  hue: 0xffb454 },
   { id: 'create.images',      label: 'images',    az: 55,  hue: 0xff6ec7 },
@@ -431,7 +674,7 @@ const SECTORS = [
   { id: 'automate.agents',    label: 'agents',    az: 215, hue: 0xc9a2ff },   // NEW
   { id: 'distribute.seo',     label: 'seo',       az: 255, hue: 0x35d0ba },
   { id: 'distribute.geo',     label: 'geo',       az: 295, hue: 0x4aa8ff },
-  { id: 'build.pro-code',     label: 'pro-code',  az: 335, hue: 0x6a8dff },
+  { id: 'build.pro-code',     label: 'coding',    az: 335, hue: 0x6a8dff },   // id != label; see above
 ].sort((a, b) => a.az - b.az);
 
 const SI = new Map(SECTORS.map((s, i) => [s.id, i]));
@@ -619,10 +862,39 @@ const MI = new Map(MONTHS.map((k, i) => [k, i]));
    -------------------------------------------------------------------------- */
 const MODELS = ['A', 'B', 'C'];
 const MODEL_META = {
-  A: { key: 'A', name: 'A · Fractional', tag: 'weights sum to 1.0', tint: 0x7ff0d2 },
-  B: { key: 'B', name: 'B · Whole commit', tag: 'full count per axis', tint: 0xffd08a },
-  C: { key: 'C', name: 'C · Primary + secondary', tag: 'solid = primary, ghost = secondary', tint: 0xc9a2ff },
+  AC: { key: 'AC', name: 'A + C · chosen model', tag: 'solid = fractional effort, ghost = secondary reach', tint: 0x7ff0d2 },
+  Q:  { key: 'Q',  name: 'Q · four quadrants',   tag: 'same data, rolled up to the four limbs',            tint: 0x9fd8ff },
+  A:  { key: 'A',  name: 'A · Fractional',       tag: 'weights sum to 1.0',                                tint: 0x7ff0d2 },
+  B:  { key: 'B',  name: 'B · Whole commit',     tag: 'full count per axis',                               tint: 0xffd08a },
+  C:  { key: 'C',  name: 'C · Primary + secondary', tag: 'solid = primary, ghost = secondary',             tint: 0xc9a2ff },
 };
+
+/* --------------------------------------------------------------------------
+   THE FOUR QUADRANTS — Walter's second model.
+   --------------------------------------------------------------------------
+   A pure ROLLUP of model A: every sector's fractional weight is added to its
+   parent limb. No reweighting and no second assignment, which is exactly what
+   makes the two views comparable — Q and AC are one measurement seen at two
+   altitudes, so any difference between them is caused by the ALTITUDE alone.
+
+   HUES are taken from a representative member sector rather than invented, so a
+   viewer who has learned the nine hues can carry that knowledge upward: CREATE
+   wears copy's amber (its largest member), AUTOMATE wears workflows' green,
+   DISTRIBUTE wears seo's teal, BUILD wears coding's blue (its only member).
+
+   BEARINGS respaced to an even 90 degrees — the same presentation-only rule
+   applied to the nine at 40 degrees. Phase-locked to 45 so the four limbs sit
+   between the diagonals and the object does not read as an axis-aligned box.
+   -------------------------------------------------------------------------- */
+const QUADS = [
+  { id: 'create',     label: 'create',     az: 45,  hue: 0xffb454 },
+  { id: 'automate',   label: 'automate',   az: 135, hue: 0x7ce65a },
+  { id: 'distribute', label: 'distribute', az: 225, hue: 0x35d0ba },
+  { id: 'build',      label: 'build',      az: 315, hue: 0x6a8dff },
+];
+const QI = new Map(QUADS.map((q, i) => [q.id, i]));
+// sector index -> quadrant index, derived from the id prefix so it cannot drift
+const SEC2QUAD = SECTORS.map((s) => QI.get(s.id.split('.')[0]));
 
 const blankRow = (key, present) => ({
   key, present,
@@ -630,7 +902,12 @@ const blankRow = (key, present) => ({
   B: new Array(SECTORS.length).fill(0),
   C: new Array(SECTORS.length).fill(0),
   Cs: new Array(SECTORS.length).fill(0),   // C's secondaries, drawn as ghosts
-  totals: { A: 0, B: 0, C: 0 },
+  // AC — the merged model. Solid IS A (same array, aliased after the pass, so
+  // there is exactly one source of truth for the solid); ghost IS Cs. Kept as
+  // named fields so the renderer never has to know which model it is drawing.
+  Q:  new Array(QUADS.length).fill(0),     // quadrant rollup of A
+  Qs: new Array(QUADS.length).fill(0),     // quadrant rollup of the ghost track
+  totals: { A: 0, B: 0, C: 0, Q: 0 },
   commits: 0,
 });
 const rows = MONTHS.map((key) => blankRow(key, seenMonths.has(key)));
@@ -660,6 +937,9 @@ for (const e of RAW) {
     if (si === undefined) continue;                  // sector not drawn here (no-code etc.)
     r.A[si] += w;  r.totals.A += w;
     r.B[si] += 1;  r.totals.B += 1;
+    // the rollup: same weight, added to the parent limb. Sectors sum into
+    // quadrants exactly, so Q's grand total is A's grand total (1749).
+    r.Q[SEC2QUAD[si]] += w; r.totals.Q += w;
     if (w > pw) { pw = w; primary = si; }
   }
   if (primary !== null) {
@@ -668,6 +948,7 @@ for (const e of RAW) {
       const si = SI.get(sid);
       if (si === undefined || si === primary || w <= 0) continue;
       r.Cs[si] += 1;
+      r.Qs[SEC2QUAD[si]] += 1;
     }
   }
 }
@@ -682,10 +963,14 @@ for (const e of RAW) {
 
 // Grand totals per model + the ghost track.
 const TOT = { A: new Array(SECTORS.length).fill(0), B: new Array(SECTORS.length).fill(0),
-              C: new Array(SECTORS.length).fill(0), Cs: new Array(SECTORS.length).fill(0) };
-for (const r of rows) SECTORS.forEach((_, i) => {
-  TOT.A[i] += r.A[i]; TOT.B[i] += r.B[i]; TOT.C[i] += r.C[i]; TOT.Cs[i] += r.Cs[i];
-});
+              C: new Array(SECTORS.length).fill(0), Cs: new Array(SECTORS.length).fill(0),
+              Q: new Array(QUADS.length).fill(0),   Qs: new Array(QUADS.length).fill(0) };
+for (const r of rows) {
+  SECTORS.forEach((_, i) => {
+    TOT.A[i] += r.A[i]; TOT.B[i] += r.B[i]; TOT.C[i] += r.C[i]; TOT.Cs[i] += r.Cs[i];
+  });
+  QUADS.forEach((_, i) => { TOT.Q[i] += r.Q[i]; TOT.Qs[i] += r.Qs[i]; });
+}
 
 /* Gini across sectors: 0 = perfectly even growth in every direction, 1 = one
    sector owns everything. This is the QUANTITATIVE companion to the visual
@@ -699,7 +984,41 @@ function gini(vals) {
   for (let i = 0; i < n; i++) cum += (i + 1) * v[i];
   return (2 * cum) / (n * s) - (n + 1) / n;
 }
-const GINI = { base: gini(BASE), A: gini(TOT.A), B: gini(TOT.B), C: gini(TOT.C) };
+const GINI = { base: gini(BASE), A: gini(TOT.A), B: gini(TOT.B), C: gini(TOT.C),
+               AC: gini(TOT.A), Q: gini(TOT.Q) };
+
+/* --------------------------------------------------------------------------
+   THE COST OF ROLLING UP, measured rather than asserted.
+   --------------------------------------------------------------------------
+   Walter's instinct is that the quadrant view will look better balanced. It
+   does. The question this page has to answer honestly is what that balance
+   costs, and the answer is the serial->parallel story: how many directions was
+   the tree growing in at once, month by month.
+
+   With nine buckets that count varies a lot and the variation IS the finding.
+   With four buckets it saturates — a month only has to touch one sector in a
+   limb for the whole limb to count as active — so the curve flattens toward the
+   ceiling and stops discriminating between months. Both curves are drawn side by
+   side at their own ceilings (9 and 4) so the flattening is visible directly.
+
+   "Active" = strictly positive attributed effort in that bucket that month. -- */
+const ACTIVE_SEC  = rows.map((r) => (r.present ? r.A.filter((v) => v > 0).length : 0));
+const ACTIVE_QUAD = rows.map((r) => (r.present ? r.Q.filter((v) => v > 0).length : 0));
+const presentRows = rows.filter((r) => r.present).length;
+const meanOf = (arr) => rows.reduce((a, _, i) => a + (rows[i].present ? arr[i] : 0), 0) / (presentRows || 1);
+// saturation: share of active months sitting at the ceiling. The higher this is,
+// the less the axis can still tell months apart.
+const satOf = (arr, ceil) =>
+  rows.reduce((a, r, i) => a + (r.present && arr[i] >= ceil ? 1 : 0), 0) / (presentRows || 1);
+const ASYM = {
+  secMean: meanOf(ACTIVE_SEC), quadMean: meanOf(ACTIVE_QUAD),
+  secFill: meanOf(ACTIVE_SEC) / SECTORS.length, quadFill: meanOf(ACTIVE_QUAD) / QUADS.length,
+  secSat: satOf(ACTIVE_SEC, SECTORS.length), quadSat: satOf(ACTIVE_QUAD, QUADS.length),
+  // how many DISTINCT values each axis actually takes across the history — a
+  // direct read on discriminating power, and the cleanest way to show the loss.
+  secLevels: new Set(ACTIVE_SEC.filter((_, i) => rows[i].present)).size,
+  quadLevels: new Set(ACTIVE_QUAD.filter((_, i) => rows[i].present)).size,
+};
 
 // badge rollup — how much of the picture is derived vs asserted
 const BADGE = { topics: 0, authored: 0, single: 0 };
@@ -714,6 +1033,24 @@ for (const info of repoInfo.values()) { BADGE[info.badge] += info.commits; BADGE
 const MAXCELL = {};
 for (const m of MODELS) MAXCELL[m] = Math.max(1, ...rows.map((r) => Math.max(...r[m])));
 MAXCELL.Cs = Math.max(1, ...rows.map((r) => Math.max(...r.Cs)));
+MAXCELL.Q  = Math.max(1, ...rows.map((r) => Math.max(...r.Q)));
+MAXCELL.Qs = Math.max(1, ...rows.map((r) => Math.max(...r.Qs)));
+// AC's solid is A's geometry unchanged — same array, same scale — so the merged
+// view's solid is bit-for-bit the model Walter approved, with the ghost added
+// rather than a re-derived lookalike.
+MAXCELL.AC = MAXCELL.A;
+
+/* Each drawable is described once here, and the renderer reads only this. Adding
+   the merged model and the rollup therefore costs no branching inside the
+   geometry code — a view is "which array is the solid, which is the ghost, and
+   on which set of bearings". */
+const VIEW = {
+  AC: { solid: 'A', solidMax: 'A', ghost: 'Cs', ghostMax: 'Cs', axes: SECTORS },
+  A:  { solid: 'A', solidMax: 'A', ghost: null,  ghostMax: null, axes: SECTORS },
+  B:  { solid: 'B', solidMax: 'B', ghost: null,  ghostMax: null, axes: SECTORS },
+  C:  { solid: 'C', solidMax: 'C', ghost: 'Cs', ghostMax: 'Cs', axes: SECTORS },
+  Q:  { solid: 'Q', solidMax: 'Q', ghost: 'Qs', ghostMax: 'Qs', axes: QUADS },
+};
 
 const radiusOf = (c, max) => (c <= 0 ? CORE_R : CORE_R + Math.sqrt(c / max) * (MAX_R - CORE_R));
 
@@ -726,9 +1063,20 @@ function catmull(p0, p1, p2, p3, t) {
     (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
     (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
 }
-const AZ = SECTORS.map((s) => s.az);
-function ringRadii(radii) {
-  const n = SECTORS.length;
+/* Parameterised by the axis set so the four quadrants get exactly the same
+   periodic Catmull-Rom treatment as the nine sectors — same interpolation, same
+   caveat that only the values AT the bearings are measurement. With four axes
+   the resampled ring is doing proportionally more inference between them, which
+   is one more reason the rollup looks smoother than it has evidence to be. */
+const AZ_OF = new Map();
+const azList = (axes) => {
+  let v = AZ_OF.get(axes);
+  if (!v) { v = axes.map((s) => s.az); AZ_OF.set(axes, v); }
+  return v;
+};
+function ringRadii(radii, axes = SECTORS) {
+  const AZ = azList(axes);
+  const n = axes.length;
   const out = new Float32Array(RING_N);
   for (let k = 0; k < RING_N; k++) {
     const a = (k / RING_N) * 360;
@@ -831,15 +1179,26 @@ const rl = new THREE.DirectionalLight(0x6ea8ff, 0.5); rl.position.set(-9, 5, -7)
 const rnd = mulberry32(SEED);
 const noiseTable = Array.from({ length: 512 }, () => rnd() - 0.5);
 const sectorColors = SECTORS.map((s) => new THREE.Color(s.hue));
+const quadColors = QUADS.map((q) => new THREE.Color(q.hue));
+const colorsFor = (axes) => (axes === QUADS ? quadColors : sectorColors);
 const neutral = new THREE.Color(PAL.dead);
 
-function hueAt(k, counts) {
+/* Blend width scales with axis spacing: 24 deg of falloff against 40 deg
+   spacing for nine sectors, widened proportionally for the four quadrants at 90
+   deg. Without this the quadrant object would show four isolated colour blooms
+   separated by grey, which would be an artefact of the constant rather than
+   anything in the data. */
+const BLEND_OF = new Map([[SECTORS, 24], [QUADS, 24 * (90 / 40)]]);
+
+function hueAt(k, counts, axes = SECTORS) {
   const a = (k / RING_N) * 360;
+  const cols = colorsFor(axes);
+  const sigma = BLEND_OF.get(axes) || 24;
   let wr = 0, wg = 0, wb = 0, wsum = 0;
-  SECTORS.forEach((s, i) => {
+  axes.forEach((s, i) => {
     let d = Math.abs(((a - s.az + 540) % 360) - 180);
     d = 180 - d;
-    const prox = Math.exp(-(d * d) / (2 * 24 * 24));
+    const prox = Math.exp(-(d * d) / (2 * sigma * sigma));
     const w = prox * counts[i];
     if (w > 0) { const c = sectorColors[i]; wr += c.r * w; wg += c.g * w; wb += c.b * w; wsum += w; }
   });
@@ -848,7 +1207,9 @@ function hueAt(k, counts) {
 }
 
 const skinAlpha = { value: LOOK.opacity };
-const skinDim = { value: 1.0 };   // per-envelope dimming when one model is focused
+// Shared by every ghost material on the page, so the slider moves all ghost
+// geometry in every envelope in one frame with no rebuild.
+const GHOSTU = { value: LOOK.ghost };
 function makeSkinMaterial(side, back, dimUniform) {
   return new THREE.ShaderMaterial({
     uniforms: { uOpacity: skinAlpha, uBack: { value: back ? 1 : 0 }, uDim: dimUniform },
@@ -878,12 +1239,15 @@ function makeSkinMaterial(side, back, dimUniform) {
 
 function buildEnvelope(model) {
   const meta = MODEL_META[model];
+  const view = VIEW[model];
+  const axes = view.axes;
   const grp = new THREE.Group();
   const dimU = { value: 1.0 };
-  const max = MAXCELL[model];
+  const max = MAXCELL[view.solidMax];
+  const solidKey = view.solid;
 
-  // per-month rings at TRUE radii for this model
-  const monthRings = rows.map((r) => ringRadii(r[model].map((c) => radiusOf(c, max))));
+  // per-month rings at TRUE radii for this model's SOLID track
+  const monthRings = rows.map((r) => ringRadii(r[solidKey].map((c) => radiusOf(c, max)), axes));
   const levels = buildLevels(monthRings);
 
   /* ---- the glass skin ---- */
@@ -891,13 +1255,13 @@ function buildEnvelope(model) {
   for (let li = 0; li < levels.length; li++) {
     const lev = levels[li];
     const mi1 = Math.max(0, Math.min(rows.length - 1, Math.round(lev.mi)));
-    const counts = rows[mi1][model];
+    const counts = rows[mi1][solidKey];
     for (let k = 0; k < RING_N; k++) {
       const a = (k / RING_N) * (Math.PI * 2);
       const n = noiseTable[(k * 7 + li * 13) % noiseTable.length];
       const r = lev.radii[k] * (1 + n * 0.012);
       pos.push(Math.cos(a) * r, lev.y, Math.sin(a) * r);
-      tmp.copy(hueAt(k, counts));
+      tmp.copy(hueAt(k, counts, axes));
       tmp.multiplyScalar(0.80 + 0.34 * (lev.y / (TOP_Y || 1)));
       if (lev.gap) tmp.setRGB(0.42, 0.16, 0.16);       // 2025-02: a dark scar, never smoothed
       col.push(tmp.r, tmp.g, tmp.b);
@@ -937,7 +1301,7 @@ function buildEnvelope(model) {
         op.push(Math.cos(a2) * r2, y, Math.sin(a2) * r2);
         for (const kk of [k, k2]) {
           if (!r.present) { oc.push(0.55, 0.16, 0.16); continue; }
-          tmp.copy(hueAt(kk, r[model]));
+          tmp.copy(hueAt(kk, r[solidKey], axes));
           const strength = (radii[kk] - CORE_R) / (MAX_R - CORE_R);
           tmp.multiplyScalar(0.55 + strength * 1.25);
           oc.push(tmp.r, tmp.g, tmp.b);
@@ -958,9 +1322,9 @@ function buildEnvelope(model) {
     rows.forEach((r, i) => {
       if (!r.present) return;
       const y = yOf(i);
-      SECTORS.forEach((s, si) => {
-        const c = r[model][si]; if (c <= 0) return;
-        const a = deg(s.az), rr = radiusOf(c, max), cc = sectorColors[si];
+      axes.forEach((s, si) => {
+        const c = r[solidKey][si]; if (c <= 0) return;
+        const a = deg(s.az), rr = radiusOf(c, max), cc = colorsFor(axes)[si];
         sp.push(Math.cos(a) * CORE_R, y, Math.sin(a) * CORE_R);
         sp.push(Math.cos(a) * rr, y, Math.sin(a) * rr);
         sc.push(cc.r * 0.20, cc.g * 0.20, cc.b * 0.20);
@@ -976,30 +1340,42 @@ function buildEnvelope(model) {
     }));
     spokes.renderOrder = 3; roseGrp.add(spokes);
 
-    /* ---- MODEL C ONLY: the ghost track ----------------------------------
-       Secondary tags drawn as a SEPARATE, fainter rosette at their own scale.
-       This is the "two visual weights" the brief asks for, and it is the whole
-       reason C exists: the solid geometry stays exactly what today's tree draws
-       (so nothing migrates, nothing breaks) while the ghost shows what the
-       single-sector model is currently throwing away. Where the ghost is much
-       bigger than the solid — agents, images — that gap IS the lost information,
-       made visible rather than argued about.
-       Drawn at 0.72 of full radius and low opacity so it can never be mistaken
-       for the primary reading.                                              */
-    if (model === 'C') {
+    /* ---- THE GHOST TRACK — secondary reach ------------------------------
+       Now drawn for the MERGED model (and for the quadrant rollup), not only
+       for C. In AC the solid beneath it is A's fractional effort, so the pair
+       reads: bright lobe = effort actually attributed here, faint lobe = how far
+       this sector's involvement reaches beyond that. WHERE THE GHOST RUNS WELL
+       PAST THE SOLID — agents, images — THAT GAP IS PRECISELY WHAT THE OLD
+       SINGLE-SECTOR MODEL WAS THROWING AWAY. Making the gap visible is the
+       entire argument for reclassifying, so it is geometry, not a footnote.
+
+       The two tracks are NOT on a shared scale and must not be subtracted: the
+       solid is fractional effort, the ghost is a count of secondary
+       appearances, each normalised to its own maximum. The relationship the eye
+       should read is "further out / not as far out", not a difference.
+
+       VISUAL WEIGHT is live-tunable (GHOSTU). Walter asked for "a tad more"
+       than the old fixed 0.42-colour / 0.50-opacity, so the default lands a step
+       up; the whole point of the lever is that he settles it by eye. The ghost
+       still sits at 0.78 of its own radius and stays additive-blended and
+       thinner than the solid, so raising the weight makes it more PRESENT
+       without letting it read as the primary quantity.                       */
+    const ghostKey = view.ghost;
+    if (ghostKey) {
+      const gmax = MAXCELL[view.ghostMax];
       const gp = [], gc = [];
       rows.forEach((r, i) => {
         if (!r.present) return;
         const y = yOf(i) + 0.03;
-        const ghostRadii = ringRadii(r.Cs.map((c) => radiusOf(c, MAXCELL.Cs) * 0.72));
+        const track = r[ghostKey];
+        const ghostRadii = ringRadii(track.map((c) => radiusOf(c, gmax) * 0.78), axes);
         for (let k = 0; k < RING_N; k++) {
           const k2 = (k + 1) % RING_N;
           const a1 = (k / RING_N) * Math.PI * 2, a2 = (k2 / RING_N) * Math.PI * 2;
           gp.push(Math.cos(a1) * ghostRadii[k], y, Math.sin(a1) * ghostRadii[k]);
           gp.push(Math.cos(a2) * ghostRadii[k2], y, Math.sin(a2) * ghostRadii[k2]);
           for (const kk of [k, k2]) {
-            tmp.copy(hueAt(kk, r.Cs));
-            tmp.multiplyScalar(0.42);
+            tmp.copy(hueAt(kk, track, axes));
             gc.push(tmp.r, tmp.g, tmp.b);
           }
         }
@@ -1007,21 +1383,87 @@ function buildEnvelope(model) {
       const gg = new THREE.BufferGeometry();
       gg.setAttribute('position', new THREE.Float32BufferAttribute(gp, 3));
       gg.setAttribute('color', new THREE.Float32BufferAttribute(gc, 3));
-      const ghosts = new THREE.LineSegments(gg, new THREE.LineBasicMaterial({
-        vertexColors: true, transparent: true, opacity: 0.5,
-        depthWrite: false, blending: THREE.AdditiveBlending,
+      // colour scalar and alpha both ride the ghost-weight uniform, so the
+      // slider moves brightness and presence together the way a real "weight"
+      // should, rather than just fading a fixed-colour line.
+      const ghosts = new THREE.LineSegments(gg, new THREE.ShaderMaterial({
+        vertexColors: true, transparent: true, depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: { uGhost: GHOSTU, uDim: dimU },
+        vertexShader: `
+          varying vec3 vCol;
+          void main() {
+            vCol = color;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }`,
+        fragmentShader: `
+          uniform float uGhost; uniform float uDim; varying vec3 vCol;
+          void main() {
+            gl_FragColor = vec4(vCol * (0.34 + uGhost * 0.62) * uDim,
+                                clamp(0.30 + uGhost * 0.52, 0.0, 1.0) * uDim);
+          }`,
       }));
       ghosts.renderOrder = 3; roseGrp.add(ghosts);
+
+      /* Ghost DOTS at the measured bearings. The ghost was previously only a
+         ring outline, which is why it read as atmosphere rather than as a
+         reading; giving it points at the true bearings makes it a MEASUREMENT
+         with the same status as the solid's dots, just quieter. This is most of
+         the "more visual weight" Walter asked for. */
+      const gdp = [], gdc = [], gds = [];
+      rows.forEach((r, i) => {
+        if (!r.present) return;
+        const y = yOf(i) + 0.03;
+        const track = r[ghostKey];
+        const cols = colorsFor(axes);
+        axes.forEach((s, si) => {
+          const c = track[si]; if (c <= 0) return;
+          const a = deg(s.az), rr = radiusOf(c, gmax) * 0.78, cc = cols[si];
+          gdp.push(Math.cos(a) * rr, y, Math.sin(a) * rr);
+          gdc.push(cc.r, cc.g, cc.b);
+          gds.push(3.4);
+        });
+      });
+      if (gdp.length) {
+        const gdg = new THREE.BufferGeometry();
+        gdg.setAttribute('position', new THREE.Float32BufferAttribute(gdp, 3));
+        gdg.setAttribute('color', new THREE.Float32BufferAttribute(gdc, 3));
+        gdg.setAttribute('psize', new THREE.Float32BufferAttribute(gds, 1));
+        const gdots = new THREE.Points(gdg, new THREE.ShaderMaterial({
+          transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true,
+          uniforms: { uScale: { value: renderer.getPixelRatio() * innerHeight * 0.5 },
+                      uDim: dimU, uGhost: GHOSTU },
+          vertexShader: `
+            attribute float psize; uniform float uScale; uniform float uGhost; varying vec3 vCol;
+            void main() {
+              vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+              vCol = color;
+              gl_PointSize = clamp(psize * (0.7 + uGhost * 0.6) * (uScale / -mvPosition.z) * 0.09, 1.0, 16.0);
+              gl_Position = projectionMatrix * mvPosition;
+            }`,
+          fragmentShader: `
+            varying vec3 vCol; uniform float uDim; uniform float uGhost;
+            void main() {
+              float d = length(gl_PointCoord - vec2(0.5));
+              if (d > 0.5) discard;
+              float a = smoothstep(0.5, 0.06, d);
+              gl_FragColor = vec4(vCol * (0.35 + uGhost * 0.5) * uDim,
+                                  a * clamp(0.26 + uGhost * 0.46, 0.0, 1.0) * uDim);
+            }`,
+        }));
+        gdots.renderOrder = 4; roseGrp.add(gdots);
+        gdots.userData.scaleU = gdots.material.uniforms.uScale;
+      }
     }
 
     // lobe dots — the actual measured points
     const dp = [], dc = [], ds = [];
     rows.forEach((r, i) => {
       if (!r.present) return;
-      const y = yOf(i), tot = r.totals[model] || 1;
-      SECTORS.forEach((s, si) => {
-        const c = r[model][si]; if (c <= 0) return;
-        const a = deg(s.az), rr = radiusOf(c, max), cc = sectorColors[si];
+      const y = yOf(i), tot = r[solidKey].reduce((x, y2) => x + y2, 0) || 1;
+      axes.forEach((s, si) => {
+        const c = r[solidKey][si]; if (c <= 0) return;
+        const a = deg(s.az), rr = radiusOf(c, max), cc = colorsFor(axes)[si];
         dp.push(Math.cos(a) * rr, y, Math.sin(a) * rr);
         const share = c / tot, b = 0.75 + share * 1.05;
         dc.push(cc.r * b, cc.g * b, cc.b * b);
@@ -1065,8 +1507,8 @@ function buildEnvelope(model) {
   }));
   core.position.y = TOP_Y / 2; core.renderOrder = 0; grp.add(core);
 
-  /* ---- sector bearing spokes on the ground ---- */
-  SECTORS.forEach((s) => {
+  /* ---- bearing spokes on the ground (9 sectors, or 4 quadrants) ---- */
+  axes.forEach((s) => {
     const a = deg(s.az);
     const lg = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(Math.cos(a) * CORE_R, 0.01, Math.sin(a) * CORE_R),
@@ -1077,7 +1519,7 @@ function buildEnvelope(model) {
     })));
   });
 
-  grp.userData = { model, dimU, skinGrp, roseGrp, monthRings, meta };
+  grp.userData = { model, dimU, skinGrp, roseGrp, monthRings, meta, axes };
   return grp;
 }
 
@@ -1115,11 +1557,26 @@ function makeLabel(text, opts = {}) {
    ========================================================================== */
 const SPACING = 12.6;
 const envelopes = {};
-const shown = SOLO ? [SOLO] : MODELS;
+/* WHAT IS ON SCREEN. The default pair is the chosen model beside the rollup —
+   that IS Walter's question ("how does it compare if we abstract to the four
+   quadrants"), so the two must be adjacent and identically lit to be compared at
+   all. A/B/C join the row only with ?evidence=1. */
+const shown = SOLO ? [SOLO] : (EVIDENCE ? ['AC', 'Q', 'A', 'B', 'C'] : ['AC', 'Q']);
+// centre the row whatever its length
+const xOf = (i) => (SOLO ? 0 : (i - (shown.length - 1) / 2) * SPACING);
+
+const headlineFor = (m) => {
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  if (m === 'AC') return sum(TOT.A).toFixed(0) + ' attributed  ·  ' + sum(TOT.Cs) + ' ghost';
+  if (m === 'Q')  return sum(TOT.Q).toFixed(0) + ' attributed  ·  4 limbs';
+  if (m === 'A')  return sum(TOT.A).toFixed(0) + ' attributed';
+  if (m === 'B')  return sum(TOT.B) + ' axis-hits';
+  return sum(TOT.C) + ' primary';
+};
 
 shown.forEach((m, i) => {
   const env = buildEnvelope(m);
-  const x = SOLO ? 0 : (i - 1) * SPACING;
+  const x = xOf(i);
   env.position.x = x;
   scene.add(env);
   envelopes[m] = env;
@@ -1132,33 +1589,34 @@ shown.forEach((m, i) => {
   t.position.set(x, TOP_Y + 2.35, 0); scene.add(t);
   const t2 = makeLabel(meta.tag, { size: 30, col: '#8fa3ba' });
   t2.position.set(x, TOP_Y + 1.62, 0); scene.add(t2);
-  const totStr = m === 'A'
-    ? TOT.A.reduce((a, b) => a + b, 0).toFixed(0) + ' attributed'
-    : (m === 'B' ? TOT.B.reduce((a, b) => a + b, 0) + ' axis-hits' : TOT.C.reduce((a, b) => a + b, 0) + ' primary');
-  const t3 = makeLabel(totStr + '   ·   Gini ' + GINI[m].toFixed(3), { size: 30, col: '#cfe0f2', bold: true });
+  const t3 = makeLabel(headlineFor(m) + '   ·   Gini ' + GINI[m].toFixed(3),
+    { size: 30, col: '#cfe0f2', bold: true });
   t3.position.set(x, TOP_Y + 1.0, 0); scene.add(t3);
-});
 
-// sector labels — drawn ONCE, on the left-hand envelope only (or the solo one),
-// because repeating nine labels three times is noise, not information.
-{
-  const anchorX = SOLO ? 0 : -SPACING;
-  SECTORS.forEach((s) => {
-    const empty = TOT.A[SI.get(s.id)] <= 0;
+  /* Axis labels go on EVERY envelope now rather than once on the left. With two
+     different axis sets on screen (nine sectors and four quadrants) a single
+     shared label ring would be wrong for one of them — and mislabelling the
+     rollup is exactly the confusion this comparison has to avoid. */
+  const cols = env.userData.axes === QUADS ? quadColors : sectorColors;
+  env.userData.axes.forEach((s, si) => {
+    const isQuad = env.userData.axes === QUADS;
+    const empty = isQuad ? TOT.Q[si] <= 0 : TOT.A[si] <= 0;
     const sp = makeLabel(s.label, {
-      size: 32, col: empty ? '#5c6672' : '#' + s.hue.toString(16).padStart(6, '0'), bold: !empty,
+      size: isQuad ? 36 : 32,
+      col: empty ? '#5c6672' : '#' + s.hue.toString(16).padStart(6, '0'),
+      bold: !empty,
     });
     const a = deg(s.az), rr = MAX_R + 1.15;
-    sp.position.set(anchorX + Math.cos(a) * rr, 0.12, Math.sin(a) * rr);
+    sp.position.set(x + Math.cos(a) * rr, 0.12, Math.sin(a) * rr);
     scene.add(sp);
   });
-}
+});
 
-// month ladder, once, at the far right
+// month ladder, once, at the far right of whatever row is on screen
 {
   const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monLabel = (key) => { const [y, m] = key.split('-'); return MON[Number(m) - 1] + " '" + y.slice(2); };
-  const x = (SOLO ? 0 : SPACING) + MAX_R + 1.6;
+  const x = xOf(shown.length - 1) + MAX_R + 1.6;
   rows.forEach((r, i) => {
     if (i % 3 !== 0 && r.present) return;
     const sp = makeLabel(monLabel(r.key), { size: 30, col: r.present ? '#9fb2c8' : '#ff9d9d' });
@@ -1176,12 +1634,21 @@ shown.forEach((m, i) => {
    they cover roughly 360px each of a 1920px frame, so the usable centre is about
    62% of the width and the outer two envelopes would otherwise sit under them. */
 function frameAll() {
-  const halfW = (SOLO ? MAX_R + 2.4 : SPACING + MAX_R + 3.2);
+  // half-width follows the row length, so the default two-up frames tight and
+  // the ?evidence=1 five-up still fits without cropping the outer titles.
+  const span = (shown.length - 1) * SPACING / 2;
+  const halfW = (SOLO ? MAX_R + 2.4 : span + MAX_R + 3.2);
   const yTop = TOP_Y + 3.1;             // tallest label, not tallest geometry
   const halfH = yTop / 2;
   const vFov = deg(camera.fov);
   const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
-  const d = Math.max(halfH / Math.tan(vFov / 2), halfW / Math.tan(hFov / 2)) * 1.14;
+  /* The fixed side panels eat roughly 360px each, so the usable centre is only
+     about 62% of the width. The 1.14 margin that covered that for a short row is
+     not enough once ?evidence=1 puts five envelopes up: the outer two land under
+     the panels or off-frame entirely. Widen the margin with the row length so
+     every envelope stays inside the readable centre band at any row size. */
+  const margin = shown.length >= 5 ? 1.66 : (shown.length >= 3 ? 1.22 : 1.14);
+  const d = Math.max(halfH / Math.tan(vFov / 2), halfW / Math.tan(hFov / 2)) * margin;
   camera.position.set(0, yTop * 0.5, d);
   controls.target.set(0, yTop * 0.5, 0);
   controls.update();
@@ -1222,6 +1689,82 @@ const fmtI = (v) => (v === 0 ? '·' : String(v));
   tbl.innerHTML = html;
 }
 
+/* ---- the quadrant rollup table + the two asymmetry sparklines ------------
+   The table answers "is it more balanced" (yes, and by how much). The
+   sparklines answer "what does that cost" (the month-to-month variation that
+   the sector view carries). Both are computed above from the same rows, so the
+   page cannot claim one without the other being true.                       */
+{
+  const t = document.getElementById('quadTbl');
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  let html = '<tr><th class="l">quadrant</th><th>effort</th><th>share</th>' +
+    '<th title="secondary reach rolled up to the limb">ghost</th></tr>';
+  const totQ = sum(TOT.Q) || 1;
+  QUADS.forEach((q, i) => {
+    html += `<tr><td class="l"><span class="dot" style="background:${hexOf(q.hue)}"></span>${q.label}</td>` +
+      `<td>${TOT.Q[i].toFixed(1)}</td>` +
+      `<td>${(TOT.Q[i] / totQ * 100).toFixed(1)}%</td>` +
+      `<td class="sec" style="color:#6f8398">${TOT.Qs[i]}</td></tr>`;
+  });
+  html += `<tr class="sum"><td class="l">total</td><td>${sum(TOT.Q).toFixed(0)}</td>` +
+    `<td>100%</td><td style="color:#6f8398">${sum(TOT.Qs)}</td></tr>`;
+  html += `<tr class="gini"><td class="l" title="inequality across the 4 quadrants">Gini</td>` +
+    `<td>${GINI.Q.toFixed(3)}</td><td colspan="2" style="color:#7f93aa;text-align:right">` +
+    `vs ${GINI.A.toFixed(3)} across 9 sectors</td></tr>`;
+  t.innerHTML = html;
+}
+
+/* Sparklines. Bars, not a line: the quantity is a small integer count of active
+   buckets, and a continuous line would imply values between 3 and 4 that cannot
+   exist. Each is drawn against ITS OWN ceiling (9 and 4) with the ceiling marked,
+   because the visible flattening of the lower chart against its ceiling is the
+   whole point being made. Absent months are drawn as gaps, never as zero-height
+   bars that could be misread as "measured and empty". */
+function sparkline(svgId, values, ceil, hue) {
+  const svg = document.getElementById(svgId);
+  const W = 300, H = 34, n = values.length;
+  const bw = W / n;
+  let out = `<line x1="0" y1="1.5" x2="${W}" y2="1.5" stroke="rgba(255,207,110,.35)" ` +
+    `stroke-width="1" stroke-dasharray="3 3"/>`;
+  values.forEach((v, i) => {
+    const r = rows[i];
+    const x = i * bw + bw * 0.14, w = bw * 0.72;
+    if (!r.present) {
+      out += `<rect x="${x.toFixed(2)}" y="${H - 3}" width="${w.toFixed(2)}" height="3" fill="rgba(150,42,42,.9)"/>`;
+      return;
+    }
+    const h = Math.max(1.5, (v / ceil) * (H - 4));
+    const atCeil = v >= ceil;
+    out += `<rect x="${x.toFixed(2)}" y="${(H - h).toFixed(2)}" width="${w.toFixed(2)}" ` +
+      `height="${h.toFixed(2)}" fill="${hue}" opacity="${atCeil ? 1 : 0.72}"/>`;
+  });
+  svg.innerHTML = out;
+}
+sparkline('spSec', ACTIVE_SEC, SECTORS.length, '#7ff0d2');
+sparkline('spQuad', ACTIVE_QUAD, QUADS.length, '#9fd8ff');
+document.getElementById('spSecAvg').innerHTML =
+  `mean <b style="color:#cfe0f2">${ASYM.secMean.toFixed(1)}</b>/9 ` +
+  `<span style="color:#7f93aa">(${(ASYM.secFill * 100).toFixed(0)}% full)</span>`;
+document.getElementById('spQuadAvg').innerHTML =
+  `mean <b style="color:#cfe0f2">${ASYM.quadMean.toFixed(1)}</b>/4 ` +
+  `<span style="color:#7f93aa">(${(ASYM.quadFill * 100).toFixed(0)}% full)</span>`;
+
+/* The trade-off, stated with the live numbers in it and no adjective doing work
+   a number should be doing. */
+{
+  const drop = ((GINI.A - GINI.Q) / GINI.A * 100);
+  document.getElementById('quadNote').innerHTML =
+    `<b>The trade-off, in numbers.</b> Rolling up cuts inequality from ` +
+    `${GINI.A.toFixed(3)} to ${GINI.Q.toFixed(3)} (&minus;${drop.toFixed(0)}%): the four limbs ` +
+    `carry far more even load than the nine sectors. But the asymmetry story flattens — ` +
+    `quadrants run ${(ASYM.quadFill * 100).toFixed(0)}% full on an average month against ` +
+    `${(ASYM.secFill * 100).toFixed(0)}% for sectors, sit at the ceiling in ` +
+    `${(ASYM.quadSat * 100).toFixed(0)}% of months (sectors: ${(ASYM.secSat * 100).toFixed(0)}%), ` +
+    `and take only ${ASYM.quadLevels} distinct values across the whole history against ` +
+    `${ASYM.secLevels} for sectors. <b>Balance is gained; the month-to-month variation that ` +
+    `carries the serial&rarr;parallel finding is what pays for it.</b>`;
+}
+
 // the fallback-chain rollup, in the HUD
 {
   const t = document.getElementById('chainTbl');
@@ -1233,6 +1776,38 @@ const fmtI = (v) => (v === 0 ? '·' : String(v));
       `<td class="n">${BADGE_REPOS.authored} repos</td><td class="n">${BADGE.authored}</td><td class="n">${pct(BADGE.authored)}</td></tr>` +
     `<tr><td class="l"><span class="badge single">single</span></td>` +
       `<td class="n">${BADGE_REPOS.single} repos</td><td class="n">${BADGE.single}</td><td class="n">${pct(BADGE.single)}</td></tr>`;
+}
+
+/* ---- legend: the nine hues, generated from SECTORS so the legend can never
+   drift from the geometry (this is also what makes the pro-code -> "coding"
+   rename a one-line change). Near-dead sectors are marked, because a first-time
+   viewer otherwise wonders why two of the nine colours are nowhere on screen. */
+{
+  const host = document.getElementById('lgHues');
+  const totA = TOT.A.reduce((a, b) => a + b, 0) || 1;
+  host.innerHTML = SECTORS.map((s, i) => {
+    const share = TOT.A[i] / totA;
+    const faint = share < 0.01;   // under 1% of attributed effort
+    return `<span class="hu" title="${s.id} — ${TOT.A[i].toFixed(1)} attributed">` +
+      `<i style="background:${hexOf(s.hue)}"></i>${s.label}` +
+      (faint ? ' <em>(&lt;1%)</em>' : '') + `</span>`;
+  }).join('');
+}
+{
+  const lg = document.getElementById('legend');
+  const tw = document.getElementById('lgTw');
+  const sync = () => {
+    lg.classList.toggle('collapsed', !LEGEND_OPEN);
+    tw.textContent = LEGEND_OPEN ? 'hide' : 'show';
+    document.getElementById('lgHd').setAttribute('aria-expanded', String(LEGEND_OPEN));
+  };
+  const toggle = () => { LEGEND_OPEN = !LEGEND_OPEN; sync(); pushURL(); };
+  const hd = document.getElementById('lgHd');
+  hd.addEventListener('click', toggle);
+  hd.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+  });
+  sync();
 }
 
 // per-repo derivation, so every guess is inspectable
@@ -1253,19 +1828,41 @@ const fmtI = (v) => (v === 0 ? '·' : String(v));
 function setPressed(id, on) { const e = document.getElementById(id); if (e) e.setAttribute('aria-pressed', String(on)); }
 
 function applyFocus() {
-  for (const m of MODELS) {
+  for (const m of ALL_KEYS) {
     const env = envelopes[m]; if (!env) continue;
     env.userData.dimU.value = (!FOCUS || FOCUS === m) ? 1.0 : 0.22;
   }
-  for (const m of MODELS) setPressed('b' + m, FOCUS === m);
+  for (const m of ALL_KEYS) setPressed('b' + m, FOCUS === m);
   setPressed('bAll', !FOCUS);
 }
-MODELS.forEach((m) => {
+ALL_KEYS.forEach((m) => {
   const b = document.getElementById('b' + m);
   if (!b) return;
-  b.addEventListener('click', () => { FOCUS = (FOCUS === m) ? null : m; applyFocus(); pushURL(); });
+  b.addEventListener('click', () => {
+    // Focusing an evidence model that is not on screen would silently do
+    // nothing, so bring the row in first — the click stays meaningful.
+    if (!envelopes[m] && !SOLO) { EVIDENCE = true; pushURL(); location.reload(); return; }
+    FOCUS = (FOCUS === m) ? null : m; applyFocus(); pushURL();
+  });
 });
 document.getElementById('bAll').addEventListener('click', () => { FOCUS = null; applyFocus(); pushURL(); });
+
+/* The evidence row changes which objects exist, so it rebuilds via the URL
+   rather than by mutating the scene — the params ARE the state on this page, and
+   a reload keeps that single source of truth honest. */
+{
+  const b = document.getElementById('bEvidence');
+  const syncEv = () => {
+    setPressed('bEvidence', EVIDENCE);
+    document.getElementById('evRow').style.display = EVIDENCE ? 'flex' : 'none';
+  };
+  b.addEventListener('click', () => {
+    EVIDENCE = !EVIDENCE;
+    if (!EVIDENCE && FOCUS && !['AC', 'Q'].includes(FOCUS)) FOCUS = null;
+    pushURL(); location.reload();
+  });
+  syncEv();
+}
 
 document.getElementById('bSpin').addEventListener('click', () => {
   controls.autoRotate = !controls.autoRotate; setPressed('bSpin', controls.autoRotate);
@@ -1287,16 +1884,20 @@ function applyLook() {
   skinAlpha.value = LOOK.opacity;
   bloomPass.strength = LOOK.bloom;
   bloomPass.threshold = LOOK.thresh;
+  GHOSTU.value = LOOK.ghost;
   document.getElementById('vOpacity').textContent = fmt(LOOK.opacity);
   document.getElementById('vBloom').textContent = fmt(LOOK.bloom);
   document.getElementById('vThresh').textContent = fmt(LOOK.thresh);
+  document.getElementById('vGhost').textContent = fmt(LOOK.ghost);
 }
 document.getElementById('sOpacity').addEventListener('input', (e) => { LOOK.opacity = parseFloat(e.target.value); applyLook(); pushURL(); });
 document.getElementById('sBloom').addEventListener('input', (e) => { LOOK.bloom = parseFloat(e.target.value); applyLook(); pushURL(); });
 document.getElementById('sThresh').addEventListener('input', (e) => { LOOK.thresh = parseFloat(e.target.value); applyLook(); pushURL(); });
+document.getElementById('sGhost').addEventListener('input', (e) => { LOOK.ghost = parseFloat(e.target.value); applyLook(); pushURL(); });
 document.getElementById('sOpacity').value = String(LOOK.opacity);
 document.getElementById('sBloom').value = String(LOOK.bloom);
 document.getElementById('sThresh').value = String(LOOK.thresh);
+document.getElementById('sGhost').value = String(LOOK.ghost);
 
 function pushURL() {
   const p = new URLSearchParams(location.search);
@@ -1304,6 +1905,9 @@ function pushURL() {
   p.set('opacity', LOOK.opacity.toFixed(3));
   p.set('bloom', LOOK.bloom.toFixed(2));
   p.set('thresh', LOOK.thresh.toFixed(2));
+  p.set('ghost', LOOK.ghost.toFixed(2));
+  if (EVIDENCE) p.set('evidence', '1'); else p.delete('evidence');
+  if (LEGEND_OPEN) p.delete('legend'); else p.set('legend', '0');
   if (LOOK.skin) p.delete('skin'); else p.set('skin', '0');
   if (LOOK.rose) p.delete('rose'); else p.set('rose', '0');
   history.replaceState(null, '', location.pathname + '?' + p.toString());
@@ -1348,18 +1952,31 @@ window.__probe = () => ({
   months: rows.map((r) => r.key),
   present: rows.map((r) => r.present),
   sectors: SECTORS.map((s) => s.id),
+  sectorLabels: SECTORS.map((s) => s.label),   // id vs label: build.pro-code -> "coding"
+  quadrants: QUADS.map((q) => q.id),
   baseline: BASE,
   totals: {
     A: TOT.A.map((v) => +v.toFixed(2)),
     B: TOT.B, C: TOT.C, Cs: TOT.Cs,
+    Q: TOT.Q.map((v) => +v.toFixed(2)), Qs: TOT.Qs,
   },
   sums: {
     base: BASE.reduce((a, b) => a + b, 0),
     A: +TOT.A.reduce((a, b) => a + b, 0).toFixed(2),
     B: TOT.B.reduce((a, b) => a + b, 0),
     C: TOT.C.reduce((a, b) => a + b, 0),
+    Q: +TOT.Q.reduce((a, b) => a + b, 0).toFixed(2),
   },
-  gini: { base: +GINI.base.toFixed(3), A: +GINI.A.toFixed(3), B: +GINI.B.toFixed(3), C: +GINI.C.toFixed(3) },
+  gini: { base: +GINI.base.toFixed(3), A: +GINI.A.toFixed(3), B: +GINI.B.toFixed(3),
+          C: +GINI.C.toFixed(3), Q: +GINI.Q.toFixed(3) },
+  // the rollup trade-off, so the claim on the page can be checked not trusted
+  asym: {
+    activeSectors: ACTIVE_SEC, activeQuads: ACTIVE_QUAD,
+    secMean: +ASYM.secMean.toFixed(3), quadMean: +ASYM.quadMean.toFixed(3),
+    secSat: +ASYM.secSat.toFixed(3), quadSat: +ASYM.quadSat.toFixed(3),
+    secLevels: ASYM.secLevels, quadLevels: ASYM.quadLevels,
+  },
+  evidence: EVIDENCE, ghost: GHOSTU.value,
   badges: BADGE, badgeRepos: BADGE_REPOS, topicCaptured: TOPIC_CAPTURED,
   repos: [...repoInfo.entries()].map(([p, i]) => ({
     project: p, commits: i.commits, badge: i.badge,
