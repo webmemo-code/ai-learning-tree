@@ -59,7 +59,32 @@ prototypes lived **inside those SaaS tools** and stayed there. That is the actua
 finding, and it is not a documentation failure — it is what no-code *is*. The platform
 owns the artifact. You get a URL, not a file.
 
+One artifact does exist on GitHub, and it is eloquent: a private repo literally named
+**`lovable`, created 2025-01-03 — and completely empty**. Never pushed to. That is a
+Lovable→GitHub sync started and abandoned, and it is the no-code era's only GitHub
+trace: a dated container with nothing in it. It confirms rather than contradicts the
+finding above. It also gives the no-code milestone a real `ts` to hang on, and an
+evidence URL of sorts.
+
 ---
+
+### The succession, in dates
+
+Correcting an earlier draft of this note: the relevant boundary is not this repo's
+first commit (2026-07-13) but the **GitHub account's creation, 2024-12-27**. That makes
+the eras cleaner than I first wrote:
+
+| Era | Span | Evidence |
+| --- | --- | --- |
+| Low-code | 2023-09 → 2025-06 | 29 dated notebooks |
+| No-code | ~2025-01 | `lovable` repo created 2025-01-03, empty; three tool notes |
+| Pro-code | 2024-12-27 → now | 2,909 harvested events |
+
+The first 15 months of the journey — Sept 2023 to Dec 2024 — are **invisible to GitHub
+entirely**, because the account did not exist yet. The harvested growth log starts
+2024-12-27; the learning journey starts over a year earlier. Note also that low-code and
+pro-code *overlap* for 18 months rather than handing off cleanly: notebooks continue to
+June 2025 while GitHub is already running. The succession is a crossfade, not a cut.
 
 ## 2. Reframing the question
 
@@ -94,8 +119,8 @@ afternoon learning to avoid — the radial-envelope panel says it outright:
 
 The tree already knows how to say "this is missing." Deleting the sectors would make it
 say something false instead: that the journey began with pro-code. It did not. It began
-in 2023, in a notebook, two and a half years before the first GitHub commit
-(2026-07-13).
+in September 2023, in a notebook — **fifteen months before the GitHub account existed**
+(created 2024-12-27; first commit `github-intro-skill`, same day).
 
 ---
 
