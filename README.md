@@ -88,6 +88,7 @@ filters, level of detail) this project inherits and takes botanical.
 | [docs/04-roadmap-and-process.md](docs/04-roadmap-and-process.md) | Phases, working process, and the path to letting anyone plant their own tree |
 | [docs/05-grove.md](docs/05-grove.md) | The forest layer: how shared groves coordinate — the planting log, phyllotaxis placement, clearings, federation |
 | [docs/research/prior-art.md](docs/research/prior-art.md) | Annotated sources: botanical infovis, procedural trees, commit visualizers, digital gardens |
+| [docs/research/no-code-low-code-taxonomy-analysis.md](docs/research/no-code-low-code-taxonomy-analysis.md) | Why the two permanently empty BUILD sectors stay: the eras leave different evidence, so they need different instruments |
 | [docs/decisions/](docs/decisions/) | Architecture Decision Records — where open questions go to become decisions |
 
 ## License
