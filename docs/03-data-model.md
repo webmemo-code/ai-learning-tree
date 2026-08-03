@@ -31,7 +31,7 @@ version-controlled. Rebuilding from scratch is always possible and always identi
 {
   "id": "gh:webmemo-code/ai-learning-tree:abdc221",   // stable, dedupable
   "ts": "2026-07-12T14:03:22Z",
-  "source": "github",            // github | obsidian | manual | blog (later)
+  "source": "github",            // github | obsidian | manual | notebook | blog (later)
   "kind": "commit",              // commit | note | milestone | shipped
   "sector": "build.pro-code",    // limb.sector, from taxonomy config
   "project": "ai-learning-tree", // → branch identity within the sector bough
@@ -46,8 +46,30 @@ version-controlled. Rebuilding from scratch is always possible and always identi
 - **Notes** (`kind: note`): the Obsidian vault is just a git repo (via
   [obsidian-git](https://github.com/Vinzent03/obsidian-git)) → *same harvester*.
   Only path-hash, timestamps, and tags are emitted. `private: true` always.
+- **Notebooks** (`source: notebook`): the 2023–2025 Jupyter/Colab era, imported
+  **once** by `harvester/backfill-notebooks.mjs` and committed as static history.
+  Deliberately not a harvest source: the files live on a Drive mount that exists on
+  one machine and not in Actions, and the era is finished. The script drops
+  `.ipynb_checkpoints` autosaves, dedups by content hash (Drive reorganisation left
+  identical copies in two trees), and emits a name, date, sector and size-derived
+  weight — never cell content. `attrs.evidence: "file-mtime"` marks the weaker
+  provenance so a filesystem date is never mistaken for a git SHA, and
+  `attrs.tooling: "low-code"` carries the era. Rerunning is safe: ids are
+  content-derived and dedupe against the log. See
+  [the taxonomy analysis](research/no-code-low-code-taxonomy-analysis.md) for why the
+  era rides as an attribute rather than filling `build.low-code`.
 - **Milestones** (`kind: milestone`): hand-authored in `data/milestones.yml` —
   the only way a sector crosses into the next stratum (integrity rule). Example:
+
+  > **Under review (2026-08-03).** [ADR-0004](decisions/0004-milestones-gate-strata.md),
+  > which this rule comes from, was never accepted — and the five entries now in
+  > `milestones.yml` are all `level: 2`, all written within four days of each other,
+  > and all describing *sustained* work over the preceding months. They are
+  > backdated acknowledgements of gradual competence, not observed level-up moments,
+  > which is evidence that learning is fluid rather than stepped. Walter's direction
+  > is that **the vertical axis is time, not proficiency**. Milestones survive as
+  > events on the timeline; the gating mechanism does not. An ADR superseding 0004
+  > is still to be written.
 
 ```yaml
 # data/milestones.yml
@@ -157,3 +179,17 @@ of the architecture rather than being a feature bolted on.
    their `privCount`/`privWeight` share; `hidden` omits the array), a separate axis from `privacy.roots`.
 4. For other users, default harvest scope = **public GitHub data only**; private-repo
    and vault scopes are explicit opt-ins with their own config keys.
+5. **`harvest.exclude` — when the repo NAME is the disclosure.** `private: true` gates
+   ids out of `tree.json`, but the repo name and commit SHAs still sit in
+   `data/growth-log.jsonl`, which is tracked and served from Pages. That is fine for a
+   name like `entity-map` and not fine for a client's or a person's name. Repos listed
+   in `harvest.exclude` are never fetched **and** are pruned from the log if they were
+   already harvested — the one sanctioned exception to the log's append-only rule,
+   because "stop adding more" would leave the disclosure in place forever. Removing a
+   name re-harvests that repo from scratch (its cursor rows are gone), which is the
+   intended if slow undo.
+6. **Rule 3 assumes the renderer reads `tree.json`.** A sketch that fetches
+   `data/growth-log.jsonl` directly bypasses every aggregation above and sees raw
+   private rows. `prototypes/time-axis-board/` does exactly this — acceptable for a
+   local design board, **not** acceptable for anything published as the landing page.
+   Any renderer promoted to the site root must read `tree.json`.
