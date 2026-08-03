@@ -37,7 +37,6 @@ repos:
   claude-code-global-config:           build.pro-code
   ai-skills-assessment-wordpress:      build.pro-code
   claude-flow:                         build.pro-code
-  cosine:                              build.pro-code
 
   # DISTRIBUTE / seo — search + knowledge-graph tooling
   google-knowledge-graph-retriever:    distribute.seo
@@ -56,7 +55,6 @@ repos:
   schaerers-info:                      create.copy
   schaerers.info:                      create.copy
   costa-rica:                          create.copy
-  imre:                                create.copy
   webmemo-code:                        create.copy
 
   # CREATE / images — photo & image asset pipelines
@@ -104,6 +102,12 @@ topic-map:
 # 3. harvest scope — what the nightly harvester is allowed to pull (docs/03 §6 privacy)
 # ----------------------------------------------------------------------------------------
 harvest:
+  exclude: imre, cosine     # never harvest these repos, and drop any of their events already
+                            # in the log. For work that must not appear in the tree AT ALL —
+                            # stronger than `private: true`, which still contributes aggregate
+                            # geometry. Use it when the repo NAME itself is the disclosure
+                            # (a client, a person), not just its contents. Comma-separated
+                            # repo names, no owner prefix. See docs/03 §6.
   include-forks: false      # forked repos are noise, not your own work — excluded by default
   private-repos: true       # DOUBLE opt-in (docs/03 §6 rule 2, ADR-0009) — harvest private
                             # repos AND let their commit weight lift limb height + canopy

@@ -282,6 +282,26 @@ export function cursorFor(existing, repoKey, family) {
   return marks[family] || null;
 }
 
+// drop rows belonging to an excluded repo. This is the ONE sanctioned exception to
+// the log's append-only rule (docs/03 §6): a repo can be excluded after its events
+// were already harvested, and "stop adding more" would leave the disclosure in place
+// forever. Matches on the `gh:owner/repo:` id prefix rather than the parsed project
+// field so it works on raw rows without re-parsing every line.
+//
+// Deliberately NOT id-based dedup: excluding is a property of the repo, not of any
+// one event, so a repo added to harvest.exclude prunes its whole history on the next
+// run. Removing the name from the config re-harvests it from scratch (the cursor for
+// that repo is gone with its rows) — which is the intended, if slow, undo.
+export function pruneExcluded(rows, excluded, owner) {
+  if (!excluded || excluded.size === 0) return { rows, pruned: [] };
+  const kept = [], pruned = [];
+  for (const r of rows) {
+    const m = /^gh:([^/]+)\/([^:]+):/.exec(r.id || '');
+    (m && m[1] === owner && excluded.has(m[2]) ? pruned : kept).push(r);
+  }
+  return { rows: kept, pruned };
+}
+
 // merge new events into existing rows, dedupe by id, sort ascending by
 // (ts, id). Returns { text, appended } — text is the full file, appended is the
 // events actually added.
@@ -555,13 +575,22 @@ export async function harvestRepos({ owner, config, token, fetch_, existing, sin
   // triples API usage, so absent/false means off — an existing user's nightly
   // harvest must not change cost because they pulled a new version.
   const includeCollab = !!(config.harvest && config.harvest.collaboration);
+  // harvest.exclude — repos that must not appear in the tree at all. Stronger than
+  // `private: true` (which still lifts geometry as an aggregate): an excluded repo is
+  // never fetched, and any of its events already in the log are pruned on the next run
+  // (see pruneExcluded below). For repos whose NAME is the disclosure.
+  const excluded = new Set(
+    String((config.harvest && config.harvest.exclude) || '')
+      .split(',').map((s) => s.trim()).filter(Boolean),
+  );
   const events = [];
-  const stats = { repos: 0, skippedForks: [], skippedPrivate: [], commits: 0, prs: 0, reviews: 0, issues: 0 };
+  const stats = { repos: 0, skippedForks: [], skippedPrivate: [], skippedExcluded: [], commits: 0, prs: 0, reviews: 0, issues: 0 };
 
   let repos = await listRepos({ owner, token, fetch_, opts, log });
   if (onlyRepo) repos = repos.filter((r) => r.name === onlyRepo.repo);
 
   for (const repo of repos) {
+    if (excluded.has(repo.name)) { stats.skippedExcluded.push(repo.name); continue; }
     if (repo.fork && !includeForks) { stats.skippedForks.push(repo.name); continue; }
     if (repo.private && !includePrivate) { stats.skippedPrivate.push(repo.name); continue; }
     stats.repos++;
@@ -670,7 +699,17 @@ async function main() {
   const token = process.env.HARVEST_TOKEN || process.env.GITHUB_TOKEN || null;
   const tokenLabel = process.env.HARVEST_TOKEN ? 'HARVEST_TOKEN' : process.env.GITHUB_TOKEN ? 'GITHUB_TOKEN' : 'none (public, low rate limit)';
 
-  const existingRows = existsSync(logPath) ? parseLog(readFileSync(logPath, 'utf8')) : [];
+  const excludedRepos = new Set(
+    String((config.harvest && config.harvest.exclude) || '')
+      .split(',').map((s) => s.trim()).filter(Boolean),
+  );
+  const allRows = existsSync(logPath) ? parseLog(readFileSync(logPath, 'utf8')) : [];
+  const { rows: existingRows, pruned } = pruneExcluded(allRows, excludedRepos, owner);
+  if (pruned.length) {
+    const byRepo = {};
+    for (const r of pruned) { const n = /^gh:[^/]+\/([^:]+):/.exec(r.id)[1]; byRepo[n] = (byRepo[n] || 0) + 1; }
+    console.error(`harvest: pruning ${pruned.length} event(s) from excluded repo(s): ${Object.entries(byRepo).map(([n, c]) => `${n} (${c})`).join(', ')}`);
+  }
   const existing = indexExisting(existingRows);
 
   console.error(`harvest: owner=${owner} token=${tokenLabel}${onlyRepo ? ` repo=${onlyRepo.repo}` : ''}${sinceArg ? ` since=${sinceArg}` : ''}${dryRun ? ' (dry-run)' : ''}`);
@@ -699,19 +738,21 @@ async function main() {
 
   const { text, appended } = buildOutput(existingRows, [...commitEvents, ...msEvents], existing.ids);
 
-  if (appended.length === 0) {
+  // a prune is a write even when nothing new arrived — checking `appended` alone would
+  // leave excluded events sitting in the log until the next repo happened to commit.
+  if (appended.length === 0 && pruned.length === 0) {
     console.error('harvest: no new growth — log already up to date.');
     process.exit(0);
   }
 
   if (dryRun) {
-    console.error(`harvest: would append ${appended.length} event(s) (dry-run, nothing written):`);
+    console.error(`harvest: would append ${appended.length} event(s), prune ${pruned.length} (dry-run, nothing written):`);
     for (const e of appended) process.stdout.write(jline(e) + '\n');
     process.exit(0);
   }
 
   writeFileSync(logPath, text);
-  console.error(`harvest: appended ${appended.length} event(s) -> ${logPath}`);
+  console.error(`harvest: appended ${appended.length} event(s), pruned ${pruned.length} -> ${logPath}`);
   process.exit(0);
 }
 
