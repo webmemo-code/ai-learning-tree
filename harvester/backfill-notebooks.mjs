@@ -139,13 +139,20 @@ const events = [...byHash.values()]
       project: name,
       weight: weightFor(size),
       // evidence: file-mtime marks this as weaker provenance than a git SHA.
-      // private: true — these are local files, never published; they may lift
-      // geometry as an aggregate but their names must not reach tree.json
-      // (ADR-0009 / ADR-0010, same contract as private repos).
       // tooling: the era marker. This is what makes the low-code period visible
       // without stealing events from their real sector (ADR-0003 precedent).
       attrs: { runtime: 'local', lang: 'Python', evidence: 'file-mtime', tooling: 'low-code' },
-      private: true,
+      // private: false — a deliberate call, reviewed name by name. Unlike a private
+      // REPO (where the name can be a client or a person — see harvest.exclude), all
+      // 25 notebooks are named after a tool or a technique: Google-KG-Retriever,
+      // post-to-instagram-live, Generate_images_with_Gemini_and_Vertex. Those names
+      // ARE the value to a viewer: they show what was being learned, and the
+      // Flickr→Instagram arc is legible across Jan–Feb 2024 only because you can
+      // read them. Nothing here is client work.
+      //
+      // If a future notebook root does hold client-named files, this is the gate:
+      // set private true and only aggregate geometry survives into tree.json.
+      private: false,
     };
   })
   .sort((a, b) => (a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : 0));
