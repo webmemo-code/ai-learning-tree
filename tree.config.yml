@@ -51,7 +51,6 @@ repos:
   content-writing:                     create.copy
   markdown-wp-rm-post-publisher:       create.copy
   markdown-wp-wm-linkedin-article-publisher: create.copy
-  wp-categories-enhancer:              create.copy
   wp-custom-sidebar:                   create.copy
   wp-rm-tm-translation:                create.copy
   schaerers-info:                      create.copy
@@ -73,6 +72,7 @@ repos:
   programmatic-video:                  create.video
 
   # AUTOMATE / workflows — cross-tool glue and content-ops automation
+  wp-maintenance-tools:                automate.workflows
   flickr-to-instagram-automation:      automate.workflows
   flickr-lightroom-publisher:          automate.workflows
   api_asana_content_retriever:         automate.workflows
