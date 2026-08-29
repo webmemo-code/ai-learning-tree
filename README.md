@@ -5,8 +5,9 @@
 You don't have to understand code to enjoy this page. Here's the whole idea in
 three sentences:
 
-1. While you learn to work with AI, you leave small traces behind — files you
-   save to GitHub, notes you write in your notebook app.
+1. While you learn to work with AI, you leave small traces behind — every step
+   of work you save to GitHub, every pull request, review and issue you take
+   part in there, and the notes you write in your notebook app.
 2. This project quietly collects those traces once a night and turns them into a
    **3D tree** you can spin around in your browser.
 3. The more you practice, the taller and fuller the tree gets — so you can
@@ -71,8 +72,9 @@ Read the tree like this:
 - **The roots = your private notes.** They're part of the foundation, but their
   contents are never published.
 - **Nothing grows without evidence.** The tree only reacts to work that really
-  happened. Same history in, same tree out — which is exactly why the 30-second
-  replay is possible.
+  happened — your commits, pull requests, reviews and issues on GitHub, plus
+  your private notes. Same history in, same tree out — which is exactly why the
+  30-second replay is possible.
 
 ## Where the project stands today
 
@@ -106,9 +108,9 @@ New to GitHub? These are the only terms you really need:
 | Word | What it means here |
 | --- | --- |
 | **Repository** (or *repo*) | A project folder that lives on GitHub. This page is the front door of one. |
-| **Commit** | One saved step of work, with a date and a short note. The tree counts these. |
-| **Issue** / **Pull request** | GitHub's ways of saying "here's something to do" and "here's a change I'd like to make". |
-| **Harvest** | Our nightly collection run: it looks for new commits and notes and writes them down. |
+| **Commit** | One saved step of work, with a date and a short note. These are the bulk of what the tree counts. |
+| **Issue** / **Pull request** | GitHub's ways of saying "here's something to do" and "here's a change I'd like to make". Both count too, as does reviewing someone else's pull request. |
+| **Harvest** | Our nightly collection run: it looks for new commits, pull requests, reviews, issues and notes, and writes them down. |
 | **Growth log** | The running list of everything harvested, in the order it happened. Nothing is ever removed. |
 | **`tree.json`** | The finished description of your tree — the file the 3D viewer reads. |
 | **Obsidian** | A popular note-taking app. If you use it, your notes can feed the roots — privately. |
