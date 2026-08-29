@@ -36,7 +36,8 @@
 // algoVersion 3.1.0 — CONTRIBUTION MEADOW (ADR-0010). Additive MINOR bump: a new
 // top-level `contribution` array of weekly per-sector activity buckets (a
 // GitHub-style density field unrolled onto the ground ring). Buckets aggregate
-// GITHUB-SOURCE commits only — vault notes stay roots-only (ADR-0002) and manual
+// GITHUB-SOURCE events only (every kind, not just commits — see the loop below and
+// docs/03 §4) — vault notes stay roots-only (ADR-0002) and manual
 // milestones stay blossoms; the same source === 'github' gate ADR-0009 uses for
 // private canopy-lift keeps knowledge out of the above-ground meadow. No existing
 // geometry moves — every segment/leaf/blossom/firefly is byte-identical to 3.0.0
@@ -678,7 +679,8 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
 
   // ---- contribution meadow: weekly per-sector activity buckets (ADR-0010) ----
   // A GitHub-style density field, unrolled onto the ground ring. GITHUB-SOURCE
-  // commits ONLY land in the buckets (source === 'github', mirroring the ADR-0009
+  // events ONLY land in the buckets — every kind, commits and the PR/review/issue
+  // events added in PR #57 alike (source === 'github', mirroring the ADR-0009
   // isPrivateWork gate) — because in `combined` mode a bucket may include private
   // events, and vault notes (source 'obsidian') are always private and always
   // roots-only (ADR-0002); folding them into the above-ground meadow would leak
@@ -700,8 +702,11 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
     // key "sec|week" -> accumulator; born deferred until after we know the field max
     const buckets = new Map();
     for (const e of evs) {
-      if (e.source !== 'github') continue;  // github commits only — vault notes stay
-                                            // roots-only (ADR-0002), milestones stay blossoms
+      // EVERY github-source kind, not just commits: since PR #57 that includes pr,
+      // review and issue events, which add their weight to the blade like any other
+      // work (docs/03 §4 drift note, ADR-0010 rule 1 clarification). Vault notes stay
+      // roots-only (ADR-0002); milestones (source 'manual') stay blossoms.
+      if (e.source !== 'github') continue;
       const sec = secIndex.get(e.sector);
       if (sec === undefined) continue;      // unclassified: skip (gray shoots own that signal)
       if (e.private && !includePriv) continue;

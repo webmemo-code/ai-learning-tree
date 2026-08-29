@@ -103,7 +103,7 @@ Computed in `deriveDrivers()` from the raw log:
 | Driver | Derivation |
 | --- | --- |
 | `level` | `1 + count(milestone events)` for the sector; authoritative `attrs.level` wins if higher; capped at 4. Gates height (which stratum the bough may reach). |
-| `act` | Log-damped share of lifetime **work** weight — public events, plus private GitHub commits under the `harvest.private-repos` opt-in (ADR-0009): `log2(1+Σweight)`, normalized so the busiest sector = 1.0. Drives limb reach/thickness/leaf mass. |
+| `act` | Log-damped share of lifetime **work** weight — every non-milestone kind counts alike (commits, plus `pr`/`review`/`issue` when `harvest.collaboration` is on), public events plus private GitHub work under the `harvest.private-repos` opt-in (ADR-0009): `log2(1+Σweight)`, normalized so the busiest sector = 1.0. Drives limb reach/thickness/leaf mass. |
 | `fill` | How far up its **current** band the sector has climbed (ADR-0009): `log2(1+w)/log2(1+60)` over work weight accrued **since the milestone that unlocked the band** (all-time at level 1). Levels 1–3 clamp at 1.0 just under the band top; the top band never clamps — Expert trees keep growing. Drives the height ceiling; not emitted into `tree.json` (it's baked into geometry). |
 | `recent` | Share of the sector's own canopy-shaping events (public, plus opt-in private GitHub work — vault notes never tick this, docs/03 §6 rule 2) landing in the **last 30 days** before the now-anchor, normalized max→1.0. Drives foliage freshness + fireflies. |
 | `roots` | Share of **private**-event weight, normalized max→1.0. Drives root-flare size (docs/03 §6 rule 2; private ids/refs never surface — opt-in private *GitHub work* may additionally lift canopy as aggregate geometry, ADR-0009). Root *visibility/attribution* is a separate `privacy.roots` concern (see above). |
@@ -148,13 +148,15 @@ gray shoots at the trunk base — visible nagging to classify them, never droppe
   "contribution": [ {                                            // weekly per-sector activity buckets (meadow)
     "sector": 8,          // sector index (matches segments[].sector)
     "weekTs": "2026-07-13", // that week's UTC Monday, YYYY-MM-DD (absolute weeks; buckets never shift)
-    "count": 9, "weight": 12.4,   // events + summed weight in the bucket
+    "count": 9, "weight": 12.4,   // events + summed weight in the bucket — EVERY github-source
+                                  // kind, not just commits (docs/03 §4 drift note)
     "privCount": 6, "privWeight": 8.1, // private share (0 in public-only mode) — AGGREGATES ONLY (docs/03 §6.3)
     "level": 3,           // 1..4 log-damped intensity, GitHub-style (0 never emitted)
     "born": 0.83          // same ts→born normalization the canopy uses (meadow ripple aligns with sprout)
   } ],                                                           // omitted entirely when privacy.contributions: hidden
   "eventMeta": {                                                 // public event metadata for detail panels
     "gh:owner/repo:sha": { "id": "…", "kind": "commit", "sector": "…", "project": "…", "ts": "…", "url"?: "…" }
+    // kind is any of commit | pr | review | issue | note | milestone | shipped
   },
   "rootDetail": {                                                // OWNER mode only; aggregates ONLY (docs/03 §6.3)
     "4": { "noteCount": 15, "lastNoteTs": "…", "topTags": [ { "tag": "ai/seo", "count": 15 } ] } // keyed by sector index
