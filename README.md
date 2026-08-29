@@ -5,9 +5,9 @@
 You don't have to understand code to enjoy this page. Here's the whole idea in
 three sentences:
 
-1. While you learn to work with AI, you leave small traces behind — work you
-   save to GitHub, reviews and discussions you take part in there, notes you
-   write in your notebook app.
+1. While you learn to work with AI, you leave small traces behind — every step
+   of work you save to GitHub, every pull request, review and issue you take
+   part in there, and the notes you write in your notebook app.
 2. This project quietly collects those traces once a night and turns them into a
    **3D tree** you can spin around in your browser.
 3. The more you practice, the taller and fuller the tree gets — so you can
@@ -72,8 +72,8 @@ Read the tree like this:
 - **The roots = your private notes.** They're part of the foundation, but their
   contents are never published.
 - **Nothing grows without evidence.** The tree only reacts to work that really
-  happened — saved work, pull requests, reviews and issues on GitHub, plus your
-  private notes. Same history in, same tree out — which is exactly why the
+  happened — your commits, pull requests, reviews and issues on GitHub, plus
+  your private notes. Same history in, same tree out — which is exactly why the
   30-second replay is possible.
 
 ## Where the project stands today
