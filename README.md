@@ -9,7 +9,7 @@ three sentences:
    save to GitHub, notes you write in your notebook app.
 2. This project quietly collects those traces once a night and turns them into a
    **3D tree** you can spin around in your browser.
-3. The more you practise, the taller and fuller the tree gets — so you can
+3. The more you practice, the taller and fuller the tree gets — so you can
    *see* your progress instead of just hoping it's there.
 
 It's your journey, rendered as something alive — and something worth showing to
@@ -60,7 +60,7 @@ Older, dated snapshots are kept in [docs/documentation/](docs/documentation/).
 
 Read the tree like this:
 
-- **How high something sits = how good you've got.** A real forest has four
+- **How high something sits = how far you've come.** A real forest has four
   layers, from the shady floor up to the few tall trees poking out of the top.
   Those four layers stand for the four skill levels described in
   [Section's AI proficiency report](https://www.sectionai.com/ai/the-ai-proficiency-report):
@@ -137,11 +137,11 @@ Only if you want the full story — they get more technical as you go down the l
 | --- | --- |
 | [docs/00-vision.md](docs/00-vision.md) | Why this exists, who it's for, and what "finished" would feel like |
 | [docs/01-concept.md](docs/01-concept.md) | The tree comparison in detail: which part of a tree stands for what, and how growth works |
-| [docs/02-visual-language.md](docs/02-visual-language.md) | The look and feel — colours, light, motion, sound |
+| [docs/02-visual-language.md](docs/02-visual-language.md) | The look and feel — colors, light, motion, sound |
 | [docs/03-data-model.md](docs/03-data-model.md) | Where the data comes from, how it's sorted, and how privacy is handled |
 | [docs/04-roadmap-and-process.md](docs/04-roadmap-and-process.md) | What's built, what's next, and the path to letting anyone plant a tree |
 | [docs/05-grove.md](docs/05-grove.md) | The forest layer: how several people's trees are arranged without ever moving each other |
-| [docs/research/prior-art.md](docs/research/prior-art.md) | Related work that inspired this: data-art, procedural trees, commit visualisers, digital gardens |
+| [docs/research/prior-art.md](docs/research/prior-art.md) | Related work that inspired this: data-art, procedural trees, commit visualizers, digital gardens |
 | [docs/decisions/](docs/decisions/) | The decision notes (ADRs) — where open questions were settled |
 
 ## Related project
