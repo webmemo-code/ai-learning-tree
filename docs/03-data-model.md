@@ -20,6 +20,12 @@
 └──────────────┘
 ```
 
+The GitHub box covers more than commits: with `harvest.collaboration: true` the
+harvester also reads pull requests, their reviews, and issues (§2). Each list
+endpoint is floored by its **own** high-water mark in the log (one per `commit` /
+`pr` / `issue` family; reviews fold into the `pr` family) — see
+[harvester/README.md](../harvester/README.md#the-cursor-in-log-design-no-state-file).
+
 Key property: **the tree is a pure function of the growth log** — `grow(events, seed, algoVersion)`.
 The log is the source of truth and lives in git, so the tree's history is itself
 version-controlled. Rebuilding from scratch is always possible and always identical.
@@ -32,7 +38,7 @@ version-controlled. Rebuilding from scratch is always possible and always identi
   "id": "gh:webmemo-code/ai-learning-tree:abdc221",   // stable, dedupable
   "ts": "2026-07-12T14:03:22Z",
   "source": "github",            // github | obsidian | manual | blog (later)
-  "kind": "commit",              // commit | note | milestone | shipped
+  "kind": "commit",              // commit | pr | review | issue | note | milestone | shipped
   "sector": "build.pro-code",    // limb.sector, from taxonomy config
   "project": "ai-learning-tree", // → branch identity within the sector bough
   "weight": 1.0,                 // damped later; big refactor ≠ typo fix (heuristic: files touched)
@@ -41,8 +47,25 @@ version-controlled. Rebuilding from scratch is always possible and always identi
 }
 ```
 
-- **Commits** (`kind: commit`): harvested via GitHub GraphQL API (public data only
-  for other users; PAT for your own private repos, opt-in).
+- **Commits** (`kind: commit`): harvested from the GitHub REST API (public data only
+  for other users; PAT for your own private repos, opt-in). Id: `gh:{owner}/{repo}:{sha7}`.
+  Weight from files touched: `clamp(0.4 + log₂(1 + files) · 0.5, 0.4, 3.0)`.
+- **Collaboration** (`kind: pr | review | issue`): opt-in via `harvest.collaboration`
+  (**off** when the key is absent). Only the owner's own PRs, reviews and issues
+  count — someone else's PR is *their* growth. Ids are
+  `…:pr{n}`, `…:pr{n}r{reviewId}`, `…:i{n}`, which can never collide with a `sha7`
+  (`p`, `r` and `i` are not hex digits). Flat per-kind weights, chosen to sit in the
+  same 0.4–3.0 band as commit weights so the mix is comparable on one axis:
+
+  | kind | weight | why |
+  | --- | --- | --- |
+  | `pr` | 1.5 | packaging work for others, not just saving it — heavier than a typical commit |
+  | `review` | 1.0 | real work and the strongest maturity signal, but it produces no artifact of its own |
+  | `issue` | 0.6 | cheap to open, yet it signals planning ahead of code |
+
+  A PR's own commits are harvested **as well**. That double count is intended: the
+  `pr` event is not a re-count of the code, it is a count of the collaboration act
+  layered on top of it.
 - **Notes** (`kind: note`): the Obsidian vault is just a git repo (via
   [obsidian-git](https://github.com/Vinzent03/obsidian-git)) → *same harvester*.
   Only path-hash, timestamps, and tags are emitted. `private: true` always.
@@ -70,6 +93,12 @@ Priority chain, first match wins:
 3. **Obsidian tags** for notes (`#ai/video → create.video`)
 4. **Default bucket** `unclassified` → rendered as faint gray shoots at the trunk
    base — visible nagging to classify them (never silently dropped)
+
+Classification is resolved **per repo, once per run**, so a repo's PRs, reviews and
+issues land in the same sector as its commits. Because the log is append-only and
+keyed by event id, re-mapping a repo does *not* re-classify rows already written —
+they keep their frozen sector until new events land, or until a one-off reclassify
+pass rewrites them (see PR #18/#55 for the approach).
 
 ```yaml
 # tree.config.yml (per-user; this repo carries Walter's as the reference instance)
@@ -126,11 +155,23 @@ stratum allows. Branches literally *colonize the space your work opened up*.
   YYYY-MM-DD), count, weight, privCount, privWeight, level (1..4, log-damped to the
   field max), born (the same ts→born normalization the canopy uses) }`. Weeks are
   anchored at the first epoch Monday (1970-01-05) so a bucket never shifts as new
-  events append. Buckets aggregate **GitHub-source commits only** — milestones
-  (source `manual`) keep their blossom signal and vault notes (source `obsidian`)
-  stay roots-only (ADR-0002/ADR-0010), so neither enters the above-ground meadow;
-  unclassified events are skipped too (they keep their gray-shoots signal). Gated by
+  events append. Buckets aggregate **every classified GitHub-source event** — the
+  gate in `grow()` is `source === 'github'`, not `kind === 'commit'`, so with
+  `harvest.collaboration` on, PRs, reviews and issues land in the buckets alongside
+  commits and their weights add to the blade height. Milestones (source `manual`)
+  keep their blossom signal and vault notes (source `obsidian`) stay roots-only
+  (ADR-0002/ADR-0010), so neither enters the above-ground meadow; unclassified
+  events are skipped too (they keep their gray-shoots signal). Gated by
   `privacy.contributions` (see §6).
+
+  > **Drift note (2026-08-29).** ADR-0010 (2026-07-20) wrote this rule as
+  > "GitHub-source **commits** only", which was an accurate description of a
+  > `source === 'github'` gate *at the time* — commits were then the only
+  > GitHub-source kind. PR #57 (2026-07-31) added `pr`/`review`/`issue` events with
+  > the same source, so they began entering the meadow without the prose ever
+  > saying so. In the current log that is 3063 bucketed events against 1880
+  > classified commits. The behaviour above is what ships; if the intent was
+  > commits-only blades, the fix belongs in `grow()`, not here.
 
 ## 5. Replay (time-lapse) for free
 
@@ -143,6 +184,8 @@ of the architecture rather than being a feature bolted on.
 ## 6. Privacy stance (hard rules)
 
 1. Note **content never leaves the vault** — the harvester emits path-hash + tags + ts only.
+   Collaboration events are held to the same line: a `pr`/`review`/`issue` event carries
+   the §2 schema fields and its number, never a title, body, branch name or label text.
 2. `private: true` events never emit ids/refs into `tree.json`. Vault notes
    (knowledge) influence **roots only**; roots render for the owner, and for
    visitors only as an anonymized silhouette (or not at all — config). Private
