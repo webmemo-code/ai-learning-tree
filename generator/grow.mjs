@@ -679,7 +679,8 @@ export function grow(events, config = {}, algoVersion = ALGO_VERSION) {
 
   // ---- contribution meadow: weekly per-sector activity buckets (ADR-0010) ----
   // A GitHub-style density field, unrolled onto the ground ring. GITHUB-SOURCE
-  // commits ONLY land in the buckets (source === 'github', mirroring the ADR-0009
+  // events ONLY land in the buckets — every kind, commits and the PR/review/issue
+  // events added in PR #57 alike (source === 'github', mirroring the ADR-0009
   // isPrivateWork gate) — because in `combined` mode a bucket may include private
   // events, and vault notes (source 'obsidian') are always private and always
   // roots-only (ADR-0002); folding them into the above-ground meadow would leak
