@@ -5,7 +5,8 @@ Turns real activity into growth events and appends them to
 the log's schema/merge machinery, but never each other's data:
 
 - **`harvest.mjs`** (phase 3, "First rings") — real GitHub activity, public by
-  default. See the sections below.
+  default: commits always, plus pull requests, their reviews, and issues when
+  `harvest.collaboration: true`. See the sections below.
 - **`vault.mjs`** (phase 4, "Roots") — Obsidian vault note *metadata only*,
   always private. See "Vault harvesting (phase 4 — Roots)" further down.
 
@@ -81,10 +82,23 @@ commit metadata. Step-by-step PAT setup, verification, and rotation:
 ## The cursor-in-log design (no state file)
 
 The log **is** the state. There is no separate cursor/checkpoint file to drift out
-of sync. On each run the harvester scans the existing log, finds the newest
-`gh:{owner}/{repo}:*` event per repo, and asks GitHub for commits `since` that
-timestamp. The boundary commit (equal ts) comes back too but is dropped by id
-dedupe. Consequences:
+of sync. On each run the harvester scans the existing log and derives, per repo, a
+high-water mark **per event family** — `commit`, `pr` and `issue` (reviews fold into
+the `pr` family: they are fetched per-PR and have no list endpoint of their own, so
+they must never set a cursor of their own). Each list endpoint is floored only by
+its own family's mark. The boundary event (equal ts) comes back too but is dropped
+by id dedupe.
+
+> **Why per-family, and not one cursor per repo.** A single shared mark is a silent
+> data-loss bug: a June PR would push the repo's floor past unharvested February
+> commits, which are then never asked for again while the run cheerfully reports
+> "no new growth". Related: the per-PR review fetch gates on `updated_at`, not
+> `created_at` — a February PR reviewed in July would otherwise be skipped forever
+> once the floor passed February. And a persistent 5xx may soft-fail a
+> collaboration endpoint, but **must** still abort the commit fetch, for the same
+> cursor reason.
+
+Consequences:
 
 - Delete a repo's lines → its history re-harvests from scratch next run.
 - Nothing is ever double-counted; running twice in a row appends nothing.
@@ -103,8 +117,15 @@ First match wins, per commit's repo:
 3. **`unclassified`** — never dropped; renders as faint gray shoots nagging you to
    add a mapping.
 
-**Weight** = `clamp(0.4 + log₂(1 + files_touched) · 0.5, 0.4, 3.0)` — a big refactor
-outweighs a typo, but no single commit can grow a monster branch.
+**Weight** (commits) = `clamp(0.4 + log₂(1 + files_touched) · 0.5, 0.4, 3.0)` — a big
+refactor outweighs a typo, but no single commit can grow a monster branch.
+
+**Weight** (collaboration) = flat per kind — `pr` 1.5, `review` 1.0, `issue` 0.6 —
+deliberately inside the same 0.4–3.0 band so the mix is comparable on one axis. A PR
+has no file count of its own worth an extra API call, and its size is already carried
+by the commits inside it, which are harvested separately. Only the owner's own PRs,
+reviews and issues are counted, and `/issues` entries carrying a `pull_request` key
+are dropped so a PR is never counted twice. Full rationale: docs/03 §2.
 
 **Milestones**: `data/milestones.yml` (hand-authored) is merged every run into
 `kind: milestone` events with id `manual:{date}-{sector}-l{level}`. The dedup key is
@@ -120,7 +141,9 @@ else away. It **never** emits:
 
 - commit **message** subjects or bodies,
 - **file paths**, filenames, `diff`s, or `patch`es,
-- raw SHAs beyond the 7-char id fragment.
+- raw SHAs beyond the 7-char id fragment,
+- PR/issue **titles**, bodies, branch names or label text — a collaboration event
+  carries its number and nothing else prose-shaped.
 
 `test-harvest.mjs` enforces this: the fixtures deliberately stuff `SECRET …` text
 and `src/secret/private-path-*.ts` paths into every commit message and file patch,

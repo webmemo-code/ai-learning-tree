@@ -21,6 +21,15 @@ ids, names, or messages: aggregates only.
    `source === 'github'` — the same gate ADR-0009 uses to decide what private work
    may lift canopy. Vault notes (`obsidian`) stay roots-only (ADR-0002); milestones
    (`manual`) stay blossoms — neither enters the above-ground meadow.
+
+   > **Clarification (2026-08-29), not a change of decision.** "Commits only"
+   > described the `source === 'github'` gate accurately when this ADR was accepted:
+   > commits were the only GitHub-source kind that existed. PR #57 (2026-07-31)
+   > introduced `pr`, `review` and `issue` events carrying the same source, so the
+   > gate as written admits them, and they have been growing meadow blades ever
+   > since. The normative rule is and remains `source === 'github'`; read the
+   > heading as "GitHub-source **work events** only". Should commits-only blades be
+   > wanted, that is a new decision and a change to `grow()`.
 2. **Gated by `privacy.contributions`** ∈ `public-only | combined | hidden`,
    **default `public-only`** (safe by default: private events excluded, privCount /
    privWeight = 0). `combined` folds private GitHub work into the buckets and reports
